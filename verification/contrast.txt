@@ -1,0 +1,17 @@
+dark heading: 11.36:1
+light heading: 6.16:1
+top bar: 14.72:1
+dark body: 16.51:1
+light body: 14.25:1
+dark primary on surfaceVariant: 7.80:1
+dark primary on surfaceContainer: 9.06:1
+dark primaryContainer: 8.43:1
+dark secondaryContainer: 9.52:1
+dark tertiaryContainer: 7.77:1
+dark errorContainer: 7.80:1
+light primary on surfaceVariant: 5.66:1
+light primary on surfaceContainer: 5.71:1
+light primaryContainer: 8.57:1
+light secondaryContainer: 9.28:1
+light tertiaryContainer: 10.18:1
+light errorContainer: 13.26:1

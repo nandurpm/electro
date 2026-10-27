@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.ui.EngineeringUiTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:53" hostname="build-host" time="4.546">
+  <properties/>
+  <testcase name="lightEngineeringPreview" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.012"/>
+  <testcase name="allHomeTabsVisible" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.1"/>
+  <testcase name="motorCalculatorPersists" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.383"/>
+  <testcase name="catalogueKeepsOnlySearchPinned" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.392"/>
+  <testcase name="cbmSampleLinksToReference" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.456"/>
+  <testcase name="terminalAndCutawaySelection" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.372"/>
+  <testcase name="bottomNavigationSupportsLargeText" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.752"/>
+  <testcase name="explorerSearchAndFilters" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.469"/>
+  <testcase name="faultAndRelatedComponentNavigation" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.381"/>
+  <testcase name="sourceReferencesRemainReachable" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.227"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:10" hostname="build-host" time="0.219">
+  <properties/>
+  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.137"/>
+  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.034"/>
+  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.002"/>
+  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.031"/>
+  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.004"/>
+  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.01"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

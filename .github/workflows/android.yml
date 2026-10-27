@@ -1,0 +1,49 @@
+# Least-privilege, pinned build actions validate source and offline data before compilation.
+name: Android
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+      # Install exact compile/build tools instead of depending on the runner image contents.
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/aapt"
+      - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947
+      # Python parser dependencies are developer tools and never ship in the Android package.
+      - name: Install documentation tooling
+        run: python3 -m pip install -r scripts/requirements-dev.txt
+      - name: Validate offline content and palette
+        run: |
+          python3 scripts/check_comments.py
+          python3 -m unittest discover -s scripts -p "test_*.py"
+          python3 scripts/validate_assets.py
+          python3 scripts/validate_engineering.py
+          python3 scripts/check_contrast.py
+          python3 scripts/package_project.py --check
+      # Shared domain tests run in both variants; the UI simulation harness belongs to debug.
+      - name: Build, test and lint with the committed wrapper
+        run: ./gradlew assembleDebug assembleRelease testDebugUnitTest testReleaseUnitTest lintDebug lintRelease
+      # Upload failure reports too, so a rejected build remains diagnosable.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: Electro-build-and-reports
+          path: |
+            app/build/outputs/apk/
+            app/build/reports/
+            app/build/test-results/
+            app/build/outputs/mapping/release/

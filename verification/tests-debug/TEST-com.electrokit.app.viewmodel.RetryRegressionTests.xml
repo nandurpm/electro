@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.viewmodel.RetryRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:59:00" hostname="build-host" time="0.274">
+  <properties/>
+  <testcase name="productionJournalRunsOffMainThread" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.109"/>
+  <testcase name="freshViewModelRecoversStagedInputsBeforeDataStoreCommit" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.051"/>
+  <testcase name="inputRetryPersistsPendingSnapshot" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.043"/>
+  <testcase name="settingsRetryRepeatsSettingsMutationRatherThanFlushingInputs" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.041"/>
+  <testcase name="inputSuccessDoesNotDismissLoadFailure" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
