@@ -63,7 +63,25 @@ jobs:
           trap 'rm -f "$ELECTROKIT_KEYSTORE"' EXIT
           umask 077
           printf '%s' "$ELECTROKIT_KEYSTORE_BASE64" | base64 --decode > "$ELECTROKIT_KEYSTORE"
-          ./gradlew --no-daemon --max-workers=4 testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleRelease | tee "$RUNNER_TEMP/electro-release-build.log"
+          keytool -exportcert -keystore "$ELECTROKIT_KEYSTORE" -alias "$ELECTROKIT_KEY_ALIAS" -storepass:env ELECTROKIT_STORE_PASSWORD -file "$RUNNER_TEMP/release-cert.der"
+          expected=$(cat signing/release-certificate.sha256)
+          actual=$(sha256sum "$RUNNER_TEMP/release-cert.der" | cut -d ' ' -f1)
+          if [ "$actual" != "$expected" ]; then echo "::error::Signing certificate mismatch. Expected $expected; found $actual"; exit 1; fi
+          if ! ./gradlew --no-daemon --max-workers=4 testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleRelease > "$RUNNER_TEMP/electro-release-build.log" 2>&1; then
+            python3 - <<'PYERROR'
+          import os, re
+          from pathlib import Path
+          text = Path(os.environ['RUNNER_TEMP'], 'electro-release-build.log').read_text()
+          for name in ('ELECTROKIT_KEYSTORE_BASE64', 'ELECTROKIT_STORE_PASSWORD', 'ELECTROKIT_KEY_ALIAS', 'ELECTROKIT_KEY_PASSWORD'):
+              value = os.environ.get(name)
+              if value: text = text.replace(value, '[REDACTED]')
+          lines = [line for line in text.splitlines() if re.search(r'(^e:|^>|FAILED|Error:|What went wrong|Exception|Caused by:)', line)]
+          for line in lines[-20:]:
+              print('::error::' + line.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
+          PYERROR
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/electro-release-build.log"
           test -f app/build/outputs/apk/release/app-release.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk | tee "$RUNNER_TEMP/electro-signature.txt"
           expected=$(cat signing/release-certificate.sha256)
@@ -81,19 +99,17 @@ jobs:
           mkdir -p app/build/outputs/distribution
           cp app/build/outputs/apk/release/app-release.apk "app/build/outputs/distribution/ELECTRO-$version.apk"
           python3 scripts/package_project.py --archive "app/build/outputs/distribution/ELECTRO-$version-source.zip"
-      - if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: ELECTRO-signed-release
-          path: app/build/outputs/distribution/
-          if-no-files-found: error
       - name: Publish matching version tag
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
-          test "$RELEASE_TAG" = "v$version"
-          gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --verify-tag --title "ELECTRO $version" --generate-notes
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            RELEASE_TAG="electro-$version"
+            gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --target "$GITHUB_SHA" --title "ELECTRO $version" --generate-notes
+          else
+            test "$RELEASE_TAG" = "v$version"
+            gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --verify-tag --title "ELECTRO $version" --generate-notes
+          fi
