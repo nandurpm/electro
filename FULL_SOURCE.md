@@ -42165,6 +42165,8 @@ No original keystore or signing-password variables are configured in this worksp
 
 Required repository Actions secrets: `ELECTROKIT_KEYSTORE_BASE64`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS`, `ELECTROKIT_KEY_PASSWORD`. Configure the **original** values securely under repository Settings → Secrets and variables → Actions. Never paste passwords into chat or commit a keystore. A certificate fingerprint or an old APK cannot recreate its private signing key.
 
+The manual signing run [40477419087](https://github.com/nandurpm/electro/actions/runs/40477419087), against application-code commit `a571723`, confirmed that **all four secrets are missing**. Its early signing-prerequisite check failed, and signing/upload/publication steps were skipped. No signed 3.0 APK, final release tag or GitHub Release was created. After the original secrets are configured, rerun Android Release on `release/electro-3.0`; verify the original certificate match before publishing `v3.0`.
+
 The previous hosted release run failed inside the third-party Android setup action before signing. Workflows now pin Ubuntu 24.04 and use its documented preinstalled SDK, with explicit required-package checks. Signing prerequisites are checked early to avoid an expensive build when credentials are absent. Hosted execution is reported separately from successful local compilation.
 
 When signed verification succeeds, the workflow packages `ELECTRO-3.0.apk` and the matching `ELECTRO-3.0-source.zip`. Manual execution uploads artifacts; a matching `v3.0` tag publishes both. Do not create the final release tag until the original signing identity has been verified.
