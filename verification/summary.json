@@ -1,0 +1,53 @@
+{
+  "version": "3.0",
+  "version_code": 14,
+  "application_id": "com.electrokit.app",
+  "generated_at_utc": "2026-10-27T09:16:13.153190+00:00",
+  "source_commit": "5c4382c531c41cea1530a08f5ba56e69e7532f12",
+  "tests": {
+    "debug": {
+      "tests": 121,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "release": {
+      "tests": 80,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "debug": {
+      "errors": 0,
+      "warnings": 14,
+      "warning_ids": {
+        "UnusedAttribute": 1,
+        "UnusedResources": 13
+      }
+    },
+    "release": {
+      "errors": 0,
+      "warnings": 14,
+      "warning_ids": {
+        "UnusedAttribute": 1,
+        "UnusedResources": 13
+      }
+    }
+  },
+  "artifact": "app/build/outputs/apk/release/app-release-unsigned.apk",
+  "apk_sha256": "5da3aa39a9e64320797795464dbee8df930fe264fa16f048ec5259a34c20647a",
+  "apk_bytes": 11216759,
+  "signing": {
+    "status": "unsigned",
+    "certificate_sha256": null,
+    "expected_certificate_sha256": "68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa"
+  },
+  "release_publishable": false,
+  "physical_device_tested": false,
+  "emulator_tested": false,
+  "remote_ci_executed": false,
+  "internet_permission": false,
+  "external_references_rechecked": false
+}

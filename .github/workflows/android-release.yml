@@ -31,6 +31,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd
+        with:
+          packages: ''
       - name: Use the hosted runner Android SDK
         run: |
           set -euo pipefail
@@ -38,13 +41,13 @@ jobs:
           test -x "$sdkmanager_path"
           "$sdkmanager_path" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
           test -f "$ANDROID_HOME/platforms/android-35/android.jar"
-      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd
-        with:
-          packages: ''
-      - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
       - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947
       - name: Verify wrapper JAR
         run: echo '498495120a03b9a6ab5d155f5de3c8f0d986a449153702fb80fc80e134484f17  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
+      - name: Install evidence tooling
+        run: |
+          python3 -m venv "$RUNNER_TEMP/electro-python"
+          "$RUNNER_TEMP/electro-python/bin/pip" install -r scripts/requirements-dev.txt
       - name: Build with existing release key
         env:
           ELECTROKIT_KEYSTORE_BASE64: ${{ secrets.ELECTROKIT_KEYSTORE_BASE64 }}
@@ -60,21 +63,24 @@ jobs:
           trap 'rm -f "$ELECTROKIT_KEYSTORE"' EXIT
           umask 077
           printf '%s' "$ELECTROKIT_KEYSTORE_BASE64" | base64 --decode > "$ELECTROKIT_KEYSTORE"
-          ./gradlew --no-daemon --max-workers=4 testReleaseUnitTest lintRelease assembleRelease
+          ./gradlew --no-daemon --max-workers=4 testReleaseUnitTest lintRelease assembleRelease | tee "$RUNNER_TEMP/electro-release-build.log"
           test -f app/build/outputs/apk/release/app-release.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk | tee "$RUNNER_TEMP/electro-signature.txt"
-          expected=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' verification/apk-signature.txt)
+          expected=$(cat signing/original-release-certificate.sha256)
           actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/electro-signature.txt")
           test -n "$expected"
           if [ "$actual" != "$expected" ]; then echo 'Signing certificate does not match the original ELECTRO release identity.' >&2; exit 1; fi
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk
+      - name: Record current signed release evidence
+        run: |
+          "$RUNNER_TEMP/electro-python/bin/python" scripts/record_verification.py --apk app/build/outputs/apk/release/app-release.apk --build-log "$RUNNER_TEMP/electro-release-build.log" --variants release --require-signed
       - name: Package APK and matching source
         run: |
           set -euo pipefail
           version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
           mkdir -p app/build/outputs/distribution
           cp app/build/outputs/apk/release/app-release.apk "app/build/outputs/distribution/ELECTRO-$version.apk"
-          git archive --format=zip --prefix="ELECTRO-$version/" --output="app/build/outputs/distribution/ELECTRO-$version-source.zip" HEAD
+          python3 scripts/package_project.py --archive "app/build/outputs/distribution/ELECTRO-$version-source.zip"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ELECTRO-signed-release

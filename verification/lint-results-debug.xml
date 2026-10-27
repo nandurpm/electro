@@ -12,153 +12,217 @@
         errorLine1=" &lt;application android:enableOnBackInvokedCallback=&quot;true&quot; android:allowBackup=&quot;false&quot; android:fullBackupContent=&quot;false&quot; android:dataExtractionRules=&quot;@xml/data_extraction_rules&quot; android:label=&quot;@string/app_name&quot; android:icon=&quot;@mipmap/ic_launcher&quot; android:roundIcon=&quot;@mipmap/ic_launcher&quot; android:supportsRtl=&quot;true&quot; android:theme=&quot;@style/AppTheme&quot;>"
         errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/app/src/main/AndroidManifest.xml"
+            file="/workspace/electro/app/src/main/AndroidManifest.xml"
             line="4"
             column="15"/>
     </issue>
 
     <issue
-        id="AndroidGradlePluginVersion"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of com.android.application than 8.7.3 is available: 9.4.1"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Android Gradle Plugin Version"
-        explanation="This detector looks for usage of the Android Gradle Plugin where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="agp = &quot;8.7.3&quot;"
-        errorLine2="      ~~~~~~~">
+        message="The resource `R.drawable.ic_database` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:width=&quot;24dp&quot; android:height=&quot;24dp&quot; android:viewportWidth=&quot;24&quot; android:viewportHeight=&quot;24&quot;>&lt;path android:fillColor=&quot;#FFFFFFFF&quot; android:pathData=&quot;M3,5C3,1 21,1 21,5L21,19C21,23 3,23 3,19ZM5,5C5,7 19,7 19,5C19,3 5,3 5,5M5,9L5,12C5,14 19,14 19,12L19,9C15,11 9,11 5,9M5,16L5,19C5,21 19,21 19,19L19,16C15,18 9,18 5,16&quot; android:fillType=&quot;evenOdd&quot;/>&lt;/vector>"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="2"
-            column="7"/>
+            file="/workspace/electro/app/src/main/res/drawable/ic_database.xml"
+            line="1"
+            column="1"/>
     </issue>
 
     <issue
-        id="AndroidGradlePluginVersion"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of com.android.application than 8.7.3 is available: 9.4.1"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Android Gradle Plugin Version"
-        explanation="This detector looks for usage of the Android Gradle Plugin where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="agp = &quot;8.7.3&quot;"
-        errorLine2="      ~~~~~~~">
+        message="The resource `R.drawable.ic_energy` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:width=&quot;24dp&quot; android:height=&quot;24dp&quot; android:viewportWidth=&quot;24&quot; android:viewportHeight=&quot;24&quot;>&lt;path android:fillColor=&quot;#FFFFFFFF&quot; android:pathData=&quot;M13,2L4,14h7l-1,8L21,9h-8z&quot;/>&lt;/vector>"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="2"
-            column="7"/>
+            file="/workspace/electro/app/src/main/res/drawable/ic_energy.xml"
+            line="1"
+            column="1"/>
     </issue>
 
     <issue
-        id="GradleDependency"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.09.00"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="compose = &quot;2024.12.01&quot;"
-        errorLine2="          ~~~~~~~~~~~~">
+        message="The resource `R.string.light_theme` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;light_theme&quot;>Light theme&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="4"
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="5"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.ui_about` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;ui_about&quot;>About&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="14"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.menu` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;menu&quot;>Menu&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="27"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.default_order` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;default_order&quot;>Default order&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="28"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.sort_az` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;sort_az&quot;>Sort A–Z&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="29"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.catalogue_calculators` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;catalogue_calculators&quot;>Your electrical &amp;amp; electronics workbench&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="30"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.catalogue_pinouts` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;catalogue_pinouts&quot;>Find the right connection&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="31"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.catalogue_resources` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;catalogue_resources&quot;>Reference, made simple&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="32"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.settings_note` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;settings_note&quot;>Settings, favourites, modules and calculator values are saved on this device.&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="69"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.plurals.tool_count` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;plurals name=&quot;tool_count&quot;>&lt;item quantity=&quot;one&quot;>%1$d tool • available offline&lt;/item>&lt;item quantity=&quot;other&quot;>%1$d tools • available offline&lt;/item>&lt;/plurals>"
+        errorLine2="          ~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="76"
             column="11"/>
     </issue>
 
     <issue
-        id="GradleDependency"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="androidx-core = { module = &quot;androidx.core:core-ktx&quot;, version = &quot;1.15.0&quot; }"
-        errorLine2="                                                               ~~~~~~~~">
+        message="The resource `R.string.engine_fault_count` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;engine_fault_count&quot;>125 original fault records • search, filters and bookmarks&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="6"
-            column="64"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="androidx-core = { module = &quot;androidx.core:core-ktx&quot;, version = &quot;1.15.0&quot; }"
-        errorLine2="                                                               ~~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="6"
-            column="64"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.activity:activity-compose than 1.9.3 is available: 1.13.0"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="activity = { module = &quot;androidx.activity:activity-compose&quot;, version = &quot;1.9.3&quot; }"
-        errorLine2="                                                                      ~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="7"
-            column="71"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.navigation:navigation-compose than 2.8.5 is available: 2.10.2"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="navigation = { module = &quot;androidx.navigation:navigation-compose&quot;, version = &quot;2.8.5&quot; }"
-        errorLine2="                                                                            ~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="14"
-            column="77"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.8.7 is available: 2.11.0"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="lifecycle = { module = &quot;androidx.lifecycle:lifecycle-runtime-compose&quot;, version = &quot;2.8.7&quot; }"
-        errorLine2="                                                                                 ~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="15"
-            column="82"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.8.7 is available: 2.11.0"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="viewmodel = { module = &quot;androidx.lifecycle:lifecycle-viewmodel-compose&quot;, version = &quot;2.8.7&quot; }"
-        errorLine2="                                                                                   ~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="16"
-            column="84"/>
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="133"
+            column="10"/>
     </issue>
 
 </issues>

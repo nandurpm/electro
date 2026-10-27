@@ -177,9 +177,9 @@ document.getElementById(id).style.display = 'none';
 <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
-      <span class="mdl-layout-title">Lint Report: 5 warnings</span>
+      <span class="mdl-layout-title">Lint Report: 14 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Mon Oct 26 13:00:23 CET 2026 by AGP (8.7.3)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Tue Oct 27 08:34:17 UTC 2026 by AGP (8.7.3)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -187,7 +187,7 @@ document.getElementById(id).style.display = 'none';
     <nav class="mdl-navigation">
       <a class="mdl-navigation__link" href="#overview"><i class="material-icons">dashboard</i>Overview</a>
       <a class="mdl-navigation__link" href="#UnusedAttribute"><i class="material-icons warning-icon">warning</i>Attribute unused on older versions (1)</a>
-      <a class="mdl-navigation__link" href="#GradleDependency"><i class="material-icons warning-icon">warning</i>Obsolete Gradle Dependency (4)</a>
+      <a class="mdl-navigation__link" href="#UnusedResources"><i class="material-icons warning-icon">warning</i>Unused resources (13)</a>
     </nav>
   </div>
   <main class="mdl-layout__content">
@@ -205,9 +205,11 @@ document.getElementById(id).style.display = 'none';
 <tr>
 <td class="countColumn">1</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
 <a href="#UnusedAttribute">UnusedAttribute</a>: Attribute unused on older versions</td></tr>
+<tr><td class="countColumn"></td><td class="categoryColumn"><a href="#Performance">Performance</a>
+</td></tr>
 <tr>
-<td class="countColumn">4</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
-<a href="#GradleDependency">GradleDependency</a>: Obsolete Gradle Dependency</td></tr>
+<td class="countColumn">13</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
+<a href="#UnusedResources">UnusedResources</a>: Unused resources</td></tr>
 <tr><td></td><td class="categoryColumn"><a href="#ExtraIssues">Included Additional Checks (65)</a>
 </td></tr>
 <tr><td></td><td class="categoryColumn"><a href="#MissingIssues">Disabled Checks (41)</a>
@@ -269,80 +271,156 @@ To suppress this error, use the issue id "UnusedAttribute" as explained in the <
 Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="UnusedAttributeCardLink" onclick="hideid('UnusedAttributeCard');">
 Dismiss</button>            </div>
             </div>
-          </section><a name="GradleDependency"></a>
-<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="GradleDependencyCard" style="display: block;">
+          </section>
+<a name="Performance"></a>
+<a name="UnusedResources"></a>
+<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="UnusedResourcesCard" style="display: block;">
             <div class="mdl-card mdl-cell mdl-cell--12-col">
   <div class="mdl-card__title">
-    <h2 class="mdl-card__title-text">Obsolete Gradle Dependency</h2>
+    <h2 class="mdl-card__title-text">Unused resources</h2>
   </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:6</span>: <span class="message">A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1</span><br /><pre class="errorlines">
-<span class="lineno">  3 </span>kotlin = "2.0.21"
-<span class="lineno">  4 </span>compose = "2024.12.01"
-<span class="lineno">  5 </span>[libraries]
-<span class="caretline"><span class="lineno">  6 </span>androidx-core = { module = "androidx.core:core-ktx", version = <span class="warning">"1.15.0"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  7 </span>activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
-<span class="lineno">  8 </span>compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
-<span class="lineno">  9 </span>compose-ui = { module = "androidx.compose.ui:ui" }
-</pre>
+<span class="location"><a href="../../src/main/res/drawable/ic_database.xml">../../src/main/res/drawable/ic_database.xml</a>:1</span>: <span class="message">The resource <code>R.drawable.ic_database</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="caretline"><span class="lineno"> 1 </span><span class="warning"><span class="tag">&lt;vector</span><span class="attribute"> </span><span class="prefix">xmlns:</span><span class="attribute">android</span>=<span class="value">"http://schemas.android.com/apk/res/android"</span> <span class="prefix">android:</span><span class="attribute">width</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">height</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">viewportWidth</span>=<span class="value">"24"</span> <span class="prefix">android:</span><span class="attribute">viewportHeight</span>=<span class="value">"24"</span>><span class="tag">&lt;path</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">fillColor</span>=<span class="value">"#FFFFFFFF"</span> <span class="prefix">android:</span><span class="attribute">pathData</span>=<span class="value">"M3,5C3,1 21,1 21,5L21,19C21,23 3,23 3,19ZM5,5C5,7 19,7 19,5C19,3 5,3 5,5M5,9L5,12C5,14 19,14 19,12L19,9C15,11 9,11 5,9M5,16L5,19C5,21 19,21 19,19L19,16C15,18 9,18 5,16"</span> <span class="prefix">android:</span><span class="attribute">fillType</span>=<span class="value">"evenOdd"</span>/><span class="tag">&lt;/vector></span></span></span></pre>
 
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:7</span>: <span class="message">A newer version of androidx.activity:activity-compose than 1.9.3 is available: 1.13.0</span><br /><pre class="errorlines">
-<span class="lineno">  4 </span>compose = "2024.12.01"
-<span class="lineno">  5 </span>[libraries]
-<span class="lineno">  6 </span>androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
-<span class="caretline"><span class="lineno">  7 </span>activity = { module = "androidx.activity:activity-compose", version = <span class="warning">"1.9.3"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  8 </span>compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
-<span class="lineno">  9 </span>compose-ui = { module = "androidx.compose.ui:ui" }
-<span class="lineno"> 10 </span>compose-tooling = { module = "androidx.compose.ui:ui-tooling-preview" }
-</pre>
+<span class="location"><a href="../../src/main/res/drawable/ic_energy.xml">../../src/main/res/drawable/ic_energy.xml</a>:1</span>: <span class="message">The resource <code>R.drawable.ic_energy</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="caretline"><span class="lineno"> 1 </span><span class="warning"><span class="tag">&lt;vector</span><span class="attribute"> </span><span class="prefix">xmlns:</span><span class="attribute">android</span>=<span class="value">"http://schemas.android.com/apk/res/android"</span> <span class="prefix">android:</span><span class="attribute">width</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">height</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">viewportWidth</span>=<span class="value">"24"</span> <span class="prefix">android:</span><span class="attribute">viewportHeight</span>=<span class="value">"24"</span>><span class="tag">&lt;path</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">fillColor</span>=<span class="value">"#FFFFFFFF"</span> <span class="prefix">android:</span><span class="attribute">pathData</span>=<span class="value">"M13,2L4,14h7l-1,8L21,9h-8z"</span>/><span class="tag">&lt;/vector></span></span></span></pre>
 
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:14</span>: <span class="message">A newer version of androidx.navigation:navigation-compose than 2.8.5 is available: 2.10.2</span><br /><pre class="errorlines">
-<span class="lineno"> 11 </span>compose-foundation = { module = "androidx.compose.foundation:foundation" }
-<span class="lineno"> 12 </span>material3 = { module = "androidx.compose.material3:material3" }
-<span class="lineno"> 13 </span>icons = { module = "androidx.compose.material:material-icons-core" }
-<span class="caretline"><span class="lineno"> 14 </span>navigation = { module = "androidx.navigation:navigation-compose", version = <span class="warning">"2.8.5"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 15 </span>lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.7" }
-<span class="lineno"> 16 </span>viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.8.7" }
-<span class="lineno"> 17 </span>datastore = { module = "androidx.datastore:datastore-preferences", version = "1.1.1" }
-</pre>
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:5</span>: <span class="message">The resource <code>R.string.light_theme</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">   2 </span><span class="tag">&lt;resources></span>
+<span class="lineno">   3 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"app_name"</span>>ELECTRO<span class="tag">&lt;/string></span>
+<span class="lineno">   4 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"settings"</span>>Settings<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">   5 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"light_theme"</span></span>>Light theme<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">   6 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"share_results"</span>>Share results<span class="tag">&lt;/string></span>
+<span class="lineno">   7 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"share_page"</span>>Share page<span class="tag">&lt;/string></span>
+<span class="lineno">   8 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"use_five_bands"</span>>Use 5 bands<span class="tag">&lt;/string></span></pre>
 
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:22</span>: <span class="message">A newer version of androidx.test:core-ktx than 1.6.1 is available: 1.7.0</span><br /><pre class="errorlines">
-<span class="lineno"> 19 </span>junit = { module = "junit:junit", version = "4.13.2" }
-<span class="lineno"> 20 </span>robolectric = { module = "org.robolectric:robolectric", version = "4.14.1" }
-<span class="lineno"> 21 </span>compose-test = { module = "androidx.compose.ui:ui-test-junit4" }
-<span class="caretline"><span class="lineno"> 22 </span>test-core = { module = "androidx.test:core-ktx", version = <span class="warning">"1.6.1"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 23 </span>[plugins]
-<span class="lineno"> 24 </span>android-application = { id = "com.android.application", version.ref = "agp" }
-<span class="lineno"> 25 </span>kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-</pre>
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:14</span>: <span class="message">The resource <code>R.string.ui_about</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  11 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_dismiss"</span>>Dismiss<span class="tag">&lt;/string></span>
+<span class="lineno">  12 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_info"</span>>Info<span class="tag">&lt;/string></span>
+<span class="lineno">  13 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_plugins"</span>>Data<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  14 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"ui_about"</span></span>>About<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  15 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_references"</span>>References<span class="tag">&lt;/string></span>
+<span class="lineno">  16 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_minimum"</span>>Minimum<span class="tag">&lt;/string></span>
+<span class="lineno">  17 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_maximum"</span>>Maximum<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:27</span>: <span class="message">The resource <code>R.string.menu</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  24 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"plugins_title"</span>>Databases<span class="tag">&lt;/string></span>
+<span class="lineno">  25 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"back"</span>>Back<span class="tag">&lt;/string></span>
+<span class="lineno">  26 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"logo_description"</span>>Electro resistor and circuit logo<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"menu"</span></span>>Menu<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span></pre>
+
+<button class="mdl-button mdl-js-button mdl-button--primary" id="UnusedResourcesDivLink" onclick="reveal('UnusedResourcesDiv');" />+ 8 More Occurrences...</button>
+<div id="UnusedResourcesDiv" style="display: none">
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:28</span>: <span class="message">The resource <code>R.string.default_order</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  25 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"back"</span>>Back<span class="tag">&lt;/string></span>
+<span class="lineno">  26 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"logo_description"</span>>Electro resistor and circuit logo<span class="tag">&lt;/string></span>
+<span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"menu"</span>>Menu<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"default_order"</span></span>>Default order<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:29</span>: <span class="message">The resource <code>R.string.sort_az</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  26 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"logo_description"</span>>Electro resistor and circuit logo<span class="tag">&lt;/string></span>
+<span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"menu"</span>>Menu<span class="tag">&lt;/string></span>
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"sort_az"</span></span>>Sort A–Z<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span>
+<span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_resources"</span>>Reference, made simple<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:30</span>: <span class="message">The resource <code>R.string.catalogue_calculators</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"menu"</span>>Menu<span class="tag">&lt;/string></span>
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"catalogue_calculators"</span></span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span>
+<span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_resources"</span>>Reference, made simple<span class="tag">&lt;/string></span>
+<span class="lineno">  33 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"more_features"</span>>More features…<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:31</span>: <span class="message">The resource <code>R.string.catalogue_pinouts</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"catalogue_pinouts"</span></span>>Find the right connection<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_resources"</span>>Reference, made simple<span class="tag">&lt;/string></span>
+<span class="lineno">  33 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"more_features"</span>>More features…<span class="tag">&lt;/string></span>
+<span class="lineno">  34 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"search"</span>>Search<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:32</span>: <span class="message">The resource <code>R.string.catalogue_resources</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"catalogue_resources"</span></span>>Reference, made simple<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  33 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"more_features"</span>>More features…<span class="tag">&lt;/string></span>
+<span class="lineno">  34 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"search"</span>>Search<span class="tag">&lt;/string></span>
+<span class="lineno">  35 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"clear_search"</span>>Clear search<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:69</span>: <span class="message">The resource <code>R.string.settings_note</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  66 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"mono_description"</span>>NE555 monostable timing network<span class="tag">&lt;/string></span>
+<span class="lineno">  67 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"astable_description"</span>>NE555 astable timing network<span class="tag">&lt;/string></span>
+<span class="lineno">  68 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"timer_note"</span>>Add supply decoupling near the IC. Monostable trigger is active low; observe reset and trigger timing limits.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  69 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"settings_note"</span></span>>Settings, favourites, modules and calculator values are saved on this device.<span class="tag">&lt;/string></span></span>
+<span class="lineno">  70 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"mono_accessibility"</span>>NE555: pins 8 and 4 to supply, 1 to ground; RA from supply to pins 6 and 7; capacitor from pins 6 and 7 to ground; trigger pin 2 pulsed low, output pin 3. Pin 5 bypass to ground.<span class="tag">&lt;/string></span>
+<span class="lineno">  71 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"astable_accessibility"</span>>NE555: pins 8 and 4 to supply, 1 to ground. RA supply to pin 7; RB pin 7 to joined pins 2 and 6; timing capacitor to ground; output pin 3; pin 5 bypass capacitor to ground.<span class="tag">&lt;/string></span>
+<span class="lineno">  72 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"transformation_accessibility"</span>>Star: three resistors meet at a common centre. Delta: three resistors form the sides of a triangle between A, B and C.<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:76</span>: <span class="message">The resource <code>R.plurals.tool_count</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  73 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"info_body"</span>>Electro\n\nAn original electrical and electronics engineering workbench with elevator and escalator references, exact supplied fault records, component and controller-terminal identification, original interactive drawings and engineering calculators. All runtime content is bundled and available offline. No advertising, account or network permission.\n\nVersion %1$s\n\nReference values are educational aids. Check exact component datasheets and installation standards for your design.<span class="tag">&lt;/string></span>
+<span class="lineno">  74 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"credits_body"</span>>Designed and authored for Electro.\n\nKotlin and kotlinx.serialization — JetBrains (Apache 2.0).\nAndroidX, Jetpack Compose, Material 3, Navigation, Lifecycle, DataStore — Android Open Source Project (Apache 2.0).\nMaterial Icons — Google (Apache 2.0).\nJUnit 4 — EPL 1.0.\nGradle wrapper — Apache 2.0.\n\nComponent names identify manufacturers’ parts and remain their respective owners’ marks. Dataset descriptions, circuit motifs and connector drawings are original. Reference URLs are listed on relevant pages and in SOURCES.md; browsing is not required by the app.<span class="tag">&lt;/string></span>
+<span class="lineno">  75 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"changes_body"</span>>%1$s • Electro engineering toolkit\n\nFull-screen browsing, compact bottom navigation and pinned catalogue search. Engineering now groups fault lookup, calculations, sources and system references clearly. Input saving runs in the background, damaged input backups can recover, and motor slip supports regenerative speed. Includes an expanded source-code editing guide.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  76 </span> <span class="tag">&lt;plurals</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"tool_count"</span></span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>%1$d tool • available offline<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>%1$d tools • available offline<span class="tag">&lt;/item>&lt;/plurals></span></span>
+<span class="lineno">  77 </span> <span class="tag">&lt;plurals</span><span class="attribute"> name</span>=<span class="value">"open_module"</span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>OPEN DATABASE (%1$d entry)<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>OPEN DATABASE (%1$d entries)<span class="tag">&lt;/item>&lt;/plurals></span>
+<span class="lineno">  78 </span> <span class="tag">&lt;plurals</span><span class="attribute"> name</span>=<span class="value">"part_count"</span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>%1$d entry • package choices vary<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>%1$d entries • package choices vary<span class="tag">&lt;/item>&lt;/plurals></span>
+<span class="lineno">  79 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"product_reference"</span>>Product reference: %1$s<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:133</span>: <span class="message">The resource <code>R.string.engine_fault_count</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno"> 130 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_preserved"</span>>Original calculator retained in the existing toolkit.<span class="tag">&lt;/string></span>
+<span class="lineno"> 131 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_simulated"</span>>SIMULATED — educational samples only<span class="tag">&lt;/string></span>
+<span class="lineno"> 132 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_not_found"</span>>This engineering route was not found. Return to the engineering dashboard.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno"> 133 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"engine_fault_count"</span></span>>125 original fault records • search, filters and bookmarks<span class="tag">&lt;/string></span></span>
+<span class="lineno"> 134 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_existing_tool"</span>>Existing toolkit entry<span class="tag">&lt;/string></span>
+<span class="lineno"> 135 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_search_end"</span>>End of local search results. Try a component ID, terminal, code or topic.<span class="tag">&lt;/string></span>
+<span class="lineno"> 136 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_fault_search"</span>>Search fault code or message<span class="tag">&lt;/string></span></pre>
 
 </div>
-<div class="metadata"><div class="explanation" id="explanationGradleDependency" style="display: none;">
-This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find.<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
-To suppress this error, use the issue id "GradleDependency" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
+</div>
+<div class="metadata"><div class="explanation" id="explanationUnusedResources" style="display: none;">
+Unused resources make applications larger and slow down builds.<br/>
+<br/>
+<br/>
+The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.<br/>
+<br/>
+You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.<br/>
+,<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
+To suppress this error, use the issue id "UnusedResources" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
 <br/></div>
 </div>
 </div>
 <div class="chips">
 <span class="mdl-chip">
-    <span class="mdl-chip__text">GradleDependency</span>
+    <span class="mdl-chip__text">UnusedResources</span>
 </span>
 <span class="mdl-chip">
-    <span class="mdl-chip__text">Correctness</span>
+    <span class="mdl-chip__text">Performance</span>
 </span>
 <span class="mdl-chip">
     <span class="mdl-chip__text">Warning</span>
 </span>
 <span class="mdl-chip">
-    <span class="mdl-chip__text">Priority 4/10</span>
+    <span class="mdl-chip__text">Priority 3/10</span>
 </span>
 </div>
               </div>
               <div class="mdl-card__actions mdl-card--border">
-<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationGradleDependencyLink" onclick="reveal('explanationGradleDependency');">
-Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="GradleDependencyCardLink" onclick="hideid('GradleDependencyCard');">
+<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationUnusedResourcesLink" onclick="reveal('explanationUnusedResources');">
+Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="UnusedResourcesCardLink" onclick="hideid('UnusedResourcesCard');">
 Dismiss</button>            </div>
             </div>
           </section>

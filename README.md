@@ -72,6 +72,7 @@ python scripts/validate_engineering.py
 python scripts/validate_library.py
 python scripts/check_contrast.py
 python scripts/package_project.py --check
+python scripts/check_verification.py
 ```
 
 PowerShell venv activation: `.\.venv\Scripts\Activate.ps1`. After intentional edits, regenerate source listings/hashes with `python scripts/package_project.py`; after palette changes also run `python scripts/check_contrast.py --write`.
@@ -97,7 +98,7 @@ All Kotlin paths below are under `app/src/main/java/com/electrokit/app/`.
 
 Images/metadata: `app/src/main/assets/components/` and `components.json`. Original engineering content: `app/src/main/assets/engineering.json` and `engineering_tools.json`. Android strings/icons: `app/src/main/res/`.
 
-The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Existing `verification/` files are historical, not evidence of this run. Current results are under `app/build/` and in [the build report](docs/BUILD_REPORT.md).
+The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the original certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
 
 ## Maintenance guides
 

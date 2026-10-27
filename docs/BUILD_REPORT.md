@@ -1,4 +1,6 @@
-# Build and test report
+# Historical 2.1.0 build and test report
+
+This document retains the earlier 2.1.0 baseline. For current 3.0 evidence, use `verification/summary.json` and `docs/RELEASE_3_0.md`.
 
 Date: 2026-10-27. Application-code checkpoint: `3f90b95` on `feature/electro-redesign`. Documentation/packaging commits may follow without changing the application binary.
 

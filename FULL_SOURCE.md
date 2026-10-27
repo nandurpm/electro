@@ -27,6 +27,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd
+        with:
+          packages: ''
       - name: Install exact Android packages
         run: |
           set -euo pipefail
@@ -49,6 +52,7 @@ jobs:
           python scripts/validate_library.py
           python scripts/check_contrast.py
           python scripts/package_project.py --check
+          python scripts/check_verification.py
       - name: Test, lint and build debug APK
         run: ./gradlew --no-daemon --max-workers=4 testDebugUnitTest lintDebug assembleDebug
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -100,6 +104,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd
+        with:
+          packages: ''
       - name: Use the hosted runner Android SDK
         run: |
           set -euo pipefail
@@ -110,6 +117,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947
       - name: Verify wrapper JAR
         run: echo '498495120a03b9a6ab5d155f5de3c8f0d986a449153702fb80fc80e134484f17  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
+      - name: Install evidence tooling
+        run: |
+          python3 -m venv "$RUNNER_TEMP/electro-python"
+          "$RUNNER_TEMP/electro-python/bin/pip" install -r scripts/requirements-dev.txt
       - name: Build with existing release key
         env:
           ELECTROKIT_KEYSTORE_BASE64: ${{ secrets.ELECTROKIT_KEYSTORE_BASE64 }}
@@ -125,21 +136,24 @@ jobs:
           trap 'rm -f "$ELECTROKIT_KEYSTORE"' EXIT
           umask 077
           printf '%s' "$ELECTROKIT_KEYSTORE_BASE64" | base64 --decode > "$ELECTROKIT_KEYSTORE"
-          ./gradlew --no-daemon --max-workers=4 testReleaseUnitTest lintRelease assembleRelease
+          ./gradlew --no-daemon --max-workers=4 testReleaseUnitTest lintRelease assembleRelease | tee "$RUNNER_TEMP/electro-release-build.log"
           test -f app/build/outputs/apk/release/app-release.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk | tee "$RUNNER_TEMP/electro-signature.txt"
-          expected=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' verification/apk-signature.txt)
+          expected=$(cat signing/original-release-certificate.sha256)
           actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/electro-signature.txt")
           test -n "$expected"
           if [ "$actual" != "$expected" ]; then echo 'Signing certificate does not match the original ELECTRO release identity.' >&2; exit 1; fi
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk
+      - name: Record current signed release evidence
+        run: |
+          "$RUNNER_TEMP/electro-python/bin/python" scripts/record_verification.py --apk app/build/outputs/apk/release/app-release.apk --build-log "$RUNNER_TEMP/electro-release-build.log" --variants release --require-signed
       - name: Package APK and matching source
         run: |
           set -euo pipefail
           version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
           mkdir -p app/build/outputs/distribution
           cp app/build/outputs/apk/release/app-release.apk "app/build/outputs/distribution/ELECTRO-$version.apk"
-          git archive --format=zip --prefix="ELECTRO-$version/" --output="app/build/outputs/distribution/ELECTRO-$version-source.zip" HEAD
+          python3 scripts/package_project.py --archive "app/build/outputs/distribution/ELECTRO-$version-source.zip"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ELECTRO-signed-release
@@ -633,6 +647,7 @@ python scripts/validate_engineering.py
 python scripts/validate_library.py
 python scripts/check_contrast.py
 python scripts/package_project.py --check
+python scripts/check_verification.py
 ```
 
 PowerShell venv activation: `.\.venv\Scripts\Activate.ps1`. After intentional edits, regenerate source listings/hashes with `python scripts/package_project.py`; after palette changes also run `python scripts/check_contrast.py --write`.
@@ -658,7 +673,7 @@ All Kotlin paths below are under `app/src/main/java/com/electrokit/app/`.
 
 Images/metadata: `app/src/main/assets/components/` and `components.json`. Original engineering content: `app/src/main/assets/engineering.json` and `engineering_tools.json`. Android strings/icons: `app/src/main/res/`.
 
-The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Existing `verification/` files are historical, not evidence of this run. Current results are under `app/build/` and in [the build report](docs/BUILD_REPORT.md).
+The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the original certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
 
 ## Maintenance guides
 
@@ -36138,6 +36153,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                         text = { Text(stringResource(R.string.ui_reset)) },
                         onClick = {
                             more = false
+                            bandResult = ""
                             mode = 0
                             vm.mode(entry.id, 0)
                             update(spec.fields.associate { it.key to it.initial })
@@ -40829,6 +40845,31 @@ class AndroidUiRegressionTests {
         ui.onNodeWithText("500 m%", substring = true).assertDoesNotExist()
     }
 
+    /** Reset restores both band renderers and the result used by Copy, without a prior cached tolerance.
+     * @return Unit; resistor and inductor copies must contain default five-percent tolerance.
+     */
+    @Test fun bandResetRestoresDisplayAndCopiedResult() {
+        for ((title, expected) in listOf("Resistor Colour Code" to "1.1 kΩ ±5%", "Inductor Colour Code" to "1.1 mH ±5%")) {
+            openCalculator(title)
+            ui.onNodeWithContentDescription("Calculator menu").performClick()
+            ui.onNodeWithText("Reset").performClick()
+            ui.onNodeWithContentDescription("Green tol ±0.5 percent").performScrollTo().performClick()
+            ui.onNodeWithText("±0.5%", substring = true).assertExists()
+            ui.onNodeWithContentDescription("Calculator menu").performClick()
+            ui.onNodeWithText("Reset").performClick()
+            ui.onNodeWithText(expected).assertExists()
+            ui.onNodeWithContentDescription("Calculator menu").performClick()
+            ui.onNodeWithText("Copy result").performClick()
+            ui.runOnIdle {
+                val clipboard = ui.activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val text = clipboard.primaryClip!!.getItemAt(0).coerceToText(ui.activity).toString()
+                assertTrue(text, text.contains(expected))
+                assertFalse(text, text.contains("±0.5%"))
+            }
+            ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
+        }
+    }
+
     /**
      * Verifies calculator input survives activity recreation; unexpected behaviour fails the test
      * visibly.
@@ -41954,7 +41995,7 @@ Known limits:
 - English only; new workbench text needs resource extraction before additional translations.
 - Scientific arithmetic is not a computer algebra system. Cable sizing models voltage drop, not full standards-based selection/protection.
 - No original release key, real-device installation, upgrade migration, TalkBack speech or hardware checks were available.
-- Recovered `verification/` records are historical. Use current `app/build/` outputs and `BUILD_REPORT.md` for this run.
+- Stale verification artifacts were confirmed in review and replaced with generated 3.0 evidence. A version/artifact/signature guard rejects the reported mismatch. Historical reports remain available in Git history and the explicitly labeled 2.1.0 build report.
 
 No claim is made that every manufacturer pinout, component model or language is fully documented or certified.
 
@@ -41963,7 +42004,9 @@ No claim is made that every manufacturer pinout, component model or language is 
 ## docs/BUILD_REPORT.md
 
 ````markdown
-# Build and test report
+# Historical 2.1.0 build and test report
+
+This document retains the earlier 2.1.0 baseline. For current 3.0 evidence, use `verification/summary.json` and `docs/RELEASE_3_0.md`.
 
 Date: 2026-10-27. Application-code checkpoint: `3f90b95` on `feature/electro-redesign`. Documentation/packaging commits may follow without changing the application binary.
 
@@ -42157,7 +42200,7 @@ Application name: **ELECTRO**. Version name: **3.0**. Version code: **14**. Appl
 
 The local optimized, non-debuggable release build passed `testReleaseUnitTest lintRelease assembleRelease`: **80 tests, 0 failures/errors/skips**, and no lint errors. R8 code/resource shrinking completed. Android SDK metadata confirms the requested name/version and SDK 24/35 bounds. Current output is `app/build/outputs/apk/release/app-release-unsigned.apk`; it is **unsigned**, not an installable production release.
 
-The user selected the original signing identity. No replacement key has been generated. The original public certificate record in `verification/apk-signature.txt` has SHA-256:
+The user selected the original signing identity. No replacement key has been generated. The immutable original public certificate record in `signing/original-release-certificate.sha256` has SHA-256:
 
 `68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa`
 
@@ -42165,11 +42208,25 @@ No original keystore or signing-password variables are configured in this worksp
 
 Required repository Actions secrets: `ELECTROKIT_KEYSTORE_BASE64`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS`, `ELECTROKIT_KEY_PASSWORD`. Configure the **original** values securely under repository Settings → Secrets and variables → Actions. Never paste passwords into chat or commit a keystore. A certificate fingerprint or an old APK cannot recreate its private signing key.
 
+The manual signing run [40477419087](https://github.com/nandurpm/electro/actions/runs/40477419087), against application-code commit `a571723`, confirmed that **all four secrets are missing**. Its early signing-prerequisite check failed, and signing/upload/publication steps were skipped. No signed 3.0 APK, final release tag or GitHub Release was created. After the original secrets are configured, rerun Android Release on `release/electro-3.0`; verify the original certificate match before publishing `v3.0`.
+
 The previous hosted release run failed inside the third-party Android setup action before signing. Workflows now pin Ubuntu 24.04 and use its documented preinstalled SDK, with explicit required-package checks. Signing prerequisites are checked early to avoid an expensive build when credentials are absent. Hosted execution is reported separately from successful local compilation.
 
 When signed verification succeeds, the workflow packages `ELECTRO-3.0.apk` and the matching `ELECTRO-3.0-source.zip`. Manual execution uploads artifacts; a matching `v3.0` tag publishes both. Do not create the final release tag until the original signing identity has been verified.
 
 The earlier `docs/BUILD_REPORT.md` records the 2.1.0 baseline's 120 debug/JVM/Robolectric tests; these are historical results, not a new 3.0 debug run. Device installation, production upgrade behavior and TalkBack remain unrun. See the audit report for existing engineering-content limitations.
+
+## Verification/reset review correction
+
+Review confirmed that the old committed verification reports still described 2.0.3. All current verification files are regenerated for 3.0 after the reviewed build; unrun external references and unsigned signing status are explicit. New regression fixtures reject old summary/badging versions and unsigned publication. The original certificate fingerprint is independent of regenerated APK signatures.
+
+Band-calculator Reset now clears the cached `bandResult` synchronously, before the new band effect runs. A UI regression covers both resistor and inductor reset/display/copy paths. Dependency and API-level lint warnings remain documented; dependency pins and application functionality were preserved.
+
+## Reviewed 3.0 results
+
+After the reset/evidence corrections, `testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleRelease` passed: **121 debug/UI tests and 80 release tests**, with no failures/errors/skips and no lint errors. Eight Python tests passed. Every file under `verification/` was regenerated from the actual 3.0/code-14 unsigned release APK and current reports. The original certificate fingerprint was preserved in the separate signing identity file.
+
+The unsigned artifact is explicitly marked `release_publishable: false`. No signed APK or final release is claimed while the original signing secrets remain missing. The version guard rejects the stale 2.0.3/12 evidence described in review, and `--require-signed` rejects the current unsigned state. Original dependency/API warnings remain warnings; no dependency upgrades were needed for these corrections.
 
 ````
 
@@ -42191,7 +42248,7 @@ python scripts/package_project.py --check
 ./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
 
-PowerShell uses `.\gradlew.bat`. XML: `app/build/test-results/testDebugUnitTest/`. Test HTML: `app/build/reports/tests/testDebugUnitTest/`. Lint: `app/build/reports/lint-results-debug.html` and `.xml`. Old `verification/` files are historical, not fresh test evidence.
+PowerShell uses `.\gradlew.bat`. XML: `app/build/test-results/testDebugUnitTest/`. Test HTML: `app/build/reports/tests/testDebugUnitTest/`. Lint: `app/build/reports/lint-results-debug.html` and `.xml`. The current `verification/` snapshot is regenerated from actual APK/test/lint outputs. Run `python scripts/check_verification.py` to reject stale versions; use `--apk PATH --require-signed` before production publication.
 
 Coverage includes original calculation/unit/formatting/fault contracts, all 107 legacy calculator/reference routes, database filters, persistence failures/recovery, new utility examples and invalid domains, SI/temperature conversion, PIN verification and UI session/search restrictions, component image/favorite navigation, large text and simulated screenshots. New suites are `WorkbenchToolsTests`, `UnitConversionsTests`, `LocalPinTests` and `WorkbenchUiTests`.
 
@@ -42208,6 +42265,18 @@ Robolectric is simulated Android API 34. `app/build/design-previews/` contains c
 - With the original key, upgrade from the previous APK and verify saved data.
 
 Record device, Android version, commit/APK hash, steps and observed results. Keep passed, failed, skipped and unrun outcomes separate. Equipment-specific reference review remains separate from automated schema tests.
+
+## Refresh all release evidence
+
+After a successful build (preserve the command exit status), run:
+
+```bash
+python scripts/record_verification.py --apk app/build/outputs/apk/release/app-release-unsigned.apk --build-log /workspace/toolchains/electro-3.0-reviewed.log --variants debug release
+python scripts/check_verification.py --apk app/build/outputs/apk/release/app-release-unsigned.apk
+python scripts/package_project.py --archive /workspace/artifacts/ELECTRO-3.0-source.zip
+```
+
+Replace paths with actual current logs/APKs. Production uses `app-release.apk` and `--require-signed`; unsigned preparation never passes that gate. The recorder replaces stale XML/HTML/text and explicitly marks unrun external checks instead of carrying forward old success claims. Original certificate identity stays in `signing/original-release-certificate.sha256`.
 
 ````
 
@@ -45171,6 +45240,53 @@ print(f'{len(results)} reference URLs checked for reachability; see output for l
 
 ````
 
+## scripts/check_verification.py
+
+````python
+"""Reject release evidence whose version, artifact or signing status is inconsistent."""
+import argparse
+import hashlib
+import json
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def validate(root=ROOT, apk=None, require_signed=False):
+    """Compare committed evidence with source pins and optionally the actual built APK."""
+    gradle = (root / 'app/build.gradle.kts').read_text()
+    version = re.search(r'versionName\s*=\s*"([^"]+)"', gradle)[1]
+    code = int(re.search(r'versionCode\s*=\s*(\d+)', gradle)[1])
+    evidence = root / 'verification'
+    summary = json.loads((evidence / 'summary.json').read_text())
+    assert (summary['version'], summary['version_code']) == (version, code), 'Stale verification summary version'
+    badging = (evidence / 'apk-badging.txt').read_text()
+    assert f"versionName='{version}'" in badging and f"versionCode='{code}'" in badging, 'Stale APK badging version'
+    assert "name='com.electrokit.app'" in badging, 'Unexpected application identity'
+    signed = summary['signing']['status'] == 'verified_original_release'
+    expected = (root / 'signing/original-release-certificate.sha256').read_text().strip()
+    if signed:
+        signature = (evidence / 'apk-signature.txt').read_text()
+        assert f'Signer #1 certificate SHA-256 digest: {expected}' in signature, 'Original release certificate mismatch'
+        assert summary['signing']['certificate_sha256'] == expected, 'Summary certificate mismatch'
+    if require_signed:
+        assert signed, 'Original-key signed APK is required; current evidence is unsigned'
+    if apk:
+        assert hashlib.sha256(Path(apk).read_bytes()).hexdigest() == summary['apk_sha256'], 'APK differs from verification evidence'
+        assert Path(apk).stat().st_size == summary['apk_bytes'], 'APK size differs from verification evidence'
+    print(f"PASS: current {version}/{code} evidence; signing={summary['signing']['status']}.")
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--apk', type=Path)
+    parser.add_argument('--require-signed', action='store_true')
+    args = parser.parse_args()
+    validate(apk=args.apk, require_signed=args.require_signed)
+
+````
+
 ## scripts/package_project.py
 
 ````python
@@ -45184,11 +45300,14 @@ covered by the resulting checksums.
 import argparse
 import base64
 import hashlib
+import re
+import zipfile
 from pathlib import Path
 
 root=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser()
 parser.add_argument('--check',action='store_true')
+parser.add_argument('--archive',type=Path,help='Write a ZIP of the current public source and regenerated evidence')
 args=parser.parse_args()
 generated={'FULL_SOURCE.md','PROJECT_TREE.txt','SHA256SUMS.txt'}
 def files():
@@ -45227,6 +45346,162 @@ else:
     (root/'FULL_SOURCE.md').write_text(''.join(listing))
     (root/'SHA256SUMS.txt').write_text(''.join(checksum(p)+'  '+str(p.relative_to(root))+'\n' for p in files() if p.name!='SHA256SUMS.txt'))
     print(f'Generated listing, tree and checksums for {len(names)} files.')
+if args.archive:
+    version=re.search(r'versionName\s*=\s*"([^"]+)"',(root/'app/build.gradle.kts').read_text())[1]
+    args.archive.parent.mkdir(parents=True,exist_ok=True)
+    with zipfile.ZipFile(args.archive,'w',compression=zipfile.ZIP_DEFLATED) as archive:
+        for path in files():
+            archive.write(path,f'ELECTRO-{version}/'+str(path.relative_to(root)))
+    print(f'Archived current source/evidence: {args.archive}')
+
+````
+
+## scripts/record_verification.py
+
+````python
+"""Replace stale verification with actual current APK, tests, lint and validator outputs.
+
+Unsigned builds are explicitly labeled and cannot pass --require-signed. The original
+certificate identity is stored separately from generated evidence.
+"""
+import argparse
+from collections import Counter
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import xml.etree.ElementTree as ET
+
+from check_verification import validate
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def run(command, expected=(0,)):
+    """Capture public tool output without echoing inherited Java option values."""
+    env = os.environ.copy()
+    if Path(command[0]).name == 'apksigner':
+        env.pop('JAVA_TOOL_OPTIONS', None)
+    result = subprocess.run(command, cwd=ROOT, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if result.returncode not in expected:
+        raise RuntimeError(f'{command[0]} failed with exit {result.returncode}:\n{result.stdout}')
+    return result
+
+
+def record(apk, build_log, variants, require_signed=False):
+    """Stage all evidence before replacing the existing snapshot; stop on failed validators."""
+    apk = apk.resolve()
+    sdk = Path(os.environ['ANDROID_HOME']) / 'build-tools/35.0.0'
+    source = (ROOT / 'app/build.gradle.kts').read_text()
+    version = re.search(r'versionName\s*=\s*"([^"]+)"', source)[1]
+    code = int(re.search(r'versionCode\s*=\s*(\d+)', source)[1])
+    log = build_log.read_text()
+    assert 'BUILD SUCCESSFUL' in log and 'BUILD FAILED' not in log, 'Build log is not a successful run'
+    expected = (ROOT / 'signing/original-release-certificate.sha256').read_text().strip()
+    with tempfile.TemporaryDirectory(prefix='electro-verification-', dir=ROOT.parent) as temp:
+        stage = Path(temp)
+        badging = run([str(sdk / 'aapt'), 'dump', 'badging', str(apk)]).stdout
+        assert f"versionName='{version}'" in badging and f"versionCode='{code}'" in badging, 'APK/source version mismatch'
+        (stage / 'apk-badging.txt').write_text(badging)
+        (stage / 'apk-permissions.txt').write_text(run([str(sdk / 'aapt'), 'dump', 'permissions', str(apk)]).stdout)
+        signature = run([str(sdk / 'apksigner'), 'verify', '--verbose', '--print-certs', str(apk)], expected=(0, 1))
+        digest = re.search(r'^Signer #1 certificate SHA-256 digest: (\w+)$', signature.stdout, re.M)
+        signed = signature.returncode == 0
+        if signed:
+            assert digest and digest[1] == expected, 'Refusing an APK signed with a different identity'
+        if require_signed:
+            assert signed, 'No original-key signature; do not publish this APK'
+        (stage / 'apk-signature.txt').write_text(('UNSIGNED RELEASE — not production ready\n' if not signed else '') + signature.stdout)
+        tests, lint = {}, {}
+        for variant in variants:
+            reports = ROOT / f'app/build/test-results/test{variant.title()}UnitTest'
+            xmls = sorted(reports.glob('TEST-*.xml'))
+            assert xmls, f'No executed {variant} tests'
+            roots = [ET.parse(path).getroot() for path in xmls]
+            counts = {key: sum(int(root.attrib.get(key, 0)) for root in roots) for key in ('tests', 'failures', 'errors', 'skipped')}
+            assert counts['tests'] > 0 and not counts['failures'] and not counts['errors'], counts
+            tests[variant] = counts
+            target = stage / f'tests-{variant}'
+            target.mkdir()
+            for path in xmls:
+                shutil.copy2(path, target / path.name)
+            for suffix in ('xml', 'html'):
+                path = ROOT / f'app/build/reports/lint-results-{variant}.{suffix}'
+                assert path.is_file(), f'Missing current lint report: {path}'
+                shutil.copy2(path, stage / path.name)
+            text = ROOT / f'app/build/intermediates/lint_intermediate_text_report/{variant}/lintReport{variant.title()}/lint-results-{variant}.txt'
+            if text.exists():
+                shutil.copy2(text, stage / f'lint-results-{variant}.txt')
+            issues = ET.parse(stage / f'lint-results-{variant}.xml').getroot().findall('issue')
+            errors = sum(item.attrib['severity'] in ('Error', 'Fatal') for item in issues)
+            assert not errors, 'Lint errors remain'
+            warnings = [item for item in issues if item.attrib['severity'] == 'Warning']
+            lint[variant] = {'errors': errors, 'warnings': len(warnings), 'warning_ids': dict(Counter(item.attrib['id'] for item in warnings))}
+        checks = {
+            'comments.txt': ['scripts/check_comments.py'],
+            'assets.txt': ['scripts/validate_assets.py'],
+            'engineering.txt': ['scripts/validate_engineering.py'],
+            'library.txt': ['scripts/validate_library.py'],
+            'contrast.txt': ['scripts/check_contrast.py'],
+            'python-tests.txt': ['-m', 'unittest', 'discover', '-s', 'scripts', '-p', 'test_*.py'],
+        }
+        for name, command in checks.items():
+            (stage / name).write_text(run([sys.executable, *command]).stdout)
+        pages = json.loads((ROOT / 'app/src/main/assets/pages.json').read_text())
+        modules = json.loads((ROOT / 'app/src/main/assets/modules.json').read_text())
+        urls = sorted({url for page in pages.values() for url in page['sources']} | {part['source'] for parts in modules.values() for part in parts})
+        (stage / 'reference-links.json').write_text(json.dumps({'status': 'not_rechecked', 'note': 'No fresh external reachability or manufacturer-content verification is claimed.', 'urls': urls}, indent=2) + '\n')
+        public_log = '\n'.join(line for line in log.splitlines() if not line.startswith('Picked up JAVA_TOOL_OPTIONS:')) + '\n'
+        (stage / 'build-output.txt').write_text(public_log)
+        summary = {
+            'version': version, 'version_code': code, 'application_id': 'com.electrokit.app',
+            'generated_at_utc': datetime.now(timezone.utc).isoformat(),
+            'source_commit': run(['git', 'rev-parse', 'HEAD']).stdout.strip(),
+            'tests': tests, 'lint': lint, 'artifact': str(apk.relative_to(ROOT)),
+            'apk_sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'apk_bytes': apk.stat().st_size,
+            'signing': {'status': 'verified_original_release' if signed else 'unsigned', 'certificate_sha256': digest[1] if digest else None, 'expected_certificate_sha256': expected},
+            'release_publishable': signed, 'physical_device_tested': False, 'emulator_tested': False,
+            'remote_ci_executed': os.environ.get('GITHUB_ACTIONS') == 'true',
+            'internet_permission': 'android.permission.INTERNET' in badging,
+            'external_references_rechecked': False,
+        }
+        assert not summary['internet_permission']
+        (stage / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+        (stage / 'README.md').write_text(
+            f'# Current ELECTRO {version} verification\n\n'
+            f'Version code: {code}. Signing status: {summary["signing"]["status"]}. '
+            'Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.\n\n'
+            'Run python scripts/check_verification.py --apk PATH to verify the snapshot; production also requires --require-signed. '
+            'Original signing identity lives separately in signing/original-release-certificate.sha256. '
+            'External references and physical-device checks are explicitly unrun when not verified.\n'
+        )
+        evidence = ROOT / 'verification'
+        backup = Path(temp) / 'previous'
+        evidence.rename(backup)
+        try:
+            shutil.copytree(stage, evidence, ignore=shutil.ignore_patterns('previous'))
+            validate(apk=apk, require_signed=require_signed)
+        except BaseException:
+            shutil.rmtree(evidence, ignore_errors=True)
+            backup.rename(evidence)
+            raise
+    print(f'Generated current {version}/{code} evidence; signed={signed}; tests={tests}')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--apk', type=Path, required=True)
+    parser.add_argument('--build-log', type=Path, required=True)
+    parser.add_argument('--variants', nargs='+', choices=('debug', 'release'), default=['debug', 'release'])
+    parser.add_argument('--require-signed', action='store_true')
+    args = parser.parse_args()
+    record(args.apk, args.build_log, args.variants, args.require_signed)
 
 ````
 
@@ -45278,6 +45553,61 @@ class QualityGateTests(unittest.TestCase):
         # Stale numbers are rejected even if old and new palettes both pass 4.5:1.
         self.assertEqual((check_contrast.ROOT/'verification/contrast.txt').read_text(),check_contrast.report())
 if __name__=='__main__':unittest.main()
+
+````
+
+## scripts/test_verification.py
+
+````python
+"""Regression fixtures reject the stale-version evidence reported during release review."""
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+import check_verification
+
+
+class VerificationTests(unittest.TestCase):
+    """Exercise known mismatches independently of Gradle or the actual private signing key."""
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.root = Path(self.folder.name)
+        (self.root / 'app').mkdir()
+        (self.root / 'verification').mkdir()
+        (self.root / 'signing').mkdir()
+        (self.root / 'app/build.gradle.kts').write_text('versionName = "3.0"\nversionCode = 14\n')
+        (self.root / 'signing/original-release-certificate.sha256').write_text('a' * 64)
+        self.summary = {'version': '3.0', 'version_code': 14, 'signing': {'status': 'unsigned'}}
+        self.write_summary()
+        (self.root / 'verification/apk-badging.txt').write_text("package: name='com.electrokit.app' versionCode='14' versionName='3.0'\n")
+
+    def write_summary(self):
+        """Write a fixture summary so each assertion tests a distinct evidence mismatch."""
+        (self.root / 'verification/summary.json').write_text(json.dumps(self.summary))
+
+    def test_current_unsigned_evidence_is_explicitly_allowed_for_preparation(self):
+        check_verification.validate(self.root)
+
+    def test_old_summary_is_rejected(self):
+        self.summary.update(version='2.0.3', version_code=12)
+        self.write_summary()
+        with self.assertRaisesRegex(AssertionError, 'Stale verification summary'):
+            check_verification.validate(self.root)
+
+    def test_old_apk_report_is_rejected(self):
+        (self.root / 'verification/apk-badging.txt').write_text("package: name='com.electrokit.app' versionCode='12' versionName='2.0.3'\n")
+        with self.assertRaisesRegex(AssertionError, 'Stale APK badging'):
+            check_verification.validate(self.root)
+
+    def test_unsigned_evidence_cannot_publish(self):
+        with self.assertRaisesRegex(AssertionError, 'signed APK is required'):
+            check_verification.validate(self.root, require_signed=True)
+
+
+if __name__ == '__main__':
+    unittest.main()
 
 ````
 
@@ -45447,102 +45777,120 @@ include(":app")
 
 ````
 
+## signing/original-release-certificate.sha256
+
+````text
+68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa
+
+````
+
+## verification/README.md
+
+````markdown
+# Current ELECTRO 3.0 verification
+
+Version code: 14. Signing status: unsigned. Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.
+
+Run python scripts/check_verification.py --apk PATH to verify the snapshot; production also requires --require-signed. Original signing identity lives separately in signing/original-release-certificate.sha256. External references and physical-device checks are explicitly unrun when not verified.
+
+````
+
 ## verification/apk-badging.txt
 
 ````text
-package: name='com.electrokit.app' versionCode='12' versionName='2.0.3' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='com.electrokit.app' versionCode='14' versionName='3.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 sdkVersion:'24'
 targetSdkVersion:'35'
 uses-permission: name='com.electrokit.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
-application-label:'Electro'
-application-label-af:'Electro'
-application-label-am:'Electro'
-application-label-ar:'Electro'
-application-label-as:'Electro'
-application-label-az:'Electro'
-application-label-be:'Electro'
-application-label-bg:'Electro'
-application-label-bn:'Electro'
-application-label-bs:'Electro'
-application-label-ca:'Electro'
-application-label-cs:'Electro'
-application-label-da:'Electro'
-application-label-de:'Electro'
-application-label-el:'Electro'
-application-label-en-AU:'Electro'
-application-label-en-CA:'Electro'
-application-label-en-GB:'Electro'
-application-label-en-IN:'Electro'
-application-label-en-XC:'Electro'
-application-label-es:'Electro'
-application-label-es-US:'Electro'
-application-label-et:'Electro'
-application-label-eu:'Electro'
-application-label-fa:'Electro'
-application-label-fi:'Electro'
-application-label-fr:'Electro'
-application-label-fr-CA:'Electro'
-application-label-gl:'Electro'
-application-label-gu:'Electro'
-application-label-hi:'Electro'
-application-label-hr:'Electro'
-application-label-hu:'Electro'
-application-label-hy:'Electro'
-application-label-in:'Electro'
-application-label-is:'Electro'
-application-label-it:'Electro'
-application-label-iw:'Electro'
-application-label-ja:'Electro'
-application-label-ka:'Electro'
-application-label-kk:'Electro'
-application-label-km:'Electro'
-application-label-kn:'Electro'
-application-label-ko:'Electro'
-application-label-ky:'Electro'
-application-label-lo:'Electro'
-application-label-lt:'Electro'
-application-label-lv:'Electro'
-application-label-mk:'Electro'
-application-label-ml:'Electro'
-application-label-mn:'Electro'
-application-label-mr:'Electro'
-application-label-ms:'Electro'
-application-label-my:'Electro'
-application-label-nb:'Electro'
-application-label-ne:'Electro'
-application-label-nl:'Electro'
-application-label-or:'Electro'
-application-label-pa:'Electro'
-application-label-pl:'Electro'
-application-label-pt:'Electro'
-application-label-pt-BR:'Electro'
-application-label-pt-PT:'Electro'
-application-label-ro:'Electro'
-application-label-ru:'Electro'
-application-label-si:'Electro'
-application-label-sk:'Electro'
-application-label-sl:'Electro'
-application-label-sq:'Electro'
-application-label-sr:'Electro'
-application-label-sr-Latn:'Electro'
-application-label-sv:'Electro'
-application-label-sw:'Electro'
-application-label-ta:'Electro'
-application-label-te:'Electro'
-application-label-th:'Electro'
-application-label-tl:'Electro'
-application-label-tr:'Electro'
-application-label-uk:'Electro'
-application-label-ur:'Electro'
-application-label-uz:'Electro'
-application-label-vi:'Electro'
-application-label-zh-CN:'Electro'
-application-label-zh-HK:'Electro'
-application-label-zh-TW:'Electro'
-application-label-zu:'Electro'
+application-label:'ELECTRO'
+application-label-af:'ELECTRO'
+application-label-am:'ELECTRO'
+application-label-ar:'ELECTRO'
+application-label-as:'ELECTRO'
+application-label-az:'ELECTRO'
+application-label-be:'ELECTRO'
+application-label-bg:'ELECTRO'
+application-label-bn:'ELECTRO'
+application-label-bs:'ELECTRO'
+application-label-ca:'ELECTRO'
+application-label-cs:'ELECTRO'
+application-label-da:'ELECTRO'
+application-label-de:'ELECTRO'
+application-label-el:'ELECTRO'
+application-label-en-AU:'ELECTRO'
+application-label-en-CA:'ELECTRO'
+application-label-en-GB:'ELECTRO'
+application-label-en-IN:'ELECTRO'
+application-label-en-XC:'ELECTRO'
+application-label-es:'ELECTRO'
+application-label-es-US:'ELECTRO'
+application-label-et:'ELECTRO'
+application-label-eu:'ELECTRO'
+application-label-fa:'ELECTRO'
+application-label-fi:'ELECTRO'
+application-label-fr:'ELECTRO'
+application-label-fr-CA:'ELECTRO'
+application-label-gl:'ELECTRO'
+application-label-gu:'ELECTRO'
+application-label-hi:'ELECTRO'
+application-label-hr:'ELECTRO'
+application-label-hu:'ELECTRO'
+application-label-hy:'ELECTRO'
+application-label-in:'ELECTRO'
+application-label-is:'ELECTRO'
+application-label-it:'ELECTRO'
+application-label-iw:'ELECTRO'
+application-label-ja:'ELECTRO'
+application-label-ka:'ELECTRO'
+application-label-kk:'ELECTRO'
+application-label-km:'ELECTRO'
+application-label-kn:'ELECTRO'
+application-label-ko:'ELECTRO'
+application-label-ky:'ELECTRO'
+application-label-lo:'ELECTRO'
+application-label-lt:'ELECTRO'
+application-label-lv:'ELECTRO'
+application-label-mk:'ELECTRO'
+application-label-ml:'ELECTRO'
+application-label-mn:'ELECTRO'
+application-label-mr:'ELECTRO'
+application-label-ms:'ELECTRO'
+application-label-my:'ELECTRO'
+application-label-nb:'ELECTRO'
+application-label-ne:'ELECTRO'
+application-label-nl:'ELECTRO'
+application-label-or:'ELECTRO'
+application-label-pa:'ELECTRO'
+application-label-pl:'ELECTRO'
+application-label-pt:'ELECTRO'
+application-label-pt-BR:'ELECTRO'
+application-label-pt-PT:'ELECTRO'
+application-label-ro:'ELECTRO'
+application-label-ru:'ELECTRO'
+application-label-si:'ELECTRO'
+application-label-sk:'ELECTRO'
+application-label-sl:'ELECTRO'
+application-label-sq:'ELECTRO'
+application-label-sr:'ELECTRO'
+application-label-sr-Latn:'ELECTRO'
+application-label-sv:'ELECTRO'
+application-label-sw:'ELECTRO'
+application-label-ta:'ELECTRO'
+application-label-te:'ELECTRO'
+application-label-th:'ELECTRO'
+application-label-tl:'ELECTRO'
+application-label-tr:'ELECTRO'
+application-label-uk:'ELECTRO'
+application-label-ur:'ELECTRO'
+application-label-uz:'ELECTRO'
+application-label-vi:'ELECTRO'
+application-label-zh-CN:'ELECTRO'
+application-label-zh-HK:'ELECTRO'
+application-label-zh-TW:'ELECTRO'
+application-label-zu:'ELECTRO'
 application-icon-160:'res/BW.xml'
 application-icon-65534:'res/BW.xml'
-application: label='Electro' icon='res/BW.xml'
+application: label='ELECTRO' icon='res/BW.xml'
 launchable-activity: name='com.electrokit.app.MainActivity'  label='' icon=''
 feature-group: label=''
   uses-feature: name='android.hardware.faketouch'
@@ -45569,23 +45917,9 @@ uses-permission: name='com.electrokit.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSI
 ## verification/apk-signature.txt
 
 ````text
-Verifies
-Verified using v1 scheme (JAR signing): false
-Verified using v2 scheme (APK Signature Scheme v2): true
-Verified using v3 scheme (APK Signature Scheme v3): true
-Verified using v3.1 scheme (APK Signature Scheme v3.1): false
-Verified using v4 scheme (APK Signature Scheme v4): false
-Verified for SourceStamp: false
-Number of signers: 1
-Signer #1 certificate DN: CN=ElectroKit, OU=Offline Android, O=ElectroKit, C=IN
-Signer #1 certificate SHA-256 digest: 68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa
-Signer #1 certificate SHA-1 digest: 3bb4ae7f47da9cfd3ed7a7df68ea9ee472c34be8
-Signer #1 certificate MD5 digest: 52ef74dbf021dc5d64c4340204afb26b
-Signer #1 key algorithm: RSA
-Signer #1 key size (bits): 3072
-Signer #1 public key SHA-256 digest: ad7e0738f91d0047745c17e13b9de50bbbc324f13ed85976337aaddfe2b0c37c
-Signer #1 public key SHA-1 digest: 4f5b9022c83c3126a87db5b3fb77c0e3127ea2b3
-Signer #1 public key MD5 digest: adf1d5657111d3d66da9a68a1dab4506
+UNSIGNED RELEASE — not production ready
+DOES NOT VERIFY
+ERROR: Missing META-INF/MANIFEST.MF
 
 ````
 
@@ -45601,56 +45935,59 @@ PASS: 31 calculators, 55 pin-outs, 21 resources, 3 modules; all routes, tables, 
 ````text
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
-> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugBuildConfig
 > Task :app:checkDebugAarMetadata UP-TO-DATE
 > Task :app:generateDebugResValues UP-TO-DATE
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:packageDebugResources
-> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksDebug UP-TO-DATE
-> Task :app:processDebugMainManifest UP-TO-DATE
-> Task :app:processDebugManifest UP-TO-DATE
-> Task :app:processDebugManifestForPackage UP-TO-DATE
-> Task :app:javaPreCompileDebug UP-TO-DATE
 > Task :app:parseDebugLocalResources
+> Task :app:mergeDebugResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
 > Task :app:mergeDebugShaders UP-TO-DATE
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:processDebugManifestForPackage
 > Task :app:mergeDebugAssets UP-TO-DATE
-> Task :app:compressDebugAssets UP-TO-DATE
-> Task :app:desugarDebugFileDependencies UP-TO-DATE
-> Task :app:mergeDebugResources
-> Task :app:checkDebugDuplicateClasses UP-TO-DATE
-> Task :app:mergeExtDexDebug UP-TO-DATE
-> Task :app:mergeLibDexDebug UP-TO-DATE
-> Task :app:mergeDebugJniLibFolders UP-TO-DATE
-> Task :app:mergeDebugNativeLibs UP-TO-DATE
-> Task :app:stripDebugDebugSymbols UP-TO-DATE
-> Task :app:validateSigningDebug UP-TO-DATE
-> Task :app:writeDebugAppMetadata UP-TO-DATE
-> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
 > Task :app:buildKotlinToolingMetadata UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
 > Task :app:generateReleaseBuildConfig UP-TO-DATE
 > Task :app:checkReleaseAarMetadata UP-TO-DATE
 > Task :app:generateReleaseResValues UP-TO-DATE
-> Task :app:mapReleaseSourceSetPaths
-> Task :app:generateReleaseResources
-> Task :app:processDebugResources
-> Task :app:mergeReleaseResources
-> Task :app:packageReleaseResources
+> Task :app:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :app:generateReleaseResources UP-TO-DATE
+> Task :app:mergeReleaseResources UP-TO-DATE
+> Task :app:packageReleaseResources UP-TO-DATE
+> Task :app:parseReleaseLocalResources UP-TO-DATE
 > Task :app:createReleaseCompatibleScreenManifests UP-TO-DATE
 > Task :app:extractDeepLinksRelease UP-TO-DATE
-> Task :app:parseReleaseLocalResources
 > Task :app:processReleaseMainManifest UP-TO-DATE
 > Task :app:processReleaseManifest UP-TO-DATE
 > Task :app:processReleaseManifestForPackage UP-TO-DATE
+> Task :app:processReleaseResources UP-TO-DATE
+> Task :app:processDebugResources
+> Task :app:packageDebugUnitTestForUnitTest
 > Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :app:preReleaseUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileReleaseUnitTest UP-TO-DATE
+> Task :app:mergeReleaseShaders UP-TO-DATE
+> Task :app:generateDebugUnitTestConfig
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets UP-TO-DATE
+> Task :app:packageReleaseUnitTestForUnitTest UP-TO-DATE
+> Task :app:generateReleaseUnitTestConfig UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :app:extractProguardFiles UP-TO-DATE
 > Task :app:mergeReleaseJniLibFolders UP-TO-DATE
 > Task :app:mergeReleaseNativeLibs UP-TO-DATE
@@ -45660,97 +45997,70 @@ Daemon will be stopped at the end of the build
 > Task :app:checkReleaseDuplicateClasses UP-TO-DATE
 > Task :app:mergeReleaseArtProfile UP-TO-DATE
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
-> Task :app:mergeReleaseShaders UP-TO-DATE
-> Task :app:compileReleaseShaders NO-SOURCE
-> Task :app:generateReleaseAssets UP-TO-DATE
-> Task :app:mergeReleaseAssets UP-TO-DATE
 > Task :app:compressReleaseAssets UP-TO-DATE
-> Task :app:extractReleaseVersionControlInfo UP-TO-DATE
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:convertLinkedResourcesToProtoRelease UP-TO-DATE
 > Task :app:collectReleaseDependencies UP-TO-DATE
 > Task :app:sdkReleaseDependencyData UP-TO-DATE
-> Task :app:validateSigningRelease UP-TO-DATE
 > Task :app:writeReleaseAppMetadata UP-TO-DATE
 > Task :app:writeReleaseSigningConfigVersions UP-TO-DATE
-> Task :app:preDebugUnitTestBuild UP-TO-DATE
-> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
-> Task :app:packageDebugUnitTestForUnitTest
-> Task :app:preReleaseUnitTestBuild UP-TO-DATE
-> Task :app:javaPreCompileReleaseUnitTest UP-TO-DATE
-> Task :app:preDebugAndroidTestBuild SKIPPED
-> Task :app:generateDebugUnitTestConfig
-> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
-> Task :app:processReleaseResources
-> Task :app:packageReleaseUnitTestForUnitTest
-> Task :app:generateReleaseUnitTestConfig
-> Task :app:convertLinkedResourcesToProtoRelease
-
 > Task :app:compileReleaseKotlin
-w: file://[project]/app/src/main/java/com/electrokit/app/MainActivity.kt:52:24 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
-
-> Task :app:compileDebugKotlin
-w: file://[project]/app/src/main/java/com/electrokit/app/MainActivity.kt:52:24 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
-
 > Task :app:compileReleaseJavaWithJavac UP-TO-DATE
-> Task :app:compileDebugJavaWithJavac UP-TO-DATE
-> Task :app:dexBuilderDebug
-> Task :app:mergeDebugGlobalSynthetics UP-TO-DATE
-> Task :app:processDebugJavaRes UP-TO-DATE
-> Task :app:mergeDebugJavaResource UP-TO-DATE
-> Task :app:generateReleaseLintVitalReportModel
-> Task :app:mergeReleaseGeneratedProguardFiles UP-TO-DATE
 > Task :app:processReleaseJavaRes UP-TO-DATE
-> Task :app:mergeReleaseJavaResource UP-TO-DATE
-> Task :app:mergeProjectDexDebug
-> Task :app:bundleDebugClassesToRuntimeJar
-> Task :app:bundleDebugClassesToCompileJar
-> Task :app:expandReleaseArtProfileWildcards
-> Task :app:packageDebug
-> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
-> Task :app:assembleDebug
-> Task :app:bundleReleaseClassesToRuntimeJar
 > Task :app:bundleReleaseClassesToCompileJar
-> Task :app:compileReleaseUnitTestKotlin
+> Task :app:bundleReleaseClassesToRuntimeJar
+> Task :app:generateReleaseLintReportModel
+> Task :app:compileReleaseUnitTestKotlin UP-TO-DATE
 > Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
 > Task :app:processReleaseUnitTestJavaRes UP-TO-DATE
+> Task :app:compileDebugKotlin
+
 > Task :app:testReleaseUnitTest
-> Task :app:generateDebugAndroidTestLintModel
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
 > Task :app:generateDebugLintReportModel
+> Task :app:generateDebugAndroidTestLintModel
 > Task :app:generateDebugUnitTestLintModel
 > Task :app:compileDebugUnitTestKotlin
 > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
-> Task :app:lintVitalAnalyzeRelease
-> Task :app:minifyReleaseWithR8
-> Task :app:lintAnalyzeDebug
+
 > Task :app:testDebugUnitTest
+
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :app:lintAnalyzeDebug
+> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:generateReleaseUnitTestLintModel
+> Task :app:generateReleaseLintVitalReportModel
+> Task :app:expandReleaseArtProfileWildcards
+> Task :app:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :app:mergeReleaseJavaResource UP-TO-DATE
+> Task :app:lintAnalyzeReleaseUnitTest
+> Task :app:lintVitalAnalyzeRelease
 > Task :app:lintVitalReportRelease SKIPPED
 > Task :app:lintVitalRelease SKIPPED
-> Task :app:lintAnalyzeDebugAndroidTest
-> Task :app:compileReleaseArtProfile
-> Task :app:generateReleaseLintReportModel
-> Task :app:generateReleaseUnitTestLintModel
-> Task :app:shrinkReleaseRes
-> Task :app:convertShrunkResourcesToBinaryRelease
-> Task :app:optimizeReleaseResources
-> Task :app:packageRelease
-> Task :app:createReleaseApkListingFileRedirect UP-TO-DATE
-> Task :app:assembleRelease
-> Task :app:lintAnalyzeDebugUnitTest
 
 > Task :app:lintReportDebug
-Wrote HTML report to file://[project]/app/build/reports/lint-results-debug.html
+Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-debug.html
 
 > Task :app:lintDebug
 > Task :app:lintAnalyzeRelease
-> Task :app:lintAnalyzeReleaseUnitTest
-
-> Task :app:lintReportRelease
-Wrote HTML report to file://[project]/app/build/reports/lint-results-release.html
-
+> Task :app:minifyReleaseWithR8
+> Task :app:lintReportRelease UP-TO-DATE
 > Task :app:lintRelease
+> Task :app:compileReleaseArtProfile
+> Task :app:shrinkReleaseRes
+> Task :app:convertShrunkResourcesToBinaryRelease UP-TO-DATE
+> Task :app:optimizeReleaseResources UP-TO-DATE
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 3m 8s
-117 actionable tasks: 53 executed, 64 up-to-date
+BUILD SUCCESSFUL in 3m 33s
+99 actionable tasks: 44 executed, 55 up-to-date
 
 ````
 
@@ -45759,10 +46069,10 @@ BUILD SUCCESSFUL in 3m 8s
 ````text
 Calculators.kt: 205 comment lines / 867 nonblank code lines
 Engineering.kt: 312 comment lines / 495 nonblank code lines
-App.kt: 153 comment lines / 1110 nonblank code lines
-CalculatorScreen.kt: 109 comment lines / 578 nonblank code lines
-AppViewModel.kt: 127 comment lines / 138 nonblank code lines
-PASS: 796 Kotlin declarations documented; five density thresholds met.
+App.kt: 144 comment lines / 875 nonblank code lines
+CalculatorScreen.kt: 109 comment lines / 603 nonblank code lines
+AppViewModel.kt: 142 comment lines / 142 nonblank code lines
+PASS: 895 Kotlin declarations documented; five density thresholds met.
 
 ````
 
@@ -45793,6 +46103,13 @@ light errorContainer: 13.26:1
 
 ````text
 PASS: 125 exact faults, 245 technical records, 14 photographs, 15 tools; all sources and routes resolve.
+
+````
+
+## verification/library.txt
+
+````text
+PASS: 114 component records, 114 unique PNGs, explicit Escalator category, valid local paths and dimensions.
 
 ````
 
@@ -45978,9 +46295,9 @@ document.getElementById(id).style.display = 'none';
 <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
-      <span class="mdl-layout-title">Lint Report: 10 warnings</span>
+      <span class="mdl-layout-title">Lint Report: 14 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Mon Oct 26 12:59:56 CET 2026 by AGP (8.7.3)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Tue Oct 27 09:11:33 UTC 2026 by AGP (8.7.3)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -45988,8 +46305,7 @@ document.getElementById(id).style.display = 'none';
     <nav class="mdl-navigation">
       <a class="mdl-navigation__link" href="#overview"><i class="material-icons">dashboard</i>Overview</a>
       <a class="mdl-navigation__link" href="#UnusedAttribute"><i class="material-icons warning-icon">warning</i>Attribute unused on older versions (1)</a>
-      <a class="mdl-navigation__link" href="#AndroidGradlePluginVersion"><i class="material-icons warning-icon">warning</i>Obsolete Android Gradle Plugin Version (2)</a>
-      <a class="mdl-navigation__link" href="#GradleDependency"><i class="material-icons warning-icon">warning</i>Obsolete Gradle Dependency (7)</a>
+      <a class="mdl-navigation__link" href="#UnusedResources"><i class="material-icons warning-icon">warning</i>Unused resources (13)</a>
     </nav>
   </div>
   <main class="mdl-layout__content">
@@ -46007,12 +46323,11 @@ document.getElementById(id).style.display = 'none';
 <tr>
 <td class="countColumn">1</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
 <a href="#UnusedAttribute">UnusedAttribute</a>: Attribute unused on older versions</td></tr>
+<tr><td class="countColumn"></td><td class="categoryColumn"><a href="#Performance">Performance</a>
+</td></tr>
 <tr>
-<td class="countColumn">2</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
-<a href="#AndroidGradlePluginVersion">AndroidGradlePluginVersion</a>: Obsolete Android Gradle Plugin Version</td></tr>
-<tr>
-<td class="countColumn">7</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
-<a href="#GradleDependency">GradleDependency</a>: Obsolete Gradle Dependency</td></tr>
+<td class="countColumn">13</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
+<a href="#UnusedResources">UnusedResources</a>: Unused resources</td></tr>
 <tr><td></td><td class="categoryColumn"><a href="#ExtraIssues">Included Additional Checks (65)</a>
 </td></tr>
 <tr><td></td><td class="categoryColumn"><a href="#MissingIssues">Disabled Checks (41)</a>
@@ -46074,162 +46389,156 @@ To suppress this error, use the issue id "UnusedAttribute" as explained in the <
 Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="UnusedAttributeCardLink" onclick="hideid('UnusedAttributeCard');">
 Dismiss</button>            </div>
             </div>
-          </section><a name="AndroidGradlePluginVersion"></a>
-<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="AndroidGradlePluginVersionCard" style="display: block;">
+          </section>
+<a name="Performance"></a>
+<a name="UnusedResources"></a>
+<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="UnusedResourcesCard" style="display: block;">
             <div class="mdl-card mdl-cell mdl-cell--12-col">
   <div class="mdl-card__title">
-    <h2 class="mdl-card__title-text">Obsolete Android Gradle Plugin Version</h2>
+    <h2 class="mdl-card__title-text">Unused resources</h2>
   </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:2</span>: <span class="message">A newer version of com.android.application than 8.7.3 is available: 9.4.1</span><br /><pre class="errorlines">
-<span class="lineno">  1 </span>[versions]
-<span class="caretline"><span class="lineno">  2 </span>agp = <span class="warning">"8.7.3"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  3 </span>kotlin = "2.0.21"
-<span class="lineno">  4 </span>compose = "2024.12.01"
-<span class="lineno">  5 </span>[libraries]
-</pre>
+<span class="location"><a href="../../src/main/res/drawable/ic_database.xml">../../src/main/res/drawable/ic_database.xml</a>:1</span>: <span class="message">The resource <code>R.drawable.ic_database</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="caretline"><span class="lineno"> 1 </span><span class="warning"><span class="tag">&lt;vector</span><span class="attribute"> </span><span class="prefix">xmlns:</span><span class="attribute">android</span>=<span class="value">"http://schemas.android.com/apk/res/android"</span> <span class="prefix">android:</span><span class="attribute">width</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">height</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">viewportWidth</span>=<span class="value">"24"</span> <span class="prefix">android:</span><span class="attribute">viewportHeight</span>=<span class="value">"24"</span>><span class="tag">&lt;path</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">fillColor</span>=<span class="value">"#FFFFFFFF"</span> <span class="prefix">android:</span><span class="attribute">pathData</span>=<span class="value">"M3,5C3,1 21,1 21,5L21,19C21,23 3,23 3,19ZM5,5C5,7 19,7 19,5C19,3 5,3 5,5M5,9L5,12C5,14 19,14 19,12L19,9C15,11 9,11 5,9M5,16L5,19C5,21 19,21 19,19L19,16C15,18 9,18 5,16"</span> <span class="prefix">android:</span><span class="attribute">fillType</span>=<span class="value">"evenOdd"</span>/><span class="tag">&lt;/vector></span></span></span></pre>
 
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:2</span>: <span class="message">A newer version of com.android.application than 8.7.3 is available: 9.4.1</span><br /><pre class="errorlines">
-<span class="lineno">  1 </span>[versions]
-<span class="caretline"><span class="lineno">  2 </span>agp = <span class="warning">"8.7.3"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  3 </span>kotlin = "2.0.21"
-<span class="lineno">  4 </span>compose = "2024.12.01"
-<span class="lineno">  5 </span>[libraries]
-</pre>
+<span class="location"><a href="../../src/main/res/drawable/ic_energy.xml">../../src/main/res/drawable/ic_energy.xml</a>:1</span>: <span class="message">The resource <code>R.drawable.ic_energy</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="caretline"><span class="lineno"> 1 </span><span class="warning"><span class="tag">&lt;vector</span><span class="attribute"> </span><span class="prefix">xmlns:</span><span class="attribute">android</span>=<span class="value">"http://schemas.android.com/apk/res/android"</span> <span class="prefix">android:</span><span class="attribute">width</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">height</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">viewportWidth</span>=<span class="value">"24"</span> <span class="prefix">android:</span><span class="attribute">viewportHeight</span>=<span class="value">"24"</span>><span class="tag">&lt;path</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">fillColor</span>=<span class="value">"#FFFFFFFF"</span> <span class="prefix">android:</span><span class="attribute">pathData</span>=<span class="value">"M13,2L4,14h7l-1,8L21,9h-8z"</span>/><span class="tag">&lt;/vector></span></span></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:5</span>: <span class="message">The resource <code>R.string.light_theme</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">   2 </span><span class="tag">&lt;resources></span>
+<span class="lineno">   3 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"app_name"</span>>ELECTRO<span class="tag">&lt;/string></span>
+<span class="lineno">   4 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"settings"</span>>Settings<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">   5 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"light_theme"</span></span>>Light theme<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">   6 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"share_results"</span>>Share results<span class="tag">&lt;/string></span>
+<span class="lineno">   7 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"share_page"</span>>Share page<span class="tag">&lt;/string></span>
+<span class="lineno">   8 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"use_five_bands"</span>>Use 5 bands<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:14</span>: <span class="message">The resource <code>R.string.ui_about</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  11 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_dismiss"</span>>Dismiss<span class="tag">&lt;/string></span>
+<span class="lineno">  12 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_info"</span>>Info<span class="tag">&lt;/string></span>
+<span class="lineno">  13 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_plugins"</span>>Data<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  14 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"ui_about"</span></span>>About<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  15 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_references"</span>>References<span class="tag">&lt;/string></span>
+<span class="lineno">  16 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_minimum"</span>>Minimum<span class="tag">&lt;/string></span>
+<span class="lineno">  17 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_maximum"</span>>Maximum<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:27</span>: <span class="message">The resource <code>R.string.menu</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  24 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"plugins_title"</span>>Databases<span class="tag">&lt;/string></span>
+<span class="lineno">  25 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"back"</span>>Back<span class="tag">&lt;/string></span>
+<span class="lineno">  26 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"logo_description"</span>>Electro resistor and circuit logo<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"menu"</span></span>>Menu<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span></pre>
+
+<button class="mdl-button mdl-js-button mdl-button--primary" id="UnusedResourcesDivLink" onclick="reveal('UnusedResourcesDiv');" />+ 8 More Occurrences...</button>
+<div id="UnusedResourcesDiv" style="display: none">
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:28</span>: <span class="message">The resource <code>R.string.default_order</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  25 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"back"</span>>Back<span class="tag">&lt;/string></span>
+<span class="lineno">  26 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"logo_description"</span>>Electro resistor and circuit logo<span class="tag">&lt;/string></span>
+<span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"menu"</span>>Menu<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"default_order"</span></span>>Default order<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:29</span>: <span class="message">The resource <code>R.string.sort_az</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  26 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"logo_description"</span>>Electro resistor and circuit logo<span class="tag">&lt;/string></span>
+<span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"menu"</span>>Menu<span class="tag">&lt;/string></span>
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"sort_az"</span></span>>Sort A–Z<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span>
+<span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_resources"</span>>Reference, made simple<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:30</span>: <span class="message">The resource <code>R.string.catalogue_calculators</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"menu"</span>>Menu<span class="tag">&lt;/string></span>
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"catalogue_calculators"</span></span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span>
+<span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_resources"</span>>Reference, made simple<span class="tag">&lt;/string></span>
+<span class="lineno">  33 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"more_features"</span>>More features…<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:31</span>: <span class="message">The resource <code>R.string.catalogue_pinouts</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"catalogue_pinouts"</span></span>>Find the right connection<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_resources"</span>>Reference, made simple<span class="tag">&lt;/string></span>
+<span class="lineno">  33 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"more_features"</span>>More features…<span class="tag">&lt;/string></span>
+<span class="lineno">  34 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"search"</span>>Search<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:32</span>: <span class="message">The resource <code>R.string.catalogue_resources</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"catalogue_resources"</span></span>>Reference, made simple<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  33 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"more_features"</span>>More features…<span class="tag">&lt;/string></span>
+<span class="lineno">  34 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"search"</span>>Search<span class="tag">&lt;/string></span>
+<span class="lineno">  35 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"clear_search"</span>>Clear search<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:69</span>: <span class="message">The resource <code>R.string.settings_note</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  66 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"mono_description"</span>>NE555 monostable timing network<span class="tag">&lt;/string></span>
+<span class="lineno">  67 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"astable_description"</span>>NE555 astable timing network<span class="tag">&lt;/string></span>
+<span class="lineno">  68 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"timer_note"</span>>Add supply decoupling near the IC. Monostable trigger is active low; observe reset and trigger timing limits.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  69 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"settings_note"</span></span>>Settings, favourites, modules and calculator values are saved on this device.<span class="tag">&lt;/string></span></span>
+<span class="lineno">  70 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"mono_accessibility"</span>>NE555: pins 8 and 4 to supply, 1 to ground; RA from supply to pins 6 and 7; capacitor from pins 6 and 7 to ground; trigger pin 2 pulsed low, output pin 3. Pin 5 bypass to ground.<span class="tag">&lt;/string></span>
+<span class="lineno">  71 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"astable_accessibility"</span>>NE555: pins 8 and 4 to supply, 1 to ground. RA supply to pin 7; RB pin 7 to joined pins 2 and 6; timing capacitor to ground; output pin 3; pin 5 bypass capacitor to ground.<span class="tag">&lt;/string></span>
+<span class="lineno">  72 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"transformation_accessibility"</span>>Star: three resistors meet at a common centre. Delta: three resistors form the sides of a triangle between A, B and C.<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:76</span>: <span class="message">The resource <code>R.plurals.tool_count</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  73 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"info_body"</span>>Electro\n\nAn original electrical and electronics engineering workbench with elevator and escalator references, exact supplied fault records, component and controller-terminal identification, original interactive drawings and engineering calculators. All runtime content is bundled and available offline. No advertising, account or network permission.\n\nVersion %1$s\n\nReference values are educational aids. Check exact component datasheets and installation standards for your design.<span class="tag">&lt;/string></span>
+<span class="lineno">  74 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"credits_body"</span>>Designed and authored for Electro.\n\nKotlin and kotlinx.serialization — JetBrains (Apache 2.0).\nAndroidX, Jetpack Compose, Material 3, Navigation, Lifecycle, DataStore — Android Open Source Project (Apache 2.0).\nMaterial Icons — Google (Apache 2.0).\nJUnit 4 — EPL 1.0.\nGradle wrapper — Apache 2.0.\n\nComponent names identify manufacturers’ parts and remain their respective owners’ marks. Dataset descriptions, circuit motifs and connector drawings are original. Reference URLs are listed on relevant pages and in SOURCES.md; browsing is not required by the app.<span class="tag">&lt;/string></span>
+<span class="lineno">  75 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"changes_body"</span>>%1$s • Electro engineering toolkit\n\nFull-screen browsing, compact bottom navigation and pinned catalogue search. Engineering now groups fault lookup, calculations, sources and system references clearly. Input saving runs in the background, damaged input backups can recover, and motor slip supports regenerative speed. Includes an expanded source-code editing guide.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  76 </span> <span class="tag">&lt;plurals</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"tool_count"</span></span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>%1$d tool • available offline<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>%1$d tools • available offline<span class="tag">&lt;/item>&lt;/plurals></span></span>
+<span class="lineno">  77 </span> <span class="tag">&lt;plurals</span><span class="attribute"> name</span>=<span class="value">"open_module"</span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>OPEN DATABASE (%1$d entry)<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>OPEN DATABASE (%1$d entries)<span class="tag">&lt;/item>&lt;/plurals></span>
+<span class="lineno">  78 </span> <span class="tag">&lt;plurals</span><span class="attribute"> name</span>=<span class="value">"part_count"</span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>%1$d entry • package choices vary<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>%1$d entries • package choices vary<span class="tag">&lt;/item>&lt;/plurals></span>
+<span class="lineno">  79 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"product_reference"</span>>Product reference: %1$s<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:133</span>: <span class="message">The resource <code>R.string.engine_fault_count</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno"> 130 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_preserved"</span>>Original calculator retained in the existing toolkit.<span class="tag">&lt;/string></span>
+<span class="lineno"> 131 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_simulated"</span>>SIMULATED — educational samples only<span class="tag">&lt;/string></span>
+<span class="lineno"> 132 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_not_found"</span>>This engineering route was not found. Return to the engineering dashboard.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno"> 133 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"engine_fault_count"</span></span>>125 original fault records • search, filters and bookmarks<span class="tag">&lt;/string></span></span>
+<span class="lineno"> 134 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_existing_tool"</span>>Existing toolkit entry<span class="tag">&lt;/string></span>
+<span class="lineno"> 135 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_search_end"</span>>End of local search results. Try a component ID, terminal, code or topic.<span class="tag">&lt;/string></span>
+<span class="lineno"> 136 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_fault_search"</span>>Search fault code or message<span class="tag">&lt;/string></span></pre>
 
 </div>
-<div class="metadata"><div class="explanation" id="explanationAndroidGradlePluginVersion" style="display: none;">
-This detector looks for usage of the Android Gradle Plugin where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find.<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
-To suppress this error, use the issue id "AndroidGradlePluginVersion" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
+</div>
+<div class="metadata"><div class="explanation" id="explanationUnusedResources" style="display: none;">
+Unused resources make applications larger and slow down builds.<br/>
+<br/>
+<br/>
+The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.<br/>
+<br/>
+You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.<br/>
+,<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
+To suppress this error, use the issue id "UnusedResources" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
 <br/></div>
 </div>
 </div>
 <div class="chips">
 <span class="mdl-chip">
-    <span class="mdl-chip__text">AndroidGradlePluginVersion</span>
+    <span class="mdl-chip__text">UnusedResources</span>
 </span>
 <span class="mdl-chip">
-    <span class="mdl-chip__text">Correctness</span>
-</span>
-<span class="mdl-chip">
-    <span class="mdl-chip__text">Warning</span>
-</span>
-<span class="mdl-chip">
-    <span class="mdl-chip__text">Priority 4/10</span>
-</span>
-</div>
-              </div>
-              <div class="mdl-card__actions mdl-card--border">
-<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationAndroidGradlePluginVersionLink" onclick="reveal('explanationAndroidGradlePluginVersion');">
-Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="AndroidGradlePluginVersionCardLink" onclick="hideid('AndroidGradlePluginVersionCard');">
-Dismiss</button>            </div>
-            </div>
-          </section><a name="GradleDependency"></a>
-<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="GradleDependencyCard" style="display: block;">
-            <div class="mdl-card mdl-cell mdl-cell--12-col">
-  <div class="mdl-card__title">
-    <h2 class="mdl-card__title-text">Obsolete Gradle Dependency</h2>
-  </div>
-              <div class="mdl-card__supporting-text">
-<div class="issue">
-<div class="warningslist">
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:4</span>: <span class="message">A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.09.00</span><br /><pre class="errorlines">
-<span class="lineno">  1 </span>[versions]
-<span class="lineno">  2 </span>agp = "8.7.3"
-<span class="lineno">  3 </span>kotlin = "2.0.21"
-<span class="caretline"><span class="lineno">  4 </span>compose = <span class="warning">"2024.12.01"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  5 </span>[libraries]
-<span class="lineno">  6 </span>androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
-<span class="lineno">  7 </span>activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
-</pre>
-
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:6</span>: <span class="message">A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1</span><br /><pre class="errorlines">
-<span class="lineno">  3 </span>kotlin = "2.0.21"
-<span class="lineno">  4 </span>compose = "2024.12.01"
-<span class="lineno">  5 </span>[libraries]
-<span class="caretline"><span class="lineno">  6 </span>androidx-core = { module = "androidx.core:core-ktx", version = <span class="warning">"1.15.0"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  7 </span>activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
-<span class="lineno">  8 </span>compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
-<span class="lineno">  9 </span>compose-ui = { module = "androidx.compose.ui:ui" }
-</pre>
-
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:6</span>: <span class="message">A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1</span><br /><pre class="errorlines">
-<span class="lineno">  3 </span>kotlin = "2.0.21"
-<span class="lineno">  4 </span>compose = "2024.12.01"
-<span class="lineno">  5 </span>[libraries]
-<span class="caretline"><span class="lineno">  6 </span>androidx-core = { module = "androidx.core:core-ktx", version = <span class="warning">"1.15.0"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  7 </span>activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
-<span class="lineno">  8 </span>compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
-<span class="lineno">  9 </span>compose-ui = { module = "androidx.compose.ui:ui" }
-</pre>
-
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:7</span>: <span class="message">A newer version of androidx.activity:activity-compose than 1.9.3 is available: 1.13.0</span><br /><pre class="errorlines">
-<span class="lineno">  4 </span>compose = "2024.12.01"
-<span class="lineno">  5 </span>[libraries]
-<span class="lineno">  6 </span>androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
-<span class="caretline"><span class="lineno">  7 </span>activity = { module = "androidx.activity:activity-compose", version = <span class="warning">"1.9.3"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  8 </span>compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
-<span class="lineno">  9 </span>compose-ui = { module = "androidx.compose.ui:ui" }
-<span class="lineno"> 10 </span>compose-tooling = { module = "androidx.compose.ui:ui-tooling-preview" }
-</pre>
-
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:14</span>: <span class="message">A newer version of androidx.navigation:navigation-compose than 2.8.5 is available: 2.10.2</span><br /><pre class="errorlines">
-<span class="lineno"> 11 </span>compose-foundation = { module = "androidx.compose.foundation:foundation" }
-<span class="lineno"> 12 </span>material3 = { module = "androidx.compose.material3:material3" }
-<span class="lineno"> 13 </span>icons = { module = "androidx.compose.material:material-icons-core" }
-<span class="caretline"><span class="lineno"> 14 </span>navigation = { module = "androidx.navigation:navigation-compose", version = <span class="warning">"2.8.5"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 15 </span>lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.7" }
-<span class="lineno"> 16 </span>viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.8.7" }
-<span class="lineno"> 17 </span>datastore = { module = "androidx.datastore:datastore-preferences", version = "1.1.1" }
-</pre>
-
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:15</span>: <span class="message">A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.8.7 is available: 2.11.0</span><br /><pre class="errorlines">
-<span class="lineno"> 12 </span>material3 = { module = "androidx.compose.material3:material3" }
-<span class="lineno"> 13 </span>icons = { module = "androidx.compose.material:material-icons-core" }
-<span class="lineno"> 14 </span>navigation = { module = "androidx.navigation:navigation-compose", version = "2.8.5" }
-<span class="caretline"><span class="lineno"> 15 </span>lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = <span class="warning">"2.8.7"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 16 </span>viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.8.7" }
-<span class="lineno"> 17 </span>datastore = { module = "androidx.datastore:datastore-preferences", version = "1.1.1" }
-<span class="lineno"> 18 </span>serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.7.3" }
-</pre>
-
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:16</span>: <span class="message">A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.8.7 is available: 2.11.0</span><br /><pre class="errorlines">
-<span class="lineno"> 13 </span>icons = { module = "androidx.compose.material:material-icons-core" }
-<span class="lineno"> 14 </span>navigation = { module = "androidx.navigation:navigation-compose", version = "2.8.5" }
-<span class="lineno"> 15 </span>lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.7" }
-<span class="caretline"><span class="lineno"> 16 </span>viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = <span class="warning">"2.8.7"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 17 </span>datastore = { module = "androidx.datastore:datastore-preferences", version = "1.1.1" }
-<span class="lineno"> 18 </span>serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.7.3" }
-<span class="lineno"> 19 </span>junit = { module = "junit:junit", version = "4.13.2" }
-</pre>
-
-</div>
-<div class="metadata"><div class="explanation" id="explanationGradleDependency" style="display: none;">
-This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find.<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
-To suppress this error, use the issue id "GradleDependency" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
-<br/></div>
-</div>
-</div>
-<div class="chips">
-<span class="mdl-chip">
-    <span class="mdl-chip__text">GradleDependency</span>
-</span>
-<span class="mdl-chip">
-    <span class="mdl-chip__text">Correctness</span>
+    <span class="mdl-chip__text">Performance</span>
 </span>
 <span class="mdl-chip">
     <span class="mdl-chip__text">Warning</span>
 </span>
 <span class="mdl-chip">
-    <span class="mdl-chip__text">Priority 4/10</span>
+    <span class="mdl-chip__text">Priority 3/10</span>
 </span>
 </div>
               </div>
               <div class="mdl-card__actions mdl-card--border">
-<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationGradleDependencyLink" onclick="reveal('explanationGradleDependency');">
-Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="GradleDependencyCardLink" onclick="hideid('GradleDependencyCard');">
+<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationUnusedResourcesLink" onclick="reveal('explanationUnusedResources');">
+Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="UnusedResourcesCardLink" onclick="hideid('UnusedResourcesCard');">
 Dismiss</button>            </div>
             </div>
           </section>
@@ -47754,7 +48063,7 @@ For more information, see <a href="https://developer.android.com/studio/write/li
 ## verification/lint-results-debug.txt
 
 ````text
-[project]/app/src/main/AndroidManifest.xml:4: Warning: Attribute enableOnBackInvokedCallback is only used in API level 33 and higher (current min is 24) [UnusedAttribute]
+/workspace/electro/app/src/main/AndroidManifest.xml:4: Warning: Attribute enableOnBackInvokedCallback is only used in API level 33 and higher (current min is 24) [UnusedAttribute]
  <application android:enableOnBackInvokedCallback="true" android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:supportsRtl="true" android:theme="@style/AppTheme">
               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -47775,50 +48084,61 @@ For more information, see <a href="https://developer.android.com/studio/write/li
    can be unused too, such as the new <tag> element in layouts introduced in
    API 21.
 
-[project]/gradle/libs.versions.toml:2: Warning: A newer version of com.android.application than 8.7.3 is available: 9.4.1 [AndroidGradlePluginVersion]
-agp = "8.7.3"
-      ~~~~~~~
-[project]/gradle/libs.versions.toml:2: Warning: A newer version of com.android.application than 8.7.3 is available: 9.4.1 [AndroidGradlePluginVersion]
-agp = "8.7.3"
-      ~~~~~~~
+/workspace/electro/app/src/main/res/drawable/ic_database.xml:1: Warning: The resource R.drawable.ic_database appears to be unused [UnusedResources]
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24"><path android:fillColor="#FFFFFFFF" android:pathData="M3,5C3,1 21,1 21,5L21,19C21,23 3,23 3,19ZM5,5C5,7 19,7 19,5C19,3 5,3 5,5M5,9L5,12C5,14 19,14 19,12L19,9C15,11 9,11 5,9M5,16L5,19C5,21 19,21 19,19L19,16C15,18 9,18 5,16" android:fillType="evenOdd"/></vector>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/drawable/ic_energy.xml:1: Warning: The resource R.drawable.ic_energy appears to be unused [UnusedResources]
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24"><path android:fillColor="#FFFFFFFF" android:pathData="M13,2L4,14h7l-1,8L21,9h-8z"/></vector>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:5: Warning: The resource R.string.light_theme appears to be unused [UnusedResources]
+ <string name="light_theme">Light theme</string>
+         ~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:14: Warning: The resource R.string.ui_about appears to be unused [UnusedResources]
+ <string name="ui_about">About</string>
+         ~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:27: Warning: The resource R.string.menu appears to be unused [UnusedResources]
+ <string name="menu">Menu</string>
+         ~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:28: Warning: The resource R.string.default_order appears to be unused [UnusedResources]
+ <string name="default_order">Default order</string>
+         ~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:29: Warning: The resource R.string.sort_az appears to be unused [UnusedResources]
+ <string name="sort_az">Sort A–Z</string>
+         ~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:30: Warning: The resource R.string.catalogue_calculators appears to be unused [UnusedResources]
+ <string name="catalogue_calculators">Your electrical &amp; electronics workbench</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:31: Warning: The resource R.string.catalogue_pinouts appears to be unused [UnusedResources]
+ <string name="catalogue_pinouts">Find the right connection</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:32: Warning: The resource R.string.catalogue_resources appears to be unused [UnusedResources]
+ <string name="catalogue_resources">Reference, made simple</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:69: Warning: The resource R.string.settings_note appears to be unused [UnusedResources]
+ <string name="settings_note">Settings, favourites, modules and calculator values are saved on this device.</string>
+         ~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:76: Warning: The resource R.plurals.tool_count appears to be unused [UnusedResources]
+ <plurals name="tool_count"><item quantity="one">%1$d tool • available offline</item><item quantity="other">%1$d tools • available offline</item></plurals>
+          ~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:133: Warning: The resource R.string.engine_fault_count appears to be unused [UnusedResources]
+ <string name="engine_fault_count">125 original fault records • search, filters and bookmarks</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Explanation for issues of type "AndroidGradlePluginVersion":
-   This detector looks for usage of the Android Gradle Plugin where the
-   version you are using is not the current stable release. Using older
-   versions is fine, and there are cases where you deliberately want to stick
-   with an older version. However, you may simply not be aware that a more
-   recent version is available, and that is what this lint check helps find.
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
 
-[project]/gradle/libs.versions.toml:4: Warning: A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.09.00 [GradleDependency]
-compose = "2024.12.01"
-          ~~~~~~~~~~~~
-[project]/gradle/libs.versions.toml:6: Warning: A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1 [GradleDependency]
-androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
-                                                               ~~~~~~~~
-[project]/gradle/libs.versions.toml:6: Warning: A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1 [GradleDependency]
-androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
-                                                               ~~~~~~~~
-[project]/gradle/libs.versions.toml:7: Warning: A newer version of androidx.activity:activity-compose than 1.9.3 is available: 1.13.0 [GradleDependency]
-activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
-                                                                      ~~~~~~~
-[project]/gradle/libs.versions.toml:14: Warning: A newer version of androidx.navigation:navigation-compose than 2.8.5 is available: 2.10.2 [GradleDependency]
-navigation = { module = "androidx.navigation:navigation-compose", version = "2.8.5" }
-                                                                            ~~~~~~~
-[project]/gradle/libs.versions.toml:15: Warning: A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.8.7 is available: 2.11.0 [GradleDependency]
-lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.7" }
-                                                                                 ~~~~~~~
-[project]/gradle/libs.versions.toml:16: Warning: A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.8.7 is available: 2.11.0 [GradleDependency]
-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.8.7" }
-                                                                                   ~~~~~~~
 
-   Explanation for issues of type "GradleDependency":
-   This detector looks for usages of libraries where the version you are using
-   is not the current stable release. Using older versions is fine, and there
-   are cases where you deliberately want to stick with an older version.
-   However, you may simply not be aware that a more recent version is
-   available, and that is what this lint check helps find.
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
 
-0 errors, 10 warnings
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests =true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests =true.
+   ,
+
+0 errors, 14 warnings
 
 ````
 
@@ -47839,153 +48159,217 @@ viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version
         errorLine1=" &lt;application android:enableOnBackInvokedCallback=&quot;true&quot; android:allowBackup=&quot;false&quot; android:fullBackupContent=&quot;false&quot; android:dataExtractionRules=&quot;@xml/data_extraction_rules&quot; android:label=&quot;@string/app_name&quot; android:icon=&quot;@mipmap/ic_launcher&quot; android:roundIcon=&quot;@mipmap/ic_launcher&quot; android:supportsRtl=&quot;true&quot; android:theme=&quot;@style/AppTheme&quot;>"
         errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/app/src/main/AndroidManifest.xml"
+            file="/workspace/electro/app/src/main/AndroidManifest.xml"
             line="4"
             column="15"/>
     </issue>
 
     <issue
-        id="AndroidGradlePluginVersion"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of com.android.application than 8.7.3 is available: 9.4.1"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Android Gradle Plugin Version"
-        explanation="This detector looks for usage of the Android Gradle Plugin where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="agp = &quot;8.7.3&quot;"
-        errorLine2="      ~~~~~~~">
+        message="The resource `R.drawable.ic_database` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:width=&quot;24dp&quot; android:height=&quot;24dp&quot; android:viewportWidth=&quot;24&quot; android:viewportHeight=&quot;24&quot;>&lt;path android:fillColor=&quot;#FFFFFFFF&quot; android:pathData=&quot;M3,5C3,1 21,1 21,5L21,19C21,23 3,23 3,19ZM5,5C5,7 19,7 19,5C19,3 5,3 5,5M5,9L5,12C5,14 19,14 19,12L19,9C15,11 9,11 5,9M5,16L5,19C5,21 19,21 19,19L19,16C15,18 9,18 5,16&quot; android:fillType=&quot;evenOdd&quot;/>&lt;/vector>"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="2"
-            column="7"/>
+            file="/workspace/electro/app/src/main/res/drawable/ic_database.xml"
+            line="1"
+            column="1"/>
     </issue>
 
     <issue
-        id="AndroidGradlePluginVersion"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of com.android.application than 8.7.3 is available: 9.4.1"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Android Gradle Plugin Version"
-        explanation="This detector looks for usage of the Android Gradle Plugin where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="agp = &quot;8.7.3&quot;"
-        errorLine2="      ~~~~~~~">
+        message="The resource `R.drawable.ic_energy` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:width=&quot;24dp&quot; android:height=&quot;24dp&quot; android:viewportWidth=&quot;24&quot; android:viewportHeight=&quot;24&quot;>&lt;path android:fillColor=&quot;#FFFFFFFF&quot; android:pathData=&quot;M13,2L4,14h7l-1,8L21,9h-8z&quot;/>&lt;/vector>"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="2"
-            column="7"/>
+            file="/workspace/electro/app/src/main/res/drawable/ic_energy.xml"
+            line="1"
+            column="1"/>
     </issue>
 
     <issue
-        id="GradleDependency"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.09.00"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="compose = &quot;2024.12.01&quot;"
-        errorLine2="          ~~~~~~~~~~~~">
+        message="The resource `R.string.light_theme` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;light_theme&quot;>Light theme&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="4"
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="5"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.ui_about` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;ui_about&quot;>About&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="14"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.menu` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;menu&quot;>Menu&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="27"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.default_order` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;default_order&quot;>Default order&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="28"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.sort_az` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;sort_az&quot;>Sort A–Z&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="29"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.catalogue_calculators` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;catalogue_calculators&quot;>Your electrical &amp;amp; electronics workbench&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="30"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.catalogue_pinouts` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;catalogue_pinouts&quot;>Find the right connection&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="31"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.catalogue_resources` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;catalogue_resources&quot;>Reference, made simple&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="32"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.settings_note` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;settings_note&quot;>Settings, favourites, modules and calculator values are saved on this device.&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="69"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.plurals.tool_count` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;plurals name=&quot;tool_count&quot;>&lt;item quantity=&quot;one&quot;>%1$d tool • available offline&lt;/item>&lt;item quantity=&quot;other&quot;>%1$d tools • available offline&lt;/item>&lt;/plurals>"
+        errorLine2="          ~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="76"
             column="11"/>
     </issue>
 
     <issue
-        id="GradleDependency"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="androidx-core = { module = &quot;androidx.core:core-ktx&quot;, version = &quot;1.15.0&quot; }"
-        errorLine2="                                                               ~~~~~~~~">
+        message="The resource `R.string.engine_fault_count` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;engine_fault_count&quot;>125 original fault records • search, filters and bookmarks&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="6"
-            column="64"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="androidx-core = { module = &quot;androidx.core:core-ktx&quot;, version = &quot;1.15.0&quot; }"
-        errorLine2="                                                               ~~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="6"
-            column="64"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.activity:activity-compose than 1.9.3 is available: 1.13.0"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="activity = { module = &quot;androidx.activity:activity-compose&quot;, version = &quot;1.9.3&quot; }"
-        errorLine2="                                                                      ~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="7"
-            column="71"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.navigation:navigation-compose than 2.8.5 is available: 2.10.2"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="navigation = { module = &quot;androidx.navigation:navigation-compose&quot;, version = &quot;2.8.5&quot; }"
-        errorLine2="                                                                            ~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="14"
-            column="77"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.8.7 is available: 2.11.0"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="lifecycle = { module = &quot;androidx.lifecycle:lifecycle-runtime-compose&quot;, version = &quot;2.8.7&quot; }"
-        errorLine2="                                                                                 ~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="15"
-            column="82"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        severity="Warning"
-        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.8.7 is available: 2.11.0"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="viewmodel = { module = &quot;androidx.lifecycle:lifecycle-viewmodel-compose&quot;, version = &quot;2.8.7&quot; }"
-        errorLine2="                                                                                   ~~~~~~~">
-        <location
-            file="[project]/gradle/libs.versions.toml"
-            line="16"
-            column="84"/>
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="133"
+            column="10"/>
     </issue>
 
 </issues>
@@ -48174,9 +48558,9 @@ document.getElementById(id).style.display = 'none';
 <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
-      <span class="mdl-layout-title">Lint Report: 5 warnings</span>
+      <span class="mdl-layout-title">Lint Report: 14 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Mon Oct 26 13:00:23 CET 2026 by AGP (8.7.3)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Tue Oct 27 08:34:17 UTC 2026 by AGP (8.7.3)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -48184,7 +48568,7 @@ document.getElementById(id).style.display = 'none';
     <nav class="mdl-navigation">
       <a class="mdl-navigation__link" href="#overview"><i class="material-icons">dashboard</i>Overview</a>
       <a class="mdl-navigation__link" href="#UnusedAttribute"><i class="material-icons warning-icon">warning</i>Attribute unused on older versions (1)</a>
-      <a class="mdl-navigation__link" href="#GradleDependency"><i class="material-icons warning-icon">warning</i>Obsolete Gradle Dependency (4)</a>
+      <a class="mdl-navigation__link" href="#UnusedResources"><i class="material-icons warning-icon">warning</i>Unused resources (13)</a>
     </nav>
   </div>
   <main class="mdl-layout__content">
@@ -48202,9 +48586,11 @@ document.getElementById(id).style.display = 'none';
 <tr>
 <td class="countColumn">1</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
 <a href="#UnusedAttribute">UnusedAttribute</a>: Attribute unused on older versions</td></tr>
+<tr><td class="countColumn"></td><td class="categoryColumn"><a href="#Performance">Performance</a>
+</td></tr>
 <tr>
-<td class="countColumn">4</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
-<a href="#GradleDependency">GradleDependency</a>: Obsolete Gradle Dependency</td></tr>
+<td class="countColumn">13</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
+<a href="#UnusedResources">UnusedResources</a>: Unused resources</td></tr>
 <tr><td></td><td class="categoryColumn"><a href="#ExtraIssues">Included Additional Checks (65)</a>
 </td></tr>
 <tr><td></td><td class="categoryColumn"><a href="#MissingIssues">Disabled Checks (41)</a>
@@ -48266,80 +48652,156 @@ To suppress this error, use the issue id "UnusedAttribute" as explained in the <
 Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="UnusedAttributeCardLink" onclick="hideid('UnusedAttributeCard');">
 Dismiss</button>            </div>
             </div>
-          </section><a name="GradleDependency"></a>
-<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="GradleDependencyCard" style="display: block;">
+          </section>
+<a name="Performance"></a>
+<a name="UnusedResources"></a>
+<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="UnusedResourcesCard" style="display: block;">
             <div class="mdl-card mdl-cell mdl-cell--12-col">
   <div class="mdl-card__title">
-    <h2 class="mdl-card__title-text">Obsolete Gradle Dependency</h2>
+    <h2 class="mdl-card__title-text">Unused resources</h2>
   </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:6</span>: <span class="message">A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1</span><br /><pre class="errorlines">
-<span class="lineno">  3 </span>kotlin = "2.0.21"
-<span class="lineno">  4 </span>compose = "2024.12.01"
-<span class="lineno">  5 </span>[libraries]
-<span class="caretline"><span class="lineno">  6 </span>androidx-core = { module = "androidx.core:core-ktx", version = <span class="warning">"1.15.0"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  7 </span>activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
-<span class="lineno">  8 </span>compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
-<span class="lineno">  9 </span>compose-ui = { module = "androidx.compose.ui:ui" }
-</pre>
+<span class="location"><a href="../../src/main/res/drawable/ic_database.xml">../../src/main/res/drawable/ic_database.xml</a>:1</span>: <span class="message">The resource <code>R.drawable.ic_database</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="caretline"><span class="lineno"> 1 </span><span class="warning"><span class="tag">&lt;vector</span><span class="attribute"> </span><span class="prefix">xmlns:</span><span class="attribute">android</span>=<span class="value">"http://schemas.android.com/apk/res/android"</span> <span class="prefix">android:</span><span class="attribute">width</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">height</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">viewportWidth</span>=<span class="value">"24"</span> <span class="prefix">android:</span><span class="attribute">viewportHeight</span>=<span class="value">"24"</span>><span class="tag">&lt;path</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">fillColor</span>=<span class="value">"#FFFFFFFF"</span> <span class="prefix">android:</span><span class="attribute">pathData</span>=<span class="value">"M3,5C3,1 21,1 21,5L21,19C21,23 3,23 3,19ZM5,5C5,7 19,7 19,5C19,3 5,3 5,5M5,9L5,12C5,14 19,14 19,12L19,9C15,11 9,11 5,9M5,16L5,19C5,21 19,21 19,19L19,16C15,18 9,18 5,16"</span> <span class="prefix">android:</span><span class="attribute">fillType</span>=<span class="value">"evenOdd"</span>/><span class="tag">&lt;/vector></span></span></span></pre>
 
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:7</span>: <span class="message">A newer version of androidx.activity:activity-compose than 1.9.3 is available: 1.13.0</span><br /><pre class="errorlines">
-<span class="lineno">  4 </span>compose = "2024.12.01"
-<span class="lineno">  5 </span>[libraries]
-<span class="lineno">  6 </span>androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
-<span class="caretline"><span class="lineno">  7 </span>activity = { module = "androidx.activity:activity-compose", version = <span class="warning">"1.9.3"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  8 </span>compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
-<span class="lineno">  9 </span>compose-ui = { module = "androidx.compose.ui:ui" }
-<span class="lineno"> 10 </span>compose-tooling = { module = "androidx.compose.ui:ui-tooling-preview" }
-</pre>
+<span class="location"><a href="../../src/main/res/drawable/ic_energy.xml">../../src/main/res/drawable/ic_energy.xml</a>:1</span>: <span class="message">The resource <code>R.drawable.ic_energy</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="caretline"><span class="lineno"> 1 </span><span class="warning"><span class="tag">&lt;vector</span><span class="attribute"> </span><span class="prefix">xmlns:</span><span class="attribute">android</span>=<span class="value">"http://schemas.android.com/apk/res/android"</span> <span class="prefix">android:</span><span class="attribute">width</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">height</span>=<span class="value">"24dp"</span> <span class="prefix">android:</span><span class="attribute">viewportWidth</span>=<span class="value">"24"</span> <span class="prefix">android:</span><span class="attribute">viewportHeight</span>=<span class="value">"24"</span>><span class="tag">&lt;path</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">fillColor</span>=<span class="value">"#FFFFFFFF"</span> <span class="prefix">android:</span><span class="attribute">pathData</span>=<span class="value">"M13,2L4,14h7l-1,8L21,9h-8z"</span>/><span class="tag">&lt;/vector></span></span></span></pre>
 
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:14</span>: <span class="message">A newer version of androidx.navigation:navigation-compose than 2.8.5 is available: 2.10.2</span><br /><pre class="errorlines">
-<span class="lineno"> 11 </span>compose-foundation = { module = "androidx.compose.foundation:foundation" }
-<span class="lineno"> 12 </span>material3 = { module = "androidx.compose.material3:material3" }
-<span class="lineno"> 13 </span>icons = { module = "androidx.compose.material:material-icons-core" }
-<span class="caretline"><span class="lineno"> 14 </span>navigation = { module = "androidx.navigation:navigation-compose", version = <span class="warning">"2.8.5"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 15 </span>lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.7" }
-<span class="lineno"> 16 </span>viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.8.7" }
-<span class="lineno"> 17 </span>datastore = { module = "androidx.datastore:datastore-preferences", version = "1.1.1" }
-</pre>
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:5</span>: <span class="message">The resource <code>R.string.light_theme</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">   2 </span><span class="tag">&lt;resources></span>
+<span class="lineno">   3 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"app_name"</span>>ELECTRO<span class="tag">&lt;/string></span>
+<span class="lineno">   4 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"settings"</span>>Settings<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">   5 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"light_theme"</span></span>>Light theme<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">   6 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"share_results"</span>>Share results<span class="tag">&lt;/string></span>
+<span class="lineno">   7 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"share_page"</span>>Share page<span class="tag">&lt;/string></span>
+<span class="lineno">   8 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"use_five_bands"</span>>Use 5 bands<span class="tag">&lt;/string></span></pre>
 
-<span class="location"><a href="../../../gradle/libs.versions.toml">../../../gradle/libs.versions.toml</a>:22</span>: <span class="message">A newer version of androidx.test:core-ktx than 1.6.1 is available: 1.7.0</span><br /><pre class="errorlines">
-<span class="lineno"> 19 </span>junit = { module = "junit:junit", version = "4.13.2" }
-<span class="lineno"> 20 </span>robolectric = { module = "org.robolectric:robolectric", version = "4.14.1" }
-<span class="lineno"> 21 </span>compose-test = { module = "androidx.compose.ui:ui-test-junit4" }
-<span class="caretline"><span class="lineno"> 22 </span>test-core = { module = "androidx.test:core-ktx", version = <span class="warning">"1.6.1"</span> }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 23 </span>[plugins]
-<span class="lineno"> 24 </span>android-application = { id = "com.android.application", version.ref = "agp" }
-<span class="lineno"> 25 </span>kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-</pre>
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:14</span>: <span class="message">The resource <code>R.string.ui_about</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  11 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_dismiss"</span>>Dismiss<span class="tag">&lt;/string></span>
+<span class="lineno">  12 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_info"</span>>Info<span class="tag">&lt;/string></span>
+<span class="lineno">  13 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_plugins"</span>>Data<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  14 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"ui_about"</span></span>>About<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  15 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_references"</span>>References<span class="tag">&lt;/string></span>
+<span class="lineno">  16 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_minimum"</span>>Minimum<span class="tag">&lt;/string></span>
+<span class="lineno">  17 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"ui_maximum"</span>>Maximum<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:27</span>: <span class="message">The resource <code>R.string.menu</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  24 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"plugins_title"</span>>Databases<span class="tag">&lt;/string></span>
+<span class="lineno">  25 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"back"</span>>Back<span class="tag">&lt;/string></span>
+<span class="lineno">  26 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"logo_description"</span>>Electro resistor and circuit logo<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"menu"</span></span>>Menu<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span></pre>
+
+<button class="mdl-button mdl-js-button mdl-button--primary" id="UnusedResourcesDivLink" onclick="reveal('UnusedResourcesDiv');" />+ 8 More Occurrences...</button>
+<div id="UnusedResourcesDiv" style="display: none">
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:28</span>: <span class="message">The resource <code>R.string.default_order</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  25 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"back"</span>>Back<span class="tag">&lt;/string></span>
+<span class="lineno">  26 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"logo_description"</span>>Electro resistor and circuit logo<span class="tag">&lt;/string></span>
+<span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"menu"</span>>Menu<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"default_order"</span></span>>Default order<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:29</span>: <span class="message">The resource <code>R.string.sort_az</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  26 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"logo_description"</span>>Electro resistor and circuit logo<span class="tag">&lt;/string></span>
+<span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"menu"</span>>Menu<span class="tag">&lt;/string></span>
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"sort_az"</span></span>>Sort A–Z<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span>
+<span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_resources"</span>>Reference, made simple<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:30</span>: <span class="message">The resource <code>R.string.catalogue_calculators</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  27 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"menu"</span>>Menu<span class="tag">&lt;/string></span>
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"catalogue_calculators"</span></span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span>
+<span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_resources"</span>>Reference, made simple<span class="tag">&lt;/string></span>
+<span class="lineno">  33 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"more_features"</span>>More features…<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:31</span>: <span class="message">The resource <code>R.string.catalogue_pinouts</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  28 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"default_order"</span>>Default order<span class="tag">&lt;/string></span>
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"catalogue_pinouts"</span></span>>Find the right connection<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_resources"</span>>Reference, made simple<span class="tag">&lt;/string></span>
+<span class="lineno">  33 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"more_features"</span>>More features…<span class="tag">&lt;/string></span>
+<span class="lineno">  34 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"search"</span>>Search<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:32</span>: <span class="message">The resource <code>R.string.catalogue_resources</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  29 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"sort_az"</span>>Sort A–Z<span class="tag">&lt;/string></span>
+<span class="lineno">  30 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_calculators"</span>>Your electrical &amp;amp; electronics workbench<span class="tag">&lt;/string></span>
+<span class="lineno">  31 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"catalogue_pinouts"</span>>Find the right connection<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  32 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"catalogue_resources"</span></span>>Reference, made simple<span class="tag">&lt;/string></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  33 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"more_features"</span>>More features…<span class="tag">&lt;/string></span>
+<span class="lineno">  34 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"search"</span>>Search<span class="tag">&lt;/string></span>
+<span class="lineno">  35 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"clear_search"</span>>Clear search<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:69</span>: <span class="message">The resource <code>R.string.settings_note</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  66 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"mono_description"</span>>NE555 monostable timing network<span class="tag">&lt;/string></span>
+<span class="lineno">  67 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"astable_description"</span>>NE555 astable timing network<span class="tag">&lt;/string></span>
+<span class="lineno">  68 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"timer_note"</span>>Add supply decoupling near the IC. Monostable trigger is active low; observe reset and trigger timing limits.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  69 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"settings_note"</span></span>>Settings, favourites, modules and calculator values are saved on this device.<span class="tag">&lt;/string></span></span>
+<span class="lineno">  70 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"mono_accessibility"</span>>NE555: pins 8 and 4 to supply, 1 to ground; RA from supply to pins 6 and 7; capacitor from pins 6 and 7 to ground; trigger pin 2 pulsed low, output pin 3. Pin 5 bypass to ground.<span class="tag">&lt;/string></span>
+<span class="lineno">  71 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"astable_accessibility"</span>>NE555: pins 8 and 4 to supply, 1 to ground. RA supply to pin 7; RB pin 7 to joined pins 2 and 6; timing capacitor to ground; output pin 3; pin 5 bypass capacitor to ground.<span class="tag">&lt;/string></span>
+<span class="lineno">  72 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"transformation_accessibility"</span>>Star: three resistors meet at a common centre. Delta: three resistors form the sides of a triangle between A, B and C.<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:76</span>: <span class="message">The resource <code>R.plurals.tool_count</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno">  73 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"info_body"</span>>Electro\n\nAn original electrical and electronics engineering workbench with elevator and escalator references, exact supplied fault records, component and controller-terminal identification, original interactive drawings and engineering calculators. All runtime content is bundled and available offline. No advertising, account or network permission.\n\nVersion %1$s\n\nReference values are educational aids. Check exact component datasheets and installation standards for your design.<span class="tag">&lt;/string></span>
+<span class="lineno">  74 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"credits_body"</span>>Designed and authored for Electro.\n\nKotlin and kotlinx.serialization — JetBrains (Apache 2.0).\nAndroidX, Jetpack Compose, Material 3, Navigation, Lifecycle, DataStore — Android Open Source Project (Apache 2.0).\nMaterial Icons — Google (Apache 2.0).\nJUnit 4 — EPL 1.0.\nGradle wrapper — Apache 2.0.\n\nComponent names identify manufacturers’ parts and remain their respective owners’ marks. Dataset descriptions, circuit motifs and connector drawings are original. Reference URLs are listed on relevant pages and in SOURCES.md; browsing is not required by the app.<span class="tag">&lt;/string></span>
+<span class="lineno">  75 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"changes_body"</span>>%1$s • Electro engineering toolkit\n\nFull-screen browsing, compact bottom navigation and pinned catalogue search. Engineering now groups fault lookup, calculations, sources and system references clearly. Input saving runs in the background, damaged input backups can recover, and motor slip supports regenerative speed. Includes an expanded source-code editing guide.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno">  76 </span> <span class="tag">&lt;plurals</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"tool_count"</span></span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>%1$d tool • available offline<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>%1$d tools • available offline<span class="tag">&lt;/item>&lt;/plurals></span></span>
+<span class="lineno">  77 </span> <span class="tag">&lt;plurals</span><span class="attribute"> name</span>=<span class="value">"open_module"</span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>OPEN DATABASE (%1$d entry)<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>OPEN DATABASE (%1$d entries)<span class="tag">&lt;/item>&lt;/plurals></span>
+<span class="lineno">  78 </span> <span class="tag">&lt;plurals</span><span class="attribute"> name</span>=<span class="value">"part_count"</span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>%1$d entry • package choices vary<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>%1$d entries • package choices vary<span class="tag">&lt;/item>&lt;/plurals></span>
+<span class="lineno">  79 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"product_reference"</span>>Product reference: %1$s<span class="tag">&lt;/string></span></pre>
+
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:133</span>: <span class="message">The resource <code>R.string.engine_fault_count</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno"> 130 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_preserved"</span>>Original calculator retained in the existing toolkit.<span class="tag">&lt;/string></span>
+<span class="lineno"> 131 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_simulated"</span>>SIMULATED — educational samples only<span class="tag">&lt;/string></span>
+<span class="lineno"> 132 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_not_found"</span>>This engineering route was not found. Return to the engineering dashboard.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno"> 133 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"engine_fault_count"</span></span>>125 original fault records • search, filters and bookmarks<span class="tag">&lt;/string></span></span>
+<span class="lineno"> 134 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_existing_tool"</span>>Existing toolkit entry<span class="tag">&lt;/string></span>
+<span class="lineno"> 135 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_search_end"</span>>End of local search results. Try a component ID, terminal, code or topic.<span class="tag">&lt;/string></span>
+<span class="lineno"> 136 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_fault_search"</span>>Search fault code or message<span class="tag">&lt;/string></span></pre>
 
 </div>
-<div class="metadata"><div class="explanation" id="explanationGradleDependency" style="display: none;">
-This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find.<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
-To suppress this error, use the issue id "GradleDependency" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
+</div>
+<div class="metadata"><div class="explanation" id="explanationUnusedResources" style="display: none;">
+Unused resources make applications larger and slow down builds.<br/>
+<br/>
+<br/>
+The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.<br/>
+<br/>
+You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.<br/>
+,<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
+To suppress this error, use the issue id "UnusedResources" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
 <br/></div>
 </div>
 </div>
 <div class="chips">
 <span class="mdl-chip">
-    <span class="mdl-chip__text">GradleDependency</span>
+    <span class="mdl-chip__text">UnusedResources</span>
 </span>
 <span class="mdl-chip">
-    <span class="mdl-chip__text">Correctness</span>
+    <span class="mdl-chip__text">Performance</span>
 </span>
 <span class="mdl-chip">
     <span class="mdl-chip__text">Warning</span>
 </span>
 <span class="mdl-chip">
-    <span class="mdl-chip__text">Priority 4/10</span>
+    <span class="mdl-chip__text">Priority 3/10</span>
 </span>
 </div>
               </div>
               <div class="mdl-card__actions mdl-card--border">
-<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationGradleDependencyLink" onclick="reveal('explanationGradleDependency');">
-Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="GradleDependencyCardLink" onclick="hideid('GradleDependencyCard');">
+<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationUnusedResourcesLink" onclick="reveal('explanationUnusedResources');">
+Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="UnusedResourcesCardLink" onclick="hideid('UnusedResourcesCard');">
 Dismiss</button>            </div>
             </div>
           </section>
@@ -49864,7 +50326,7 @@ For more information, see <a href="https://developer.android.com/studio/write/li
 ## verification/lint-results-release.txt
 
 ````text
-[project]/app/src/main/AndroidManifest.xml:4: Warning: Attribute enableOnBackInvokedCallback is only used in API level 33 and higher (current min is 24) [UnusedAttribute]
+/workspace/electro/app/src/main/AndroidManifest.xml:4: Warning: Attribute enableOnBackInvokedCallback is only used in API level 33 and higher (current min is 24) [UnusedAttribute]
  <application android:enableOnBackInvokedCallback="true" android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:supportsRtl="true" android:theme="@style/AppTheme">
               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -49885,27 +50347,61 @@ For more information, see <a href="https://developer.android.com/studio/write/li
    can be unused too, such as the new <tag> element in layouts introduced in
    API 21.
 
-[project]/gradle/libs.versions.toml:6: Warning: A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1 [GradleDependency]
-androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
-                                                               ~~~~~~~~
-[project]/gradle/libs.versions.toml:7: Warning: A newer version of androidx.activity:activity-compose than 1.9.3 is available: 1.13.0 [GradleDependency]
-activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
-                                                                      ~~~~~~~
-[project]/gradle/libs.versions.toml:14: Warning: A newer version of androidx.navigation:navigation-compose than 2.8.5 is available: 2.10.2 [GradleDependency]
-navigation = { module = "androidx.navigation:navigation-compose", version = "2.8.5" }
-                                                                            ~~~~~~~
-[project]/gradle/libs.versions.toml:22: Warning: A newer version of androidx.test:core-ktx than 1.6.1 is available: 1.7.0 [GradleDependency]
-test-core = { module = "androidx.test:core-ktx", version = "1.6.1" }
-                                                           ~~~~~~~
+/workspace/electro/app/src/main/res/drawable/ic_database.xml:1: Warning: The resource R.drawable.ic_database appears to be unused [UnusedResources]
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24"><path android:fillColor="#FFFFFFFF" android:pathData="M3,5C3,1 21,1 21,5L21,19C21,23 3,23 3,19ZM5,5C5,7 19,7 19,5C19,3 5,3 5,5M5,9L5,12C5,14 19,14 19,12L19,9C15,11 9,11 5,9M5,16L5,19C5,21 19,21 19,19L19,16C15,18 9,18 5,16" android:fillType="evenOdd"/></vector>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/drawable/ic_energy.xml:1: Warning: The resource R.drawable.ic_energy appears to be unused [UnusedResources]
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24"><path android:fillColor="#FFFFFFFF" android:pathData="M13,2L4,14h7l-1,8L21,9h-8z"/></vector>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:5: Warning: The resource R.string.light_theme appears to be unused [UnusedResources]
+ <string name="light_theme">Light theme</string>
+         ~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:14: Warning: The resource R.string.ui_about appears to be unused [UnusedResources]
+ <string name="ui_about">About</string>
+         ~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:27: Warning: The resource R.string.menu appears to be unused [UnusedResources]
+ <string name="menu">Menu</string>
+         ~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:28: Warning: The resource R.string.default_order appears to be unused [UnusedResources]
+ <string name="default_order">Default order</string>
+         ~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:29: Warning: The resource R.string.sort_az appears to be unused [UnusedResources]
+ <string name="sort_az">Sort A–Z</string>
+         ~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:30: Warning: The resource R.string.catalogue_calculators appears to be unused [UnusedResources]
+ <string name="catalogue_calculators">Your electrical &amp; electronics workbench</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:31: Warning: The resource R.string.catalogue_pinouts appears to be unused [UnusedResources]
+ <string name="catalogue_pinouts">Find the right connection</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:32: Warning: The resource R.string.catalogue_resources appears to be unused [UnusedResources]
+ <string name="catalogue_resources">Reference, made simple</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:69: Warning: The resource R.string.settings_note appears to be unused [UnusedResources]
+ <string name="settings_note">Settings, favourites, modules and calculator values are saved on this device.</string>
+         ~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:76: Warning: The resource R.plurals.tool_count appears to be unused [UnusedResources]
+ <plurals name="tool_count"><item quantity="one">%1$d tool • available offline</item><item quantity="other">%1$d tools • available offline</item></plurals>
+          ~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:133: Warning: The resource R.string.engine_fault_count appears to be unused [UnusedResources]
+ <string name="engine_fault_count">125 original fault records • search, filters and bookmarks</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Explanation for issues of type "GradleDependency":
-   This detector looks for usages of libraries where the version you are using
-   is not the current stable release. Using older versions is fine, and there
-   are cases where you deliberately want to stick with an older version.
-   However, you may simply not be aware that a more recent version is
-   available, and that is what this lint check helps find.
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
 
-0 errors, 5 warnings
+
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
+
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests =true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests =true.
+   ,
+
+0 errors, 14 warnings
 
 ````
 
@@ -49926,73 +50422,217 @@ test-core = { module = "androidx.test:core-ktx", version = "1.6.1" }
         errorLine1=" &lt;application android:enableOnBackInvokedCallback=&quot;true&quot; android:allowBackup=&quot;false&quot; android:fullBackupContent=&quot;false&quot; android:dataExtractionRules=&quot;@xml/data_extraction_rules&quot; android:label=&quot;@string/app_name&quot; android:icon=&quot;@mipmap/ic_launcher&quot; android:roundIcon=&quot;@mipmap/ic_launcher&quot; android:supportsRtl=&quot;true&quot; android:theme=&quot;@style/AppTheme&quot;>"
         errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/app/src/main/AndroidManifest.xml"
+            file="/workspace/electro/app/src/main/AndroidManifest.xml"
             line="4"
             column="15"/>
     </issue>
 
     <issue
-        id="GradleDependency"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="androidx-core = { module = &quot;androidx.core:core-ktx&quot;, version = &quot;1.15.0&quot; }"
-        errorLine2="                                                               ~~~~~~~~">
+        message="The resource `R.drawable.ic_database` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:width=&quot;24dp&quot; android:height=&quot;24dp&quot; android:viewportWidth=&quot;24&quot; android:viewportHeight=&quot;24&quot;>&lt;path android:fillColor=&quot;#FFFFFFFF&quot; android:pathData=&quot;M3,5C3,1 21,1 21,5L21,19C21,23 3,23 3,19ZM5,5C5,7 19,7 19,5C19,3 5,3 5,5M5,9L5,12C5,14 19,14 19,12L19,9C15,11 9,11 5,9M5,16L5,19C5,21 19,21 19,19L19,16C15,18 9,18 5,16&quot; android:fillType=&quot;evenOdd&quot;/>&lt;/vector>"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="6"
-            column="64"/>
+            file="/workspace/electro/app/src/main/res/drawable/ic_database.xml"
+            line="1"
+            column="1"/>
     </issue>
 
     <issue
-        id="GradleDependency"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of androidx.activity:activity-compose than 1.9.3 is available: 1.13.0"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="activity = { module = &quot;androidx.activity:activity-compose&quot;, version = &quot;1.9.3&quot; }"
-        errorLine2="                                                                      ~~~~~~~">
+        message="The resource `R.drawable.ic_energy` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:width=&quot;24dp&quot; android:height=&quot;24dp&quot; android:viewportWidth=&quot;24&quot; android:viewportHeight=&quot;24&quot;>&lt;path android:fillColor=&quot;#FFFFFFFF&quot; android:pathData=&quot;M13,2L4,14h7l-1,8L21,9h-8z&quot;/>&lt;/vector>"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="7"
-            column="71"/>
+            file="/workspace/electro/app/src/main/res/drawable/ic_energy.xml"
+            line="1"
+            column="1"/>
     </issue>
 
     <issue
-        id="GradleDependency"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of androidx.navigation:navigation-compose than 2.8.5 is available: 2.10.2"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="navigation = { module = &quot;androidx.navigation:navigation-compose&quot;, version = &quot;2.8.5&quot; }"
-        errorLine2="                                                                            ~~~~~~~">
+        message="The resource `R.string.light_theme` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;light_theme&quot;>Light theme&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="5"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.ui_about` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;ui_about&quot;>About&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
             line="14"
-            column="77"/>
+            column="10"/>
     </issue>
 
     <issue
-        id="GradleDependency"
+        id="UnusedResources"
         severity="Warning"
-        message="A newer version of androidx.test:core-ktx than 1.6.1 is available: 1.7.0"
-        category="Correctness"
-        priority="4"
-        summary="Obsolete Gradle Dependency"
-        explanation="This detector looks for usages of libraries where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
-        errorLine1="test-core = { module = &quot;androidx.test:core-ktx&quot;, version = &quot;1.6.1&quot; }"
-        errorLine2="                                                           ~~~~~~~">
+        message="The resource `R.string.menu` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;menu&quot;>Menu&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~">
         <location
-            file="[project]/gradle/libs.versions.toml"
-            line="22"
-            column="60"/>
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="27"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.default_order` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;default_order&quot;>Default order&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="28"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.sort_az` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;sort_az&quot;>Sort A–Z&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="29"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.catalogue_calculators` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;catalogue_calculators&quot;>Your electrical &amp;amp; electronics workbench&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="30"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.catalogue_pinouts` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;catalogue_pinouts&quot;>Find the right connection&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="31"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.catalogue_resources` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;catalogue_resources&quot;>Reference, made simple&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="32"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.settings_note` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;settings_note&quot;>Settings, favourites, modules and calculator values are saved on this device.&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="69"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.plurals.tool_count` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;plurals name=&quot;tool_count&quot;>&lt;item quantity=&quot;one&quot;>%1$d tool • available offline&lt;/item>&lt;item quantity=&quot;other&quot;>%1$d tools • available offline&lt;/item>&lt;/plurals>"
+        errorLine2="          ~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="76"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.engine_fault_count` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1=" &lt;string name=&quot;engine_fault_count&quot;>125 original fault records • search, filters and bookmarks&lt;/string>"
+        errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/workspace/electro/app/src/main/res/values/strings.xml"
+            line="133"
+            column="10"/>
     </issue>
 
 </issues>
@@ -50002,615 +50642,134 @@ test-core = { module = "androidx.test:core-ktx", version = "1.6.1" }
 ## verification/python-tests.txt
 
 ````text
-....
+........
 ----------------------------------------------------------------------
-Ran 4 tests in 0.003s
+Ran 8 tests in 0.005s
 
 OK
+PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````
 
 ## verification/reference-links.json
 
 ````json
-[
-  {
-    "url": "https://docs.arduino.cc/hardware/uno-rev3/",
-    "status": 200,
-    "resolved_url": "https://docs.arduino.cc/hardware/uno-rev3/",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://docs.beagleboard.org/boards/beaglebone/black/ch07.html",
-    "status": 200,
-    "resolved_url": "https://docs.beagleboard.org/boards/beaglebone/black/ch07.html",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://global.sharp/products/device/lineup/selection/opto/photocoupler/index.html",
-    "status": 200,
-    "resolved_url": "https://global.sharp/products/device/",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://web.archive.org/web/20110726000611/http://www.displayport.org/cms/sites/default/files/downloads/DisplayPort_Technical_Overview.pdf",
-    "status": 200,
-    "resolved_url": "https://web.archive.org/web/20110726000611/http://www.displayport.org/cms/sites/default/files/downloads/DisplayPort_Technical_Overview.pdf",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/40001239F.pdf",
-    "status": 200,
-    "resolved_url": "https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/40001239F.pdf",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://ww1.microchip.com/downloads/en/DeviceDoc/41236E.pdf",
-    "status": 200,
-    "resolved_url": "https://ww1.microchip.com/downloads/en/DeviceDoc/41236E.pdf",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://ww1.microchip.com/downloads/en/devicedoc/41190c.pdf",
-    "status": 200,
-    "resolved_url": "https://ww1.microchip.com/downloads/en/devicedoc/41190c.pdf",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.analog.com/en/products/max232.html",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.analog.com/en/products/max485.html",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.infineon.com/part/IRF540N",
-    "status": 200,
-    "resolved_url": "https://www.infineon.com/part/IRF540N",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.infineon.com/part/IRLZ44N",
-    "status": 200,
-    "resolved_url": "https://www.infineon.com/part/IRLZ44N",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega1280",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega1281",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega1284P",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega128A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega164P",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega168A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega16A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega16U2",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega2560",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega324P",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega328P",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega32A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega32U2",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega32U4",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega48A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega640",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega644P",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega64A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega88A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATmega8A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny13A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny2313A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny24A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny25",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny261A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny4313",
-    "error": "URLError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny44A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny45",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny461A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny84A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny85",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/ATtiny861A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC10F200",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC10F202",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC10F204",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC10F206",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC10F320",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC10F322",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC12F1822",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC12F1840",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC12F508",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC12F509",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC12F510",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC12F629",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC12F675",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC12F683",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F1827",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F54",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F57",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F59",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F628A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F648A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F684",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F690",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F720",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F721",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F873A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F876A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F877A",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC16F887",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC18F2550",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC18F25K22",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC18F4520",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/PIC18F4550",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/dsPIC30F2010",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/dsPIC30F4011",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.microchip.com/en-us/product/dsPIC33FJ128GP802",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.modbus.org/modbus-specifications",
-    "error": "URLError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.onsemi.com/download/data-sheet/pdf/1n5817-d.pdf",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.onsemi.com/download/data-sheet/pdf/1n914-d.pdf",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.onsemi.com/download/data-sheet/pdf/2n3903-d.pdf",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.onsemi.com/download/data-sheet/pdf/2n3906-d.pdf",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.onsemi.com/download/data-sheet/pdf/bc550-d.pdf",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.onsemi.com/download/data-sheet/pdf/bc556b-d.pdf",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.onsemi.com/download/data-sheet/pdf/nds7002a-d.pdf",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.onsemi.com/pdf/datasheet/4n35-d.pdf",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.onsemi.com/products/discrete-power-modules/rectifiers/1n4007",
-    "error": "URLError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.raspberrypi.com/documentation/computers/raspberry-pi.html",
-    "status": 403,
-    "checked": "blocked, unavailable, or HEAD unsupported; manual check needed"
-  },
-  {
-    "url": "https://www.square1industries.com/manuals/PS8070.pdf",
-    "status": 200,
-    "resolved_url": "https://www.square1industries.com/manuals/PS8070.pdf",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.st.com/resource/en/datasheet/l78.pdf",
-    "status": 200,
-    "resolved_url": "https://www.st.com/resource/en/datasheet/l78.pdf",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.st.com/resource/en/datasheet/uln2803a.pdf",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.ti.com/lit/pdf/sbaa275",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/lit/an/sbaa275a/sbaa275a.pdf?ts=1792946688117",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/CD4011B",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/CD4011B",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/CD4017B",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/CD4017B",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/L293D",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/L293D",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/LM317",
-    "error": "TimeoutError",
-    "checked": "could not verify"
-  },
-  {
-    "url": "https://www.ti.com/product/LM324",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/LM324",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/LM339",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/LM339",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/LM340",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/LM340",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/LM358",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/LM358",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/LM393",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/LM393",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/LM79",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/LM79",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/NE5532",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/NE5532",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/NE555",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/NE555",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/SN74HC165",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/SN74HC165",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/SN74HC595",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/SN74HC595",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/TL072",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/TL072",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/TL074",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/TL074",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.ti.com/product/ULN2003A",
-    "status": 200,
-    "resolved_url": "https://www.ti.com/product/ULN2003A",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.usb.org/documents",
-    "status": 200,
-    "resolved_url": "https://www.usb.org/documents",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.usb.org/sites/default/files/USB%20Type-C%20Spec%20R2.0%20-%20August%202019.pdf",
-    "status": 200,
-    "resolved_url": "https://www.usb.org/sites/default/files/USB%20Type-C%20Spec%20R2.0%20-%20August%202019.pdf",
-    "checked": "reachability only"
-  },
-  {
-    "url": "https://www.vishay.com/docs/85604/bzx55.pdf",
-    "status": 200,
-    "resolved_url": "https://www.vishay.com/docs/85604/bzx55.pdf",
-    "checked": "reachability only"
-  }
-]
+{
+  "status": "not_rechecked",
+  "note": "No fresh external reachability or manufacturer-content verification is claimed.",
+  "urls": [
+    "https://docs.arduino.cc/hardware/uno-rev3/",
+    "https://docs.beagleboard.org/boards/beaglebone/black/ch07.html",
+    "https://global.sharp/products/device/lineup/selection/opto/photocoupler/index.html",
+    "https://web.archive.org/web/20110726000611/http://www.displayport.org/cms/sites/default/files/downloads/DisplayPort_Technical_Overview.pdf",
+    "https://www.analog.com/en/products/max232.html",
+    "https://www.analog.com/en/products/max485.html",
+    "https://www.infineon.com/part/IRF540N",
+    "https://www.infineon.com/part/IRLZ44N",
+    "https://www.microchip.com/en-us/product/ATmega1280",
+    "https://www.microchip.com/en-us/product/ATmega1281",
+    "https://www.microchip.com/en-us/product/ATmega1284P",
+    "https://www.microchip.com/en-us/product/ATmega128A",
+    "https://www.microchip.com/en-us/product/ATmega164P",
+    "https://www.microchip.com/en-us/product/ATmega168A",
+    "https://www.microchip.com/en-us/product/ATmega16A",
+    "https://www.microchip.com/en-us/product/ATmega16U2",
+    "https://www.microchip.com/en-us/product/ATmega2560",
+    "https://www.microchip.com/en-us/product/ATmega324P",
+    "https://www.microchip.com/en-us/product/ATmega328P",
+    "https://www.microchip.com/en-us/product/ATmega32A",
+    "https://www.microchip.com/en-us/product/ATmega32U2",
+    "https://www.microchip.com/en-us/product/ATmega32U4",
+    "https://www.microchip.com/en-us/product/ATmega48A",
+    "https://www.microchip.com/en-us/product/ATmega640",
+    "https://www.microchip.com/en-us/product/ATmega644P",
+    "https://www.microchip.com/en-us/product/ATmega64A",
+    "https://www.microchip.com/en-us/product/ATmega88A",
+    "https://www.microchip.com/en-us/product/ATmega8A",
+    "https://www.microchip.com/en-us/product/ATtiny13A",
+    "https://www.microchip.com/en-us/product/ATtiny2313A",
+    "https://www.microchip.com/en-us/product/ATtiny24A",
+    "https://www.microchip.com/en-us/product/ATtiny25",
+    "https://www.microchip.com/en-us/product/ATtiny261A",
+    "https://www.microchip.com/en-us/product/ATtiny4313",
+    "https://www.microchip.com/en-us/product/ATtiny44A",
+    "https://www.microchip.com/en-us/product/ATtiny45",
+    "https://www.microchip.com/en-us/product/ATtiny461A",
+    "https://www.microchip.com/en-us/product/ATtiny84A",
+    "https://www.microchip.com/en-us/product/ATtiny85",
+    "https://www.microchip.com/en-us/product/ATtiny861A",
+    "https://www.microchip.com/en-us/product/PIC10F200",
+    "https://www.microchip.com/en-us/product/PIC10F202",
+    "https://www.microchip.com/en-us/product/PIC10F204",
+    "https://www.microchip.com/en-us/product/PIC10F206",
+    "https://www.microchip.com/en-us/product/PIC10F320",
+    "https://www.microchip.com/en-us/product/PIC10F322",
+    "https://www.microchip.com/en-us/product/PIC12F1822",
+    "https://www.microchip.com/en-us/product/PIC12F1840",
+    "https://www.microchip.com/en-us/product/PIC12F508",
+    "https://www.microchip.com/en-us/product/PIC12F509",
+    "https://www.microchip.com/en-us/product/PIC12F510",
+    "https://www.microchip.com/en-us/product/PIC12F629",
+    "https://www.microchip.com/en-us/product/PIC12F675",
+    "https://www.microchip.com/en-us/product/PIC12F683",
+    "https://www.microchip.com/en-us/product/PIC16F1827",
+    "https://www.microchip.com/en-us/product/PIC16F54",
+    "https://www.microchip.com/en-us/product/PIC16F57",
+    "https://www.microchip.com/en-us/product/PIC16F59",
+    "https://www.microchip.com/en-us/product/PIC16F628A",
+    "https://www.microchip.com/en-us/product/PIC16F648A",
+    "https://www.microchip.com/en-us/product/PIC16F684",
+    "https://www.microchip.com/en-us/product/PIC16F690",
+    "https://www.microchip.com/en-us/product/PIC16F720",
+    "https://www.microchip.com/en-us/product/PIC16F721",
+    "https://www.microchip.com/en-us/product/PIC16F873A",
+    "https://www.microchip.com/en-us/product/PIC16F876A",
+    "https://www.microchip.com/en-us/product/PIC16F877A",
+    "https://www.microchip.com/en-us/product/PIC16F887",
+    "https://www.microchip.com/en-us/product/PIC18F2550",
+    "https://www.microchip.com/en-us/product/PIC18F25K22",
+    "https://www.microchip.com/en-us/product/PIC18F4520",
+    "https://www.microchip.com/en-us/product/PIC18F4550",
+    "https://www.microchip.com/en-us/product/dsPIC30F2010",
+    "https://www.microchip.com/en-us/product/dsPIC30F4011",
+    "https://www.microchip.com/en-us/product/dsPIC33FJ128GP802",
+    "https://www.modbus.org/modbus-specifications",
+    "https://www.onsemi.com/download/data-sheet/pdf/1n5817-d.pdf",
+    "https://www.onsemi.com/download/data-sheet/pdf/1n914-d.pdf",
+    "https://www.onsemi.com/download/data-sheet/pdf/2n3903-d.pdf",
+    "https://www.onsemi.com/download/data-sheet/pdf/2n3906-d.pdf",
+    "https://www.onsemi.com/download/data-sheet/pdf/bc550-d.pdf",
+    "https://www.onsemi.com/download/data-sheet/pdf/bc556b-d.pdf",
+    "https://www.onsemi.com/download/data-sheet/pdf/nds7002a-d.pdf",
+    "https://www.onsemi.com/pdf/datasheet/4n35-d.pdf",
+    "https://www.onsemi.com/products/discrete-power-modules/rectifiers/1n4007",
+    "https://www.raspberrypi.com/documentation/computers/raspberry-pi.html",
+    "https://www.square1industries.com/manuals/PS8070.pdf",
+    "https://www.st.com/resource/en/datasheet/l78.pdf",
+    "https://www.st.com/resource/en/datasheet/uln2803a.pdf",
+    "https://www.ti.com/lit/pdf/sbaa275",
+    "https://www.ti.com/product/CD4011B",
+    "https://www.ti.com/product/CD4017B",
+    "https://www.ti.com/product/L293D",
+    "https://www.ti.com/product/LM317",
+    "https://www.ti.com/product/LM324",
+    "https://www.ti.com/product/LM339",
+    "https://www.ti.com/product/LM340",
+    "https://www.ti.com/product/LM358",
+    "https://www.ti.com/product/LM393",
+    "https://www.ti.com/product/LM79",
+    "https://www.ti.com/product/NE5532",
+    "https://www.ti.com/product/NE555",
+    "https://www.ti.com/product/SN74HC165",
+    "https://www.ti.com/product/SN74HC595",
+    "https://www.ti.com/product/TL072",
+    "https://www.ti.com/product/TL074",
+    "https://www.ti.com/product/ULN2003A",
+    "https://www.usb.org/documents",
+    "https://www.usb.org/sites/default/files/USB%20Type-C%20Spec%20R2.0%20-%20August%202019.pdf",
+    "https://www.vishay.com/docs/85604/bzx55.pdf"
+  ]
+}
 
 ````
 
@@ -50618,17 +50777,20 @@ OK
 
 ````json
 {
-  "version": "2.0.3",
-  "version_code": 12,
+  "version": "3.0",
+  "version_code": 14,
+  "application_id": "com.electrokit.app",
+  "generated_at_utc": "2026-10-27T09:16:13.153190+00:00",
+  "source_commit": "5c4382c531c41cea1530a08f5ba56e69e7532f12",
   "tests": {
     "debug": {
-      "tests": 100,
+      "tests": 121,
       "failures": 0,
       "errors": 0,
       "skipped": 0
     },
     "release": {
-      "tests": 68,
+      "tests": 80,
       "failures": 0,
       "errors": 0,
       "skipped": 0
@@ -50637,37 +50799,35 @@ OK
   "lint": {
     "debug": {
       "errors": 0,
-      "warnings": 10,
+      "warnings": 14,
       "warning_ids": {
         "UnusedAttribute": 1,
-        "AndroidGradlePluginVersion": 2,
-        "GradleDependency": 7
+        "UnusedResources": 13
       }
     },
     "release": {
       "errors": 0,
-      "warnings": 5,
+      "warnings": 14,
       "warning_ids": {
         "UnusedAttribute": 1,
-        "GradleDependency": 4
+        "UnusedResources": 13
       }
     }
   },
+  "artifact": "app/build/outputs/apk/release/app-release-unsigned.apk",
+  "apk_sha256": "5da3aa39a9e64320797795464dbee8df930fe264fa16f048ec5259a34c20647a",
+  "apk_bytes": 11216759,
+  "signing": {
+    "status": "unsigned",
+    "certificate_sha256": null,
+    "expected_certificate_sha256": "68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa"
+  },
+  "release_publishable": false,
   "physical_device_tested": false,
   "emulator_tested": false,
   "remote_ci_executed": false,
-  "apk_sha256": "4b73cf6fdda7b9b988f270383780bba7c991cb12cb4bc277c2b3d846348621c4",
-  "apk_bytes": 1751157,
-  "assets_match_source": true,
   "internet_permission": false,
-  "faults_unchanged_from_2_0_1": true,
-  "source_records_unchanged": true,
-  "domain_changes": [
-    "Engineering.kt",
-    "Calculators.kt",
-    "EngineeringTools.kt"
-  ],
-  "photo_hashes_match": true
+  "external_references_rechecked": false
 }
 
 ````
@@ -50676,14 +50836,14 @@ OK
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:14" hostname="build-host" time="0.272">
+<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:02" hostname="cd711711733c" time="0.486">
   <properties/>
-  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.187"/>
-  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.032"/>
-  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.0"/>
-  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.037"/>
-  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.004"/>
-  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.009"/>
+  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.319"/>
+  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.061"/>
+  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.001"/>
+  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.075"/>
+  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.007"/>
+  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.021"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -50694,19 +50854,19 @@ OK
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:15" hostname="build-host" time="0.696">
+<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:03" hostname="cd711711733c" time="1.805">
   <properties/>
-  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.013"/>
-  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.012"/>
-  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.007"/>
-  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.005"/>
-  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.007"/>
-  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.481"/>
-  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.088"/>
+  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.032"/>
+  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.05"/>
+  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.012"/>
+  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
+  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.011"/>
+  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="1.003"/>
+  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.006"/>
+  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.47"/>
   <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.002"/>
-  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.077"/>
+  <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
+  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.208"/>
   <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
   <system-out><![CDATA[Extreme per-field cases exercised: 1984
 ]]></system-out>
@@ -50719,7 +50879,309 @@ OK
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:15" hostname="build-host" time="0.069">
+<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:04" hostname="cd711711733c" time="0.12">
+  <properties/>
+  <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="astableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="colourBothDirections" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="ohmAllSixInputPairs" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="dividerAndLoaded" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="parserHandlesEngineeringForms" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="monostableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="traceWidthScalingAndKnownPoint" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="lm317" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="rangeMapping" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="ledResistor" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.111"/>
+  <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.004"/>
+  <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="seriesParallel" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="filterCutoff" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="ledRejectsInsufficientSupply" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.domain.EngineeringModuleTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:04" hostname="cd711711733c" time="0.243">
+  <properties/>
+  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.039"/>
+  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
+  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
+  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
+  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
+  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
+  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.02"/>
+  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.014"/>
+  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
+  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
+  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
+  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
+  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.028"/>
+  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
+  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.domain.FieldUnitTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:05" hostname="cd711711733c" time="0.003">
+  <properties/>
+  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.002"/>
+  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
+  <testcase name="alreadyScaledUnitsKeepTheirDeclaredLabel" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
+  <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.domain.FormattingRegressionTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:05" hostname="cd711711733c" time="0.024">
+  <properties/>
+  <testcase name="megaAliasesAndMicroValuesAreExact" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.001"/>
+  <testcase name="defaultRtdTemperatureIsExactlyPositiveZero" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
+  <testcase name="percentagesAreRoundedWithoutChangingBandTolerances" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.001"/>
+  <testcase name="unitlessValuesNeverUseEngineeringPrefixes" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
+  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.021"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.domain.LocalPinTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:05" hostname="cd711711733c" time="2.323">
+  <properties/>
+  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="1.66"/>
+  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.663"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.domain.UnitConversionsTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:07" hostname="cd711711733c" time="0.013">
+  <properties/>
+  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.007"/>
+  <testcase name="independentConversions" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.domain.WorkbenchToolsTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:07" hostname="cd711711733c" time="0.009">
+  <properties/>
+  <testcase name="temperatureBoundary" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.003"/>
+  <testcase name="invalidPowerFactorRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="cableSizingIncludesReturnPath" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <testcase name="transformerRatio" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="scientificGrammar" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="scientificInvalidInputs" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="upsAccountsForBothLossFactors" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <testcase name="invalidPercentagesRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.ui.AndroidUiRegressionTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.ui.AndroidUiRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:08" hostname="cd711711733c" time="38.698">
+  <properties/>
+  <testcase name="selectedKiloUnitDoesNotMultiplyASuffixedValueTwice" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="17.807"/>
+  <testcase name="lightThemePersistsAcrossActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.14"/>
+  <testcase name="mainTabsAndReferenceNavigationWork" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.564"/>
+  <testcase name="bundledDatabasesAlwaysOpenAndSearch" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="2.928"/>
+  <testcase name="fractionalToleranceUsesPercentText" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.684"/>
+  <testcase name="extremeRatioIsAnInlineErrorInsteadOfACrash" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.69"/>
+  <testcase name="bandResetRestoresDisplayAndCopiedResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.462"/>
+  <testcase name="calculationModeChangeInvalidatesExplicitResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.76"/>
+  <testcase name="everyCatalogueEntryOpensWithoutCrashing" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="10.6"/>
+  <testcase name="largeTextKeepsMainActionsReachable" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.411"/>
+  <testcase name="calculatorInputSurvivesActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.532"/>
+  <testcase name="catalogueHasNoReservedBottomFooter" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.115"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.ui.DesignPreviewTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.ui.DesignPreviewTests" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:46" hostname="cd711711733c" time="1.93">
+  <properties/>
+  <testcase name="homePreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.614"/>
+  <testcase name="connectorPreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.328"/>
+  <testcase name="illustratedReferencePreviews" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.987"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.ui.EngineeringUiTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.ui.EngineeringUiTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:48" hostname="cd711711733c" time="8.123">
+  <properties/>
+  <testcase name="lightEngineeringPreview" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.678"/>
+  <testcase name="allHomeTabsVisible" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.106"/>
+  <testcase name="motorCalculatorPersists" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.596"/>
+  <testcase name="catalogueKeepsHeaderAndSearchPinned" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.377"/>
+  <testcase name="cbmSampleLinksToReference" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.581"/>
+  <testcase name="terminalAndCutawaySelection" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.627"/>
+  <testcase name="bottomNavigationSupportsLargeText" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.219"/>
+  <testcase name="explorerSearchAndFilters" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.547"/>
+  <testcase name="faultAndRelatedComponentNavigation" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.459"/>
+  <testcase name="sourceReferencesRemainReachable" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.929"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.ui.WorkbenchUiTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.ui.WorkbenchUiTests" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:56" hostname="cd711711733c" time="4.438">
+  <properties/>
+  <testcase name="publicSearchExcludesFaultSnippets" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.153"/>
+  <testcase name="protectedContentRequiresCodeAndRelocks" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.965"/>
+  <testcase name="homeScreenshotAndSystemBarFlags" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.656"/>
+  <testcase name="componentImageAndFavoriteRoundTrip" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.493"/>
+  <testcase name="accessIsNotSavedAndAttemptsAreRateLimited" classname="com.electrokit.app.ui.WorkbenchUiTests" time="1.646"/>
+  <testcase name="utilityCalculationAndAndroidBack" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.284"/>
+  <testcase name="unitConverterNativeWorkflow" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.24"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.viewmodel.InputJournalTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.viewmodel.InputJournalTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:11:01" hostname="cd711711733c" time="2.589">
+  <properties/>
+  <testcase name="corruptJournalIsPreservedAndRetryCanContinue" classname="com.electrokit.app.viewmodel.InputJournalTests" time="2.458"/>
+  <testcase name="corruptJournalIsNotSilentlyReplaced" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.037"/>
+  <testcase name="acknowledgementRetainsNewerEdits" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.064"/>
+  <testcase name="stagedInputsSurviveNewJournalInstance" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.03"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-debug/TEST-com.electrokit.app.viewmodel.RetryRegressionTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.viewmodel.RetryRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:11:03" hostname="cd711711733c" time="0.386">
+  <properties/>
+  <testcase name="productionJournalRunsOffMainThread" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.166"/>
+  <testcase name="freshViewModelRecoversStagedInputsBeforeDataStoreCommit" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.059"/>
+  <testcase name="inputRetryPersistsPendingSnapshot" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.058"/>
+  <testcase name="settingsRetryRepeatsSettingsMutationRatherThanFlushingInputs" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.041"/>
+  <testcase name="inputSuccessDoesNotDismissLoadFailure" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.062"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-release/TEST-com.electrokit.app.data.DataRegressionTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:53" hostname="cd711711733c" time="0.293">
+  <properties/>
+  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.164"/>
+  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.066"/>
+  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.001"/>
+  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.033"/>
+  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.003"/>
+  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.026"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-release/TEST-com.electrokit.app.domain.AuditRegressionTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:53" hostname="cd711711733c" time="0.922">
+  <properties/>
+  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.011"/>
+  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.012"/>
+  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.007"/>
+  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
+  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.005"/>
+  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.672"/>
+  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
+  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.106"/>
+  <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
+  <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
+  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.102"/>
+  <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
+  <system-out><![CDATA[Extreme per-field cases exercised: 1984
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-release/TEST-com.electrokit.app.domain.CalculatorTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:54" hostname="cd711711733c" time="0.078">
   <properties/>
   <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="astableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
@@ -50733,250 +51195,17 @@ OK
   <testcase name="lm317" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="rangeMapping" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ledResistor" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.041"/>
-  <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.003"/>
-  <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <testcase name="seriesParallel" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="filterCutoff" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ledRejectsInsufficientSupply" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-debug/TEST-com.electrokit.app.domain.EngineeringModuleTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:15" hostname="build-host" time="0.215">
-  <properties/>
-  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
-  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
-  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
-  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
-  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
-  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
-  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
-  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.015"/>
-  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.015"/>
-  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
-  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.039"/>
-  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-debug/TEST-com.electrokit.app.domain.FieldUnitTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:16" hostname="build-host" time="0.006">
-  <properties/>
-  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.004"/>
-  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
-  <testcase name="alreadyScaledUnitsKeepTheirDeclaredLabel" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
-  <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-debug/TEST-com.electrokit.app.domain.FormattingRegressionTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:16" hostname="build-host" time="0.031">
-  <properties/>
-  <testcase name="megaAliasesAndMicroValuesAreExact" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
-  <testcase name="defaultRtdTemperatureIsExactlyPositiveZero" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
-  <testcase name="percentagesAreRoundedWithoutChangingBandTolerances" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.002"/>
-  <testcase name="unitlessValuesNeverUseEngineeringPrefixes" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
-  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.028"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-debug/TEST-com.electrokit.app.ui.AndroidUiRegressionTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.AndroidUiRegressionTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:16" hostname="build-host" time="34.192">
-  <properties/>
-  <testcase name="selectedKiloUnitDoesNotMultiplyASuffixedValueTwice" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="11.603"/>
-  <testcase name="lightThemePersistsAcrossActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.299"/>
-  <testcase name="mainTabsAndReferenceNavigationWork" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.671"/>
-  <testcase name="bundledDatabasesAlwaysOpenAndSearch" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="3.264"/>
-  <testcase name="fractionalToleranceUsesPercentText" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.52"/>
-  <testcase name="extremeRatioIsAnInlineErrorInsteadOfACrash" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.68"/>
-  <testcase name="everyCatalogueEntryOpensWithoutCrashing" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="13.212"/>
-  <testcase name="largeTextKeepsMainActionsReachable" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.848"/>
-  <testcase name="calculatorInputSurvivesActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.91"/>
-  <testcase name="catalogueHasNoReservedBottomFooter" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.178"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-debug/TEST-com.electrokit.app.ui.DesignPreviewTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.DesignPreviewTests" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:50" hostname="build-host" time="3.305">
-  <properties/>
-  <testcase name="homePreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="1.223"/>
-  <testcase name="connectorPreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.423"/>
-  <testcase name="illustratedReferencePreviews" classname="com.electrokit.app.ui.DesignPreviewTests" time="1.658"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-debug/TEST-com.electrokit.app.ui.EngineeringUiTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.EngineeringUiTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:53" hostname="build-host" time="4.546">
-  <properties/>
-  <testcase name="lightEngineeringPreview" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.012"/>
-  <testcase name="allHomeTabsVisible" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.1"/>
-  <testcase name="motorCalculatorPersists" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.383"/>
-  <testcase name="catalogueKeepsOnlySearchPinned" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.392"/>
-  <testcase name="cbmSampleLinksToReference" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.456"/>
-  <testcase name="terminalAndCutawaySelection" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.372"/>
-  <testcase name="bottomNavigationSupportsLargeText" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.752"/>
-  <testcase name="explorerSearchAndFilters" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.469"/>
-  <testcase name="faultAndRelatedComponentNavigation" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.381"/>
-  <testcase name="sourceReferencesRemainReachable" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.227"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-debug/TEST-com.electrokit.app.viewmodel.InputJournalTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.viewmodel.InputJournalTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:58" hostname="build-host" time="2.139">
-  <properties/>
-  <testcase name="corruptJournalIsPreservedAndRetryCanContinue" classname="com.electrokit.app.viewmodel.InputJournalTests" time="2.046"/>
-  <testcase name="corruptJournalIsNotSilentlyReplaced" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.026"/>
-  <testcase name="acknowledgementRetainsNewerEdits" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.032"/>
-  <testcase name="stagedInputsSurviveNewJournalInstance" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.034"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-debug/TEST-com.electrokit.app.viewmodel.RetryRegressionTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.viewmodel.RetryRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:59:00" hostname="build-host" time="0.274">
-  <properties/>
-  <testcase name="productionJournalRunsOffMainThread" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.109"/>
-  <testcase name="freshViewModelRecoversStagedInputsBeforeDataStoreCommit" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.051"/>
-  <testcase name="inputRetryPersistsPendingSnapshot" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.043"/>
-  <testcase name="settingsRetryRepeatsSettingsMutationRatherThanFlushingInputs" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.041"/>
-  <testcase name="inputSuccessDoesNotDismissLoadFailure" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.028"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-release/TEST-com.electrokit.app.data.DataRegressionTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:10" hostname="build-host" time="0.219">
-  <properties/>
-  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.137"/>
-  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.034"/>
-  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.002"/>
-  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.031"/>
-  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.004"/>
-  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.01"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-release/TEST-com.electrokit.app.domain.AuditRegressionTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:10" hostname="build-host" time="0.727">
-  <properties/>
-  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.014"/>
-  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.012"/>
-  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.021"/>
-  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.004"/>
-  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.007"/>
-  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.512"/>
-  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
-  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.08"/>
-  <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.066"/>
-  <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <system-out><![CDATA[Extreme per-field cases exercised: 1984
-]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
-
-````
-
-## verification/tests-release/TEST-com.electrokit.app.domain.CalculatorTests.xml
-
-````xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:11" hostname="build-host" time="0.057">
-  <properties/>
-  <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <testcase name="astableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="colourBothDirections" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ohmAllSixInputPairs" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="dividerAndLoaded" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="parserHandlesEngineeringForms" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="monostableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <testcase name="traceWidthScalingAndKnownPoint" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="lm317" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="rangeMapping" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ledResistor" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.034"/>
+  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.069"/>
   <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.002"/>
+  <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.002"/>
+  <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.003"/>
   <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="seriesParallel" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="filterCutoff" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ledRejectsInsufficientSupply" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="ledRejectsInsufficientSupply" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -50987,26 +51216,26 @@ OK
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:11" hostname="build-host" time="0.268">
+<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:54" hostname="cd711711733c" time="0.171">
   <properties/>
-  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.026"/>
-  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.027"/>
-  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.017"/>
-  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.02"/>
-  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.015"/>
-  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.02"/>
-  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.025"/>
-  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.04"/>
-  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
+  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.031"/>
+  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
+  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
+  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.017"/>
+  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.015"/>
+  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
+  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
+  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
   <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
   <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
   <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
-  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
+  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51017,12 +51246,12 @@ OK
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:11" hostname="build-host" time="0.003">
+<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.004">
   <properties/>
-  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.002"/>
-  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
+  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.003"/>
+  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <testcase name="alreadyScaledUnitsKeepTheirDeclaredLabel" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
-  <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
+  <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51033,13 +51262,61 @@ OK
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:11" hostname="build-host" time="0.019">
+<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.014">
   <properties/>
   <testcase name="megaAliasesAndMicroValuesAreExact" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
   <testcase name="defaultRtdTemperatureIsExactlyPositiveZero" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
   <testcase name="percentagesAreRoundedWithoutChangingBandTolerances" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.001"/>
   <testcase name="unitlessValuesNeverUseEngineeringPrefixes" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
-  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.017"/>
+  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.012"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-release/TEST-com.electrokit.app.domain.LocalPinTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.573">
+  <properties/>
+  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.463"/>
+  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.109"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-release/TEST-com.electrokit.app.domain.UnitConversionsTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.002">
+  <properties/>
+  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.001"/>
+  <testcase name="independentConversions" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+
+````
+
+## verification/tests-release/TEST-com.electrokit.app.domain.WorkbenchToolsTests.xml
+
+````xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.003">
+  <properties/>
+  <testcase name="temperatureBoundary" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="invalidPowerFactorRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="cableSizingIncludesReturnPath" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <testcase name="transformerRatio" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <testcase name="scientificGrammar" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <testcase name="scientificInvalidInputs" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <testcase name="upsAccountsForBothLossFactors" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <testcase name="invalidPercentagesRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

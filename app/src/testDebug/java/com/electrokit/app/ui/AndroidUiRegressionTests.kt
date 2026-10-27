@@ -160,6 +160,31 @@ class AndroidUiRegressionTests {
         ui.onNodeWithText("500 m%", substring = true).assertDoesNotExist()
     }
 
+    /** Reset restores both band renderers and the result used by Copy, without a prior cached tolerance.
+     * @return Unit; resistor and inductor copies must contain default five-percent tolerance.
+     */
+    @Test fun bandResetRestoresDisplayAndCopiedResult() {
+        for ((title, expected) in listOf("Resistor Colour Code" to "1.1 kΩ ±5%", "Inductor Colour Code" to "1.1 mH ±5%")) {
+            openCalculator(title)
+            ui.onNodeWithContentDescription("Calculator menu").performClick()
+            ui.onNodeWithText("Reset").performClick()
+            ui.onNodeWithContentDescription("Green tol ±0.5 percent").performScrollTo().performClick()
+            ui.onNodeWithText("±0.5%", substring = true).assertExists()
+            ui.onNodeWithContentDescription("Calculator menu").performClick()
+            ui.onNodeWithText("Reset").performClick()
+            ui.onNodeWithText(expected).assertExists()
+            ui.onNodeWithContentDescription("Calculator menu").performClick()
+            ui.onNodeWithText("Copy result").performClick()
+            ui.runOnIdle {
+                val clipboard = ui.activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val text = clipboard.primaryClip!!.getItemAt(0).coerceToText(ui.activity).toString()
+                assertTrue(text, text.contains(expected))
+                assertFalse(text, text.contains("±0.5%"))
+            }
+            ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
+        }
+    }
+
     /**
      * Verifies calculator input survives activity recreation; unexpected behaviour fails the test
      * visibly.

@@ -45,6 +45,7 @@ jobs:
           python scripts/validate_library.py
           python scripts/check_contrast.py
           python scripts/package_project.py --check
+          python scripts/check_verification.py
       - name: Test, lint and build debug APK
         run: ./gradlew --no-daemon --max-workers=4 testDebugUnitTest lintDebug assembleDebug
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

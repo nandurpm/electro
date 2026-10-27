@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:15" hostname="build-host" time="0.215">
+<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:04" hostname="cd711711733c" time="0.243">
   <properties/>
-  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
+  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.039"/>
   <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
-  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
-  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
-  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
-  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
-  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
-  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.015"/>
-  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.015"/>
-  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
-  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.039"/>
+  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
+  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
+  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
+  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
+  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.02"/>
+  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.014"/>
+  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
+  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
+  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
+  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
+  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.028"/>
+  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
   <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
