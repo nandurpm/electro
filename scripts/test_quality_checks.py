@@ -28,7 +28,7 @@ class QualityGateTests(unittest.TestCase):
         # A hard-coded duplicate colour list would incorrectly leave the report unchanged.
         source=(check_contrast.ROOT/'app/src/main/java/com/electrokit/app/ui/theme/Theme.kt').read_text()
         original=check_contrast.report()
-        with patch.object(Path,'read_text',return_value=source.replace('0xFF64DFC9','0xFFFFFFFF')):
+        with patch.object(Path,'read_text',return_value=source.replace('0xFF93B4FF','0xFFFFFFFF')):
             self.assertNotEqual(original,check_contrast.report())
     def test_committed_contrast_evidence_is_current(self):
         # Stale numbers are rejected even if old and new palettes both pass 4.5:1.

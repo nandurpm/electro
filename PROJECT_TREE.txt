@@ -1,11 +1,13 @@
 Electro/
-  .github/workflows/android.yml
+  .github/workflows/android-ci.yml
+  .github/workflows/android-release.yml
   .gitignore
   AUDIT_RESOLUTION_2_0_3.md
   BUILD_STEPS.md
   CHANGELOG.md
   DEVELOPER_GUIDE.md
   FULL_SOURCE.md
+  HEADER_FIX_STATUS.md
   LICENSE
   PROJECT_TREE.txt
   README.md
@@ -16,12 +18,128 @@ Electro/
   app/build.gradle.kts
   app/proguard-rules.pro
   app/src/main/AndroidManifest.xml
+  app/src/main/assets/components.json
+  app/src/main/assets/components/axial_resistor.png
+  app/src/main/assets/components/breadboard.png
+  app/src/main/assets/components/bridge_rectifier.png
+  app/src/main/assets/components/can_bus_module.png
+  app/src/main/assets/components/can_bus_termination.png
+  app/src/main/assets/components/can_twisted_pair.png
+  app/src/main/assets/components/capacitive_proximity_sensor.png
+  app/src/main/assets/components/cat6_cable.png
+  app/src/main/assets/components/cellular_module.png
+  app/src/main/assets/components/ceramic_capacitor.png
+  app/src/main/assets/components/clamp_meter.png
+  app/src/main/assets/components/comb_plate.png
+  app/src/main/assets/components/control_transformer.png
+  app/src/main/assets/components/crossover_cable.png
+  app/src/main/assets/components/crystal_oscillator.png
+  app/src/main/assets/components/current_transformer.png
+  app/src/main/assets/components/db25_connector.png
+  app/src/main/assets/components/db9_female.png
+  app/src/main/assets/components/db9_male.png
+  app/src/main/assets/components/db9_serial_cable.png
+  app/src/main/assets/components/digital_multimeter.png
+  app/src/main/assets/components/dip_integrated_circuit.png
+  app/src/main/assets/components/dupont_connector.png
+  app/src/main/assets/components/electrolytic_capacitor.png
+  app/src/main/assets/components/electromagnetic_brake.png
+  app/src/main/assets/components/emergency_stop.png
+  app/src/main/assets/components/emergency_stop_button.png
+  app/src/main/assets/components/escalator_control_cabinet.png
+  app/src/main/assets/components/escalator_hmi.png
+  app/src/main/assets/components/escalator_step.png
+  app/src/main/assets/components/esp8266_wifi_module.png
+  app/src/main/assets/components/ethernet_patch_cable.png
+  app/src/main/assets/components/ethernet_rs485_gateway.png
+  app/src/main/assets/components/ethernet_switch.png
+  app/src/main/assets/components/film_capacitor.png
+  app/src/main/assets/components/float_switch.png
+  app/src/main/assets/components/gear_reducer.png
+  app/src/main/assets/components/green_push_button.png
+  app/src/main/assets/components/handrail_drive_roller.png
+  app/src/main/assets/components/hdmi.png
+  app/src/main/assets/components/hmi_touch_screen.png
+  app/src/main/assets/components/induction_motor.png
+  app/src/main/assets/components/inductive_proximity_sensor.png
+  app/src/main/assets/components/inductor.png
+  app/src/main/assets/components/insulation_tester.png
+  app/src/main/assets/components/jst_connector.png
+  app/src/main/assets/components/led.png
+  app/src/main/assets/components/lever_connector.png
+  app/src/main/assets/components/lora_module.png
+  app/src/main/assets/components/lvdt_displacement_sensor.png
+  app/src/main/assets/components/m12_4pin_sensor_generic.png
+  app/src/main/assets/components/m12_connector.png
+  app/src/main/assets/components/magnetic_contactor.png
+  app/src/main/assets/components/main_drive_motor.png
+  app/src/main/assets/components/max485_transceiver_module.png
+  app/src/main/assets/components/max485_uart_concept.png
+  app/src/main/assets/components/mccb.png
+  app/src/main/assets/components/micro_usb.png
+  app/src/main/assets/components/modbus_gateway.png
+  app/src/main/assets/components/modbus_rtu_daisy_chain.png
+  app/src/main/assets/components/npn_pnp_3wire_sensors.png
+  app/src/main/assets/components/photoelectric_sensor.png
+  app/src/main/assets/components/plc_controller.png
+  app/src/main/assets/components/plug_in_relay.png
+  app/src/main/assets/components/pluggable_terminal.png
+  app/src/main/assets/components/plunger_limit_switch.png
+  app/src/main/assets/components/power_transistor.png
+  app/src/main/assets/components/rectifier_diode.png
+  app/src/main/assets/components/red_indicator_lamp.png
+  app/src/main/assets/components/ribbon_cable.png
+  app/src/main/assets/components/rj45_keystone_jack.png
+  app/src/main/assets/components/rj45_plug.png
+  app/src/main/assets/components/rj45_screw_terminal_breakout.png
+  app/src/main/assets/components/rj45_socket.png
+  app/src/main/assets/components/rj45_t568a_pinout.png
+  app/src/main/assets/components/rj45_t568b_pinout.png
+  app/src/main/assets/components/roller_lever_limit_switch.png
+  app/src/main/assets/components/rotary_encoder.png
+  app/src/main/assets/components/rs232_db9_dte_pinout.png
+  app/src/main/assets/components/rs232_ttl_converter.png
+  app/src/main/assets/components/rs485_four_wire_concept.png
+  app/src/main/assets/components/rs485_isolator.png
+  app/src/main/assets/components/rs485_termination_and_bias.png
+  app/src/main/assets/components/rs485_two_wire_bus.png
+  app/src/main/assets/components/rtd_temperature_probe.png
+  app/src/main/assets/components/safety_limit_switch.png
+  app/src/main/assets/components/screw_terminal.png
+  app/src/main/assets/components/selector_switch.png
+  app/src/main/assets/components/shielded_rs485_cable.png
+  app/src/main/assets/components/single_pole_mcb.png
+  app/src/main/assets/components/skirt_brush.png
+  app/src/main/assets/components/skirt_switch.png
+  app/src/main/assets/components/smps_power_supply.png
+  app/src/main/assets/components/sprocket.png
+  app/src/main/assets/components/start_stop_station.png
+  app/src/main/assets/components/step_chain.png
+  app/src/main/assets/components/step_lighting.png
+  app/src/main/assets/components/temperature_sensor.png
+  app/src/main/assets/components/terminal_block.png
+  app/src/main/assets/components/thermal_overload_relay_a.png
+  app/src/main/assets/components/thermal_overload_relay_b.png
+  app/src/main/assets/components/three_pole_mcb.png
+  app/src/main/assets/components/to220_mosfet.png
+  app/src/main/assets/components/to92_transistor.png
+  app/src/main/assets/components/trimmer_potentiometer.png
+  app/src/main/assets/components/usb_rs232_converter.png
+  app/src/main/assets/components/usb_rs485_converter.png
+  app/src/main/assets/components/usb_to_rs485_generic.png
+  app/src/main/assets/components/usb_type_a.png
+  app/src/main/assets/components/usb_type_b.png
+  app/src/main/assets/components/usb_type_c.png
+  app/src/main/assets/components/variable_frequency_drive.png
+  app/src/main/assets/components/vga_db15.png
+  app/src/main/assets/components/zener_diode.png
   app/src/main/assets/engineering.json
   app/src/main/assets/engineering_tools.json
   app/src/main/assets/modules.json
   app/src/main/assets/pages.json
   app/src/main/assets/registry.json
   app/src/main/java/com/electrokit/app/MainActivity.kt
+  app/src/main/java/com/electrokit/app/data/ComponentLibrary.kt
   app/src/main/java/com/electrokit/app/data/EngineeringContent.kt
   app/src/main/java/com/electrokit/app/data/InputJournal.kt
   app/src/main/java/com/electrokit/app/data/PreferenceCodec.kt
@@ -31,18 +149,27 @@ Electro/
   app/src/main/java/com/electrokit/app/domain/Engineering.kt
   app/src/main/java/com/electrokit/app/domain/EngineeringSearch.kt
   app/src/main/java/com/electrokit/app/domain/EngineeringTools.kt
+  app/src/main/java/com/electrokit/app/domain/LocalPin.kt
   app/src/main/java/com/electrokit/app/domain/Messages.kt
   app/src/main/java/com/electrokit/app/domain/NumericFilter.kt
   app/src/main/java/com/electrokit/app/domain/UnitCatalog.kt
+  app/src/main/java/com/electrokit/app/domain/UnitConversions.kt
+  app/src/main/java/com/electrokit/app/domain/WorkbenchTools.kt
   app/src/main/java/com/electrokit/app/ui/components/ConnectorIllustrations.kt
   app/src/main/java/com/electrokit/app/ui/components/Drawings.kt
   app/src/main/java/com/electrokit/app/ui/components/IndustrialDrawings.kt
+  app/src/main/java/com/electrokit/app/ui/components/MultimeterLesson.kt
   app/src/main/java/com/electrokit/app/ui/components/ToolIcon.kt
   app/src/main/java/com/electrokit/app/ui/screens/App.kt
   app/src/main/java/com/electrokit/app/ui/screens/CalculatorScreen.kt
+  app/src/main/java/com/electrokit/app/ui/screens/EngineeringGate.kt
   app/src/main/java/com/electrokit/app/ui/screens/EngineeringScreens.kt
+  app/src/main/java/com/electrokit/app/ui/screens/UnitConverterScreen.kt
+  app/src/main/java/com/electrokit/app/ui/screens/UtilityScreen.kt
+  app/src/main/java/com/electrokit/app/ui/screens/WorkbenchScreen.kt
   app/src/main/java/com/electrokit/app/ui/theme/Theme.kt
   app/src/main/java/com/electrokit/app/viewmodel/AppViewModel.kt
+  app/src/main/java/com/electrokit/app/viewmodel/EngineeringAccess.kt
   app/src/main/java/com/electrokit/app/viewmodel/EngineeringViewModel.kt
   app/src/main/res/drawable/ic_database.xml
   app/src/main/res/drawable/ic_energy.xml
@@ -61,13 +188,27 @@ Electro/
   app/src/test/java/com/electrokit/app/domain/EngineeringModuleTests.kt
   app/src/test/java/com/electrokit/app/domain/FieldUnitTests.kt
   app/src/test/java/com/electrokit/app/domain/FormattingRegressionTests.kt
+  app/src/test/java/com/electrokit/app/domain/LocalPinTests.kt
+  app/src/test/java/com/electrokit/app/domain/UnitConversionsTests.kt
+  app/src/test/java/com/electrokit/app/domain/WorkbenchToolsTests.kt
   app/src/test/resources/faults-original.tsv
   app/src/testDebug/java/com/electrokit/app/ui/AndroidUiRegressionTests.kt
   app/src/testDebug/java/com/electrokit/app/ui/DesignPreviewTests.kt
   app/src/testDebug/java/com/electrokit/app/ui/EngineeringUiTests.kt
+  app/src/testDebug/java/com/electrokit/app/ui/TestMatchers.kt
+  app/src/testDebug/java/com/electrokit/app/ui/WorkbenchUiTests.kt
   app/src/testDebug/java/com/electrokit/app/viewmodel/InputJournalTests.kt
   app/src/testDebug/java/com/electrokit/app/viewmodel/RetryRegressionTests.kt
   build.gradle.kts
+  docs/ANDROID_PHONE_BUILD_GUIDE.md
+  docs/ARCHITECTURE.md
+  docs/AUDIT_REPORT.md
+  docs/BUILD_REPORT.md
+  docs/COMMANDS.md
+  docs/DEVELOPMENT_GUIDE.md
+  docs/GITHUB_RELEASE_GUIDE.md
+  docs/TESTING_GUIDE.md
+  docs/UPDATE_GUIDE.md
   documentation/ENGINEERING_REQUIREMENTS.md
   documentation/PHOTO_TRANSCRIPTIONS.md
   documentation/history/AUDIT_2_0_1.md
@@ -86,6 +227,74 @@ Electro/
   gradle/wrapper/gradle-wrapper.properties
   gradlew
   gradlew.bat
+  photos/Communication_Modules/CAN_Bus_Module.png
+  photos/Communication_Modules/CAN_Twisted_Pair.png
+  photos/Communication_Modules/Cellular_Module.png
+  photos/Communication_Modules/DB9_Serial_Cable.png
+  photos/Communication_Modules/ESP8266_WiFi_Module.png
+  photos/Communication_Modules/Ethernet_RS485_Gateway.png
+  photos/Communication_Modules/LoRa_Module.png
+  photos/Communication_Modules/MAX485_Transceiver_Module.png
+  photos/Communication_Modules/Modbus_Gateway.png
+  photos/Communication_Modules/RS232_TTL_Converter.png
+  photos/Communication_Modules/RS485_Isolator.png
+  photos/Communication_Modules/Shielded_RS485_Cable.png
+  photos/Communication_Modules/USB_RS232_Converter.png
+  photos/Communication_Modules/USB_RS485_Converter.png
+  photos/Connectors_and_Communication/CAT6_Cable.png
+  photos/Connectors_and_Communication/Crossover_Cable.png
+  photos/Connectors_and_Communication/DB25_Connector.png
+  photos/Connectors_and_Communication/DB9_Female.png
+  photos/Connectors_and_Communication/DB9_Male.png
+  photos/Connectors_and_Communication/Dupont_Connector.png
+  photos/Connectors_and_Communication/Ethernet_Patch_Cable.png
+  photos/Connectors_and_Communication/Ethernet_Switch.png
+  photos/Connectors_and_Communication/HDMI.png
+  photos/Connectors_and_Communication/JST_Connector.png
+  photos/Connectors_and_Communication/Lever_Connector.png
+  photos/Connectors_and_Communication/M12_Connector.png
+  photos/Connectors_and_Communication/Micro_USB.png
+  photos/Connectors_and_Communication/Pluggable_Terminal.png
+  photos/Connectors_and_Communication/RJ45_Keystone_Jack.png
+  photos/Connectors_and_Communication/RJ45_Plug.png
+  photos/Connectors_and_Communication/RJ45_Screw_Terminal_Breakout.png
+  photos/Connectors_and_Communication/RJ45_Socket.png
+  photos/Connectors_and_Communication/Ribbon_Cable.png
+  photos/Connectors_and_Communication/Screw_Terminal.png
+  photos/Connectors_and_Communication/USB_Type_A.png
+  photos/Connectors_and_Communication/USB_Type_B.png
+  photos/Connectors_and_Communication/USB_Type_C.png
+  photos/Connectors_and_Communication/VGA_DB15.png
+  photos/MANIFEST.json
+  photos/README.txt
+  photos/Sensors_and_Controls/Capacitive_Proximity_Sensor.png
+  photos/Sensors_and_Controls/Clamp_Meter.png
+  photos/Sensors_and_Controls/Current_Transformer.png
+  photos/Sensors_and_Controls/Digital_Multimeter.png
+  photos/Sensors_and_Controls/Float_Switch.png
+  photos/Sensors_and_Controls/HMI_Touch_Screen.png
+  photos/Sensors_and_Controls/Inductive_Proximity_Sensor.png
+  photos/Sensors_and_Controls/Insulation_Tester.png
+  photos/Sensors_and_Controls/LVDT_Displacement_Sensor.png
+  photos/Sensors_and_Controls/PLC_Controller.png
+  photos/Sensors_and_Controls/Photoelectric_Sensor.png
+  photos/Sensors_and_Controls/Plunger_Limit_Switch.png
+  photos/Sensors_and_Controls/RTD_Temperature_Probe.png
+  photos/Sensors_and_Controls/Roller_Lever_Limit_Switch.png
+  photos/Sensors_and_Controls/Rotary_Encoder.png
+  photos/Sensors_and_Controls/Temperature_Sensor.png
+  photos/Verified_Generic_Pinout_Diagrams/CAN_Bus_Termination.png
+  photos/Verified_Generic_Pinout_Diagrams/M12_4Pin_Sensor_Generic.png
+  photos/Verified_Generic_Pinout_Diagrams/MAX485_UART_Concept.png
+  photos/Verified_Generic_Pinout_Diagrams/Modbus_RTU_Daisy_Chain.png
+  photos/Verified_Generic_Pinout_Diagrams/NPN_PNP_3Wire_Sensors.png
+  photos/Verified_Generic_Pinout_Diagrams/RJ45_T568A_Pinout.png
+  photos/Verified_Generic_Pinout_Diagrams/RJ45_T568B_Pinout.png
+  photos/Verified_Generic_Pinout_Diagrams/RS232_DB9_DTE_Pinout.png
+  photos/Verified_Generic_Pinout_Diagrams/RS485_Four_Wire_Concept.png
+  photos/Verified_Generic_Pinout_Diagrams/RS485_Termination_and_Bias.png
+  photos/Verified_Generic_Pinout_Diagrams/RS485_Two_Wire_Bus.png
+  photos/Verified_Generic_Pinout_Diagrams/USB_to_RS485_Generic.png
   scripts/check_comments.py
   scripts/check_contrast.py
   scripts/check_reference_links.py
@@ -94,6 +303,7 @@ Electro/
   scripts/test_quality_checks.py
   scripts/validate_assets.py
   scripts/validate_engineering.py
+  scripts/validate_library.py
   settings.gradle.kts
   verification/apk-badging.txt
   verification/apk-permissions.txt

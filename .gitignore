@@ -10,3 +10,7 @@ captures/
 *.jks
 *.keystore
 keystore.properties
+.venv/
+venv/
+__pycache__/
+*.pyc
