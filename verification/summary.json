@@ -1,10 +1,10 @@
 {
-  "version": "3.0.1",
-  "version_code": 15,
+  "version": "3.0.2",
+  "version_code": 16,
   "application_id": "com.electrokit.app",
-  "generated_at_utc": "2026-10-27T11:53:10.681424+00:00",
-  "source_commit": "97a3dae82d72fa99d9f6a6b8a54bd3f160299db4",
-  "source_tree_dirty": true,
+  "generated_at_utc": "2026-10-27T16:33:00.145134+00:00",
+  "source_commit": "ffca022d05a22731ad01a5af493709ecce6df25b",
+  "source_tree_dirty": false,
   "tests": {
     "debug": {
       "tests": 121,
@@ -38,8 +38,8 @@
     }
   },
   "artifact": "app/build/outputs/apk/release/app-release-unsigned.apk",
-  "apk_sha256": "43ca94b0c79d6d1781e231d3028ace55e4ef3c4b51f62c2414b88ff1684b0a35",
-  "apk_bytes": 11231863,
+  "apk_sha256": "305eecd70c0d19ed4df3d6066076f73f108278dc37c449ea0cd670c6b9698008",
+  "apk_bytes": 11236815,
   "signing": {
     "status": "unsigned",
     "certificate_sha256": null,

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.EngineeringUiTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:08" hostname="4156269b6c2a" time="3.22">
+<testsuite name="com.electrokit.app.ui.EngineeringUiTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:44" hostname="4156269b6c2a" time="3.032">
   <properties/>
-  <testcase name="lightEngineeringPreview" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.75"/>
-  <testcase name="allHomeTabsVisible" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.103"/>
-  <testcase name="motorCalculatorPersists" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.349"/>
-  <testcase name="catalogueKeepsHeaderAndSearchPinned" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.179"/>
-  <testcase name="cbmSampleLinksToReference" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.321"/>
-  <testcase name="terminalAndCutawaySelection" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.276"/>
-  <testcase name="bottomNavigationSupportsLargeText" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.373"/>
-  <testcase name="explorerSearchAndFilters" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.283"/>
-  <testcase name="faultAndRelatedComponentNavigation" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.363"/>
-  <testcase name="mobileUiHidesSourceReferences" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.22"/>
+  <testcase name="lightEngineeringPreview" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.66"/>
+  <testcase name="allHomeTabsVisible" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.055"/>
+  <testcase name="motorCalculatorPersists" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.318"/>
+  <testcase name="catalogueKeepsHeaderAndSearchPinned" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.196"/>
+  <testcase name="cbmSampleLinksToReference" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.32"/>
+  <testcase name="terminalAndCutawaySelection" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.349"/>
+  <testcase name="bottomNavigationSupportsLargeText" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.362"/>
+  <testcase name="explorerSearchAndFilters" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.264"/>
+  <testcase name="faultAndRelatedComponentNavigation" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.317"/>
+  <testcase name="mobileUiHidesSourceReferences" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.19"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
