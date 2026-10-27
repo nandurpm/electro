@@ -121,7 +121,7 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
         Column(
             Modifier.fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.displayCutout)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
                 .imePadding()
         ) {
             if (err != null)
@@ -141,7 +141,7 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                     MainScreen(
                         vm,
                         prefs,
-                        { nav.navigate("entry/$it") },
+                        { vm.visited(it); nav.navigate("entry/$it") },
                         { nav.navigate("info/$it") },
                         { nav.navigate("settings") },
                         engineering,
@@ -163,13 +163,7 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                     Scaffold(
                         topBar = { Bar(stringResource(R.string.settings), { nav.popBackStack() }) }
                     ) { padding ->
-                        Column(Modifier.padding(padding).padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(stringResource(R.string.light_theme), Modifier.weight(1f))
-                                Switch(prefs.light, { vm.theme(it) })
-                            }
-                            Text(stringResource(R.string.settings_note))
-                        }
+                        ElectroSettings(vm, prefs, Modifier.padding(padding))
                     }
                 }
                 composable("plugins") {
@@ -301,244 +295,6 @@ fun Bar(
  *   state. Rendering/callback failures propagate; recoverable persistence failures belong to the
  *   ViewModel.
  */
-@Composable
-fun MainScreen(
-    vm: AppViewModel,
-    prefs: PreferencesState,
-    openEntry: (String) -> Unit,
-    info: (Int) -> Unit,
-    settings: () -> Unit,
-    engineering: com.electrokit.app.viewmodel.EngineeringViewModel,
-    openEngineering: (String) -> Unit,
-) {
-    val catalogueLabels =
-        mapOf(
-            "CALCULATORS" to stringResource(R.string.tab_calculators),
-            "PIN-OUTS" to stringResource(R.string.tab_pinouts),
-            "RESOURCES" to stringResource(R.string.tab_resources),
-            "PLUGINS" to stringResource(R.string.ui_plugins),
-            "ENGINEERING" to stringResource(R.string.engine_tab),
-        )
-    val tabs = listOf("CALCULATORS", "PIN-OUTS", "RESOURCES", "PLUGINS", "ENGINEERING")
-    val pager = rememberPagerState { tabs.size }
-    val scope = rememberCoroutineScope()
-    var menu by remember { mutableStateOf(false) }
-    val listStates = List(3) { rememberLazyListState() }
-    // Large text prioritises the catalogue; Engineering remains available in navigation.
-    val compactCatalogue = LocalDensity.current.fontScale > 1.3f
-    // Observe vertical gestures across every page so only the search remains fixed while browsing.
-    var showToolbar by remember { mutableStateOf(true) }
-    val scrollConnection = remember {
-        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
-            /** Hides chrome on downward browsing; upward gestures restore navigation actions.
-             * @param available Unconsumed gesture distance in pixels.
-             * @param source Gesture origin, passed through without consuming scroll.
-             * @return Zero offset; all distance remains available to the list. No disk access.
-             */
-            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
-                if (available.y < -2f) showToolbar = false
-                if (available.y > 2f) showToolbar = true
-                return androidx.compose.ui.geometry.Offset.Zero
-            }
-        }
-    }
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollConnection),
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            androidx.compose.animation.AnimatedVisibility(showToolbar) {
-            Bar(
-                stringResource(R.string.app_name),
-                brand = true,
-                actions = {
-                    IconButton({ info(0) }) {
-                        Icon(Icons.Default.Info, stringResource(R.string.ui_info), tint = TopBarText)
-                    }
-                    IconButton({ menu = true }) {
-                        Icon(Icons.Default.MoreVert, stringResource(R.string.menu), tint = TopBarText)
-                    }
-                    DropdownMenu(menu, { menu = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.settings)) },
-                            onClick = { menu = false; settings() },
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    if (prefs.alphabetical) stringResource(R.string.default_order)
-                                    else stringResource(R.string.sort_az)
-                                )
-                            },
-                            onClick = { menu = false; vm.sort() },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.ui_about)) },
-                            onClick = { menu = false; info(0) },
-                        )
-                    }
-                },
-            )
-            }
-        },
-        bottomBar = {
-            NavigationBar(
-                // Account for scaled labels and system insets without allowing an unbounded bar.
-                modifier = Modifier.testTag("main_navigation").height((64f + 64f * (LocalDensity.current.fontScale - 1f).coerceAtLeast(0f)).dp),
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                tonalElevation = 4.dp,
-                windowInsets = WindowInsets(0, 0, 0, 0),
-            ) {
-                tabs.forEachIndexed { index, name ->
-                    // Full-width, equal-height labels avoid single-line clipping at large font scales.
-                    val selected = pager.currentPage == index
-                    Column(
-                        Modifier.weight(1f).fillMaxHeight()
-                            .selectable(selected = selected, role = Role.Tab, onClick = { scope.launch { pager.animateScrollToPage(index) } })
-                            .padding(horizontal = 2.dp, vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Box(
-                            Modifier.clip(RoundedCornerShape(24.dp))
-                                .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            when (index) {
-                                0 -> Icon(painterResource(R.drawable.ic_energy), null, Modifier.size(24.dp))
-                                1 -> Icon(Icons.Default.Search, null, Modifier.size(24.dp))
-                                2 -> Icon(Icons.AutoMirrored.Filled.List, null, Modifier.size(24.dp))
-                                3 -> Icon(painterResource(R.drawable.ic_database), null, Modifier.size(24.dp))
-                                else -> Icon(Icons.Default.Settings, null, Modifier.size(24.dp))
-                            }
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            catalogueLabels.getValue(name), Modifier.fillMaxWidth(),
-                            maxLines = 2, minLines = if (compactCatalogue) 2 else 1, fontSize = 11.sp, lineHeight = 14.sp,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-        },
-    ) { padding ->
-        HorizontalPager(
-            pager,
-            Modifier.padding(padding).fillMaxSize(),
-            beyondViewportPageCount = 0,
-        ) { tab ->
-            if (tab == 4)
-                EngineeringScreen("home", engineering, vm, prefs, openEngineering, openEntry)
-            else if (tab == 3) Databases(vm, prefs, Modifier.fillMaxSize(), openEntry, { info(1) })
-            else {
-                var query by rememberSaveable("query$tab") { mutableStateOf("") }
-                val entries =
-                    vm.repository.registry
-                        .filter { it.tab == tabs[tab] || (tab == 0 && it.screenType == "module") }
-                        .filter { it.title.contains(query, true) }
-                val sorted =
-                    entries.sortedWith(
-                        compareByDescending<Entry> { it.id in prefs.favourites }
-                            .thenBy { if (prefs.alphabetical) it.title.lowercase() else "" }
-                    )
-                LazyColumn(state = listStates[tab], modifier = Modifier.fillMaxSize()) {
-                    item(key = "catalogue_intro") {
-                    Column(
-                        Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp)
-                    ) {
-                        Text(
-                            if (compactCatalogue) catalogueLabels.getValue(tabs[tab]) else when (tab) {
-                                0 -> stringResource(R.string.catalogue_calculators)
-                                1 -> stringResource(R.string.catalogue_pinouts)
-                                else -> stringResource(R.string.catalogue_resources)
-                            },
-                            style = if (compactCatalogue) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            pluralStringResource(R.plurals.tool_count, entries.size, entries.size),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                    }
-                    if (tab == 0 && !compactCatalogue)
-                        Card(
-                            onClick = { openEngineering("home") },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                            shape = RoundedCornerShape(26.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF142A40)),
-                        ) {
-                            Row(
-                                Modifier.fillMaxWidth()
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(Color(0xFF142A40), Color(0xFF176D70), Color(0xFF1E5369))
-                                        )
-                                    )
-                                    .padding(horizontal = 18.dp, vertical = 20.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Box(
-                                    Modifier.size(52.dp)
-                                        .clip(RoundedCornerShape(18.dp))
-                                        .background(Color.White.copy(alpha = .12f)),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        painterResource(R.drawable.ic_energy),
-                                        contentDescription = null,
-                                        tint = Color(0xFFFFD28A),
-                                        modifier = Modifier.size(30.dp),
-                                    )
-                                }
-                                Column(Modifier.weight(1f).padding(start = 14.dp, end = 8.dp)) {
-                                    Text(
-                                        stringResource(R.string.engine_title),
-                                        color = Color.White,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                    Text(
-                                        stringResource(R.string.engine_fault_count),
-                                        color = Color(0xFFD8E9EE),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.padding(top = 5.dp),
-                                    )
-                                }
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White)
-                            }
-                        }
-                    }
-                    stickyHeader(key = "catalogue_search") {
-                        Box(Modifier.background(MaterialTheme.colorScheme.background)) { Search(query, { query = it }) }
-                    }
-                        items(sorted, key = { it.id }) { entry ->
-                            EntryRow(
-                                entry,
-                                { openEntry(entry.id) },
-                                prefs.favourites.contains(entry.id),
-                            ) {
-                                vm.star(entry.id)
-                            }
-                        }
-                        item {
-                            Text(
-                                stringResource(R.string.more_features),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                modifier =
-                                    Modifier.fillMaxWidth().clickable { info(1) }.padding(16.dp),
-                            )
-                        }
-                }
-            }
-        }
-    }
-}
 
 /**
  * Uses a labelled editable field and explicit clear action while the caller owns query state.

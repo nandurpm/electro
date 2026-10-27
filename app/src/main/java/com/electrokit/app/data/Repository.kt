@@ -183,6 +183,12 @@ data class PreferencesState(
     val values: Map<String, Map<String, String>> = emptyMap(),
     /** Per-calculator mode indices, clamped by the engine when read. */
     val modes: Map<String, Int> = emptyMap(),
+    /** Empty mode migrates existing light/dark preferences without changing their meaning. */
+    val themeMode: String = "",
+    /** Most-recent-first public registry routes; protected engineering details are excluded. */
+    val recent: List<String> = emptyList(),
+    /** Bounded, explicitly saved legacy calculator results, stored in the existing DataStore. */
+    val calculations: List<String> = emptyList(),
 )
 
 /** One application-scoped DataStore delegate avoids concurrent stores for the same file. */

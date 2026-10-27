@@ -52,6 +52,31 @@ fun EngineeringScreen(
     legacy: (String) -> Unit,
     back: (() -> Unit)? = null,
 ) {
+    EngineeringGate(back) {
+        EngineeringContentScreen(route, engineering, vm, prefs, navigate, legacy, back)
+    }
+}
+
+/** Renders engineering data only after the shared session boundary has granted access.
+ * @param route Protected stable section, tool or reference identifier.
+ * @param engineering Source-traceable engineering asset-loading owner.
+ * @param vm Existing input and bookmark persistence owner.
+ * @param prefs Latest committed saved state.
+ * @param navigate Opens another route behind the same gate.
+ * @param legacy Opens an original public calculator or reference.
+ * @param back Optional return action for a standalone destination.
+ * @return Unit; loading errors expose an explicit retry without discarding content.
+ */
+@Composable
+private fun EngineeringContentScreen(
+    route: String,
+    engineering: EngineeringViewModel,
+    vm: AppViewModel,
+    prefs: PreferencesState,
+    navigate: (String) -> Unit,
+    legacy: (String) -> Unit,
+    back: (() -> Unit)? = null,
+) {
     val loaded by engineering.content.collectAsStateWithLifecycle()
     val failed by engineering.failed.collectAsStateWithLifecycle()
     val pair = loaded

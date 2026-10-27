@@ -32,8 +32,9 @@ class AndroidUiRegressionTests {
      */
     private fun ready() {
         ui.waitUntil(30_000) {
-            ui.onAllNodesWithText("Resistor Colour Code").fetchSemanticsNodes().isNotEmpty()
+            ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty()
         }
+        ui.onNodeWithText("Tools").performClick()
     }
 
     /**
@@ -66,6 +67,22 @@ class AndroidUiRegressionTests {
         ui.onNode(hasSetTextAction() and hasText(label)).performTextReplacement(value)
     }
 
+    /** A cached explicit result must not survive a mode change with different physical behavior.
+     * @return Unit; at t=0 a 5 V capacitor model changes from 0 V charge to 5 V discharge.
+     */
+    @Test fun calculationModeChangeInvalidatesExplicitResult() {
+        openCalculator("Capacitor charge")
+        ui.onNode(hasText("Mode:", substring = true)).performClick()
+        ui.onNodeWithText("Charge").performClick()
+        input("Initial / supply voltage", "5")
+        input("Elapsed time", "0")
+        ui.onNodeWithText("Calculate").performScrollTo().performClick()
+        ui.onNodeWithText("Voltage: 0 V", substring = true).assertExists()
+        ui.onNode(hasText("Mode:", substring = true)).performScrollTo().performClick()
+        ui.onNodeWithText("Discharge").performClick()
+        ui.onNodeWithText("Voltage: 5 V", substring = true).assertExists()
+    }
+
     /**
      * Verifies main tabs and reference navigation work; unexpected behaviour fails the test
      * visibly.
@@ -80,7 +97,7 @@ class AndroidUiRegressionTests {
         ui.onNodeWithText("Pin-outs").performClick()
         ui.onNodeWithText("USB port").performClick()
         ui.onNodeWithText("Universal Serial Bus").assertExists()
-        ui.onNode(hasScrollToIndexAction())
+        ui.onNode(verticalList())
             .performScrollToNode(hasText("USB 3.x", substring = true))
         ui.onNodeWithText("USB 3.x Standard-A").assertIsDisplayed()
         ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
@@ -174,7 +191,7 @@ class AndroidUiRegressionTests {
     fun lightThemePersistsAcrossActivityRecreation() {
         ready()
         ui.onNodeWithContentDescription("Menu").performClick()
-        ui.onNodeWithText("Settings").performClick()
+        ui.onNode(hasText("Settings") and hasClickAction() and !hasAnyAncestor(hasTestTag("main_navigation"))).performClick()
         // Establish a dark baseline: other preview tests deliberately persist a light preference.
         if (ui.onAllNodes(isOn()).fetchSemanticsNodes().isNotEmpty()) {
             ui.onNode(isToggleable()).performClick()
@@ -237,7 +254,7 @@ class AndroidUiRegressionTests {
             repository.loadAssets()
             repository.update { it.copy(modules = emptySet()) }
         }
-        ui.onNodeWithText("34 tools", substring = true).assertExists()
+        ui.onNodeWithText("34 calculators", substring = true).assertExists()
         ui.onAllNodesWithText("Data").onLast().performClick()
         for (entry in repository.registry.filter { it.tab == "PLUGINS" }) {
             ui.onNode(hasSetTextAction() and hasText("Search databases"))
@@ -295,7 +312,7 @@ class AndroidUiRegressionTests {
         ready()
         val rootBounds = ui.onRoot().fetchSemanticsNode().boundsInRoot
         val listBounds =
-            ui.onAllNodes(hasScrollToIndexAction())
+            ui.onAllNodes(verticalList())
                 .fetchSemanticsNodes()
                 .first {
                     it.boundsInRoot.center.x > 0 && it.boundsInRoot.center.x < rootBounds.width

@@ -67,8 +67,9 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
             else v
         }
     var bandResult by rememberSaveable(entry.id) { mutableStateOf("") }
+    var calculated by remember(entry.id) { mutableStateOf<Calculation?>(null) }
     val result =
-        if (id in listOf(1, 3)) Calculation.Value(bandResult)
+        calculated ?: if (id in listOf(1, 3)) Calculation.Value(bandResult)
         else Calculators.calculate(id, scaled, mode)
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
@@ -83,6 +84,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
      */
     fun update(map: Map<String, String>) {
         raw = map.toMap()
+        calculated = null
         vm.values(entry.id, map)
     }
     val shareText =
@@ -117,6 +119,10 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                 }
                 DropdownMenu(more, { more = false }) {
                     DropdownMenuItem(
+                        text = { Text("Save calculation") },
+                        onClick = { more = false; vm.saveCalculation(shareText) },
+                    )
+                    DropdownMenuItem(
                         text = { Text(stringResource(R.string.ui_reset)) },
                         onClick = {
                             more = false
@@ -150,6 +156,8 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
             return@Scaffold
         }
         Column(Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(12.dp)) {
+            Text("ENGINEERING WORKBENCH", style = MaterialTheme.typography.labelSmall, color = Heading)
+            Text(entry.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 12.dp))
             if (spec.modes.size > 1)
                 Choice(
                     stringResource(R.string.mode),
@@ -157,6 +165,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     spec.modes[mode.coerceIn(spec.modes.indices)],
                     {
                         mode = spec.modes.indexOf(it)
+                        calculated = null
                         vm.mode(entry.id, mode)
                     },
                 )
@@ -233,6 +242,13 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                         }
                     }
                 }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { calculated = Calculators.calculate(id, scaled, mode) }) { Text("Calculate") }
+                OutlinedButton(onClick = {
+                    mode = 0; calculated = null; vm.mode(entry.id, 0)
+                    update(spec.fields.associate { it.key to it.initial })
+                }) { Text("Reset") }
+            }
             Card(
                 Modifier.fillMaxWidth().padding(vertical = 16.dp),
                 shape = RoundedCornerShape(24.dp),
@@ -283,6 +299,14 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                 fontWeight = FontWeight.Bold,
             )
             Text(spec.formula, Modifier.padding(vertical = 8.dp))
+            Text("Substitution", style = MaterialTheme.typography.titleMedium)
+            spec.fields.forEach { field ->
+                Text("${field.label} = ${raw[field.key].orEmpty().ifBlank { "not entered" }} ${field.unit}", style = MaterialTheme.typography.bodyMedium)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton({ clipboard.setText(AnnotatedString(shareText)) }) { Text("Copy result") }
+                TextButton({ vm.saveCalculation(shareText) }) { Text("Save result") }
+            }
             Text(
                 stringResource(R.string.input_convention),
                 style = MaterialTheme.typography.bodySmall,

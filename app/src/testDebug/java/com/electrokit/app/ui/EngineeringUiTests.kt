@@ -24,7 +24,7 @@ class EngineeringUiTests {
      */
     @Test fun allHomeTabsVisible() {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
-        listOf("Tools", "Pin-outs", "Reference", "Data", "Engineering").forEach {
+        listOf("Home", "Tools", "Learn", "Favorites", "Settings").forEach {
             ui.onAllNodesWithText(it).onLast().assertIsDisplayed()
         }
     }
@@ -35,7 +35,7 @@ class EngineeringUiTests {
     @Test fun lightEngineeringPreview() {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithContentDescription("Menu").performClick()
-        ui.onNodeWithText("Settings").performClick()
+        ui.onNode(hasText("Settings") and hasClickAction() and !hasAnyAncestor(hasTestTag("main_navigation"))).performClick()
         val toggle = ui.onNode(isToggleable())
         // Force a real save even when another test's in-memory DataStore already selected light.
         if (toggle.fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.ToggleableState] == androidx.compose.ui.state.ToggleableState.On) {
@@ -51,7 +51,7 @@ class EngineeringUiTests {
         ui.onNode(hasSetTextAction()).performTextReplacement("Motor shaft torque")
         ui.onNode(hasText("Motor shaft torque") and !hasSetTextAction()).performClick()
         ui.onNodeWithText("Load example").performClick()
-        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Torque: 146.912 N·m", substring = true))
+        ui.onNode(verticalList()).performScrollToNode(hasText("Torque: 146.912 N·m", substring = true))
         save("torque-light")
         ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
         ui.onNode(hasSetTextAction()).performTextReplacement("USB port")
@@ -70,9 +70,9 @@ class EngineeringUiTests {
      */
     @Test fun sourceReferencesRemainReachable() {
         home()
-        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Technical Reference Library"))
+        ui.onNode(verticalList()).performScrollToNode(hasText("Technical Reference Library"))
         ui.onNodeWithText("Technical Reference Library").performClick()
-        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("4884.jpg", substring = true))
+        ui.onNode(verticalList()).performScrollToNode(hasText("4884.jpg", substring = true))
         ui.onNode(hasText("4884.jpg", substring = true) and hasClickAction()).performClick()
         ui.onNodeWithText("Photograph transcription").assertExists()
     }
@@ -84,10 +84,11 @@ class EngineeringUiTests {
         org.robolectric.RuntimeEnvironment.setFontScale(2f)
         ui.activityRule.scenario.recreate()
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
-        ui.onAllNodes(hasScrollToIndexAction()).onLast().performScrollToNode(hasText("Resistor Colour Code"))
+        ui.onNodeWithText("Tools").performClick()
+        ui.onAllNodes(verticalList()).onLast().performScrollToNode(hasText("Resistor Colour Code"))
         ui.onNodeWithText("Resistor Colour Code").assertIsDisplayed()
         save("navigation-large")
-        listOf("Tools", "Pin-outs", "Reference", "Data", "Engineering").forEach { label ->
+        listOf("Home", "Tools", "Learn", "Favorites", "Settings").forEach { label ->
             val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
             ui.onNode(hasText(label) and hasAnyAncestor(hasTestTag("main_navigation")), useUnmergedTree = true)
                 .assertIsDisplayed().performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
@@ -102,19 +103,12 @@ class EngineeringUiTests {
      * @return Unit; missing destinations or load errors fail with a bounded timeout.
      */
     private fun home() {
-        ui.waitUntil(30000) {
-            ui.onAllNodesWithText("Elevator & Escalator Engineering")
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
-        ui.onNodeWithText("Elevator & Escalator Engineering").performClick()
-        ui.waitUntil(30000) {
-            ui.onAllNodes(
-                    hasSetTextAction() and hasText("Search all engineering references and tools")
-                )
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
+        ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
+        ui.onNodeWithText("Tools").performClick()
+        ui.onNodeWithText("Engineering").performClick()
+        ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("789")
+        ui.onNodeWithText("Unlock").performClick()
+        ui.waitUntil(30000) { ui.onAllNodes(hasSetTextAction() and hasText("Search all engineering references and tools")).fetchSemanticsNodes().isNotEmpty() }
     }
 
     /**
@@ -164,7 +158,7 @@ class EngineeringUiTests {
         ui.waitForIdle()
         ui.onAllNodesWithText("E217", substring = true).assertAny(hasText("E217", substring = true))
         ui.onNodeWithContentDescription("Remove favourite").assertExists()
-        ui.onNode(hasScrollToIndexAction())
+        ui.onNode(verticalList())
             .performScrollToNode(hasText("S21A — Drive chain switch — suffix A not verified"))
         ui.onNodeWithText("S21A — Drive chain switch — suffix A not verified").performClick()
         ui.onNodeWithText("Source and verification status").assertExists()
@@ -179,7 +173,7 @@ class EngineeringUiTests {
     @Test
     fun explorerSearchAndFilters() {
         home()
-        ui.onNode(hasScrollToIndexAction())
+        ui.onNode(verticalList())
             .performScrollToNode(hasText("Escalator Fault Code Explorer"))
         ui.onNodeWithText("Escalator Fault Code Explorer").performClick()
         ui.onNode(hasSetTextAction()).performTextReplacement("164")
@@ -198,7 +192,7 @@ class EngineeringUiTests {
     @Test
     fun terminalAndCutawaySelection() {
         home()
-        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Explore the escalator diagram"))
+        ui.onNode(verticalList()).performScrollToNode(hasText("Explore the escalator diagram"))
         ui.onNodeWithText("Explore the escalator diagram").performClick()
         ui.onNodeWithText("Inspect drawing").performScrollTo().performClick()
         ui.onNodeWithText("Zoom in").performClick()
@@ -221,7 +215,7 @@ class EngineeringUiTests {
         ui.onNode(hasSetTextAction()).performTextReplacement("Motor shaft torque")
         ui.onNode(hasText("Motor shaft torque") and !hasSetTextAction()).performClick()
         ui.onNodeWithText("Load example").performClick()
-        ui.onNode(hasScrollToIndexAction())
+        ui.onNode(verticalList())
             .performScrollToNode(hasText("Torque: 146.912 N·m", substring = true))
         ui.onNodeWithText("Torque: 146.912 N·m", substring = true).assertExists()
         save("torque")
@@ -239,23 +233,24 @@ class EngineeringUiTests {
     @Test
     fun cbmSampleLinksToReference() {
         home()
-        ui.onNode(hasScrollToIndexAction())
+        ui.onNode(verticalList())
             .performScrollToNode(hasText("Condition-Based Monitoring"))
         ui.onNodeWithText("Condition-Based Monitoring").performClick()
-        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Water-event example"))
+        ui.onNode(verticalList()).performScrollToNode(hasText("Water-event example"))
         ui.onNodeWithText("Water-event example").performClick()
         ui.onNodeWithText("Wet pit — simulated event").assertExists()
         save("cbm")
         ui.onNodeWithText("Open related reference: E065").performClick()
         ui.onNodeWithText("E065").assertExists()
     }
-    /** @return Unit; header scrolls away while the search remains visible above catalogue results. */
-    @Test fun catalogueKeepsOnlySearchPinned() {
+    /** @return Unit; both brand toolbar and search remain visible after catalogue scrolling. */
+    @Test fun catalogueKeepsHeaderAndSearchPinned() {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
-        ui.onAllNodes(hasScrollToIndexAction()).onLast().performScrollToNode(hasText("Voltage divider"))
-        ui.onAllNodes(hasScrollToIndexAction()).onLast().performTouchInput { swipeUp() }
+        ui.onNodeWithText("Tools").performClick()
+        ui.onAllNodes(verticalList()).onLast().performScrollToNode(hasText("Voltage divider"))
+        ui.onAllNodes(verticalList()).onLast().performTouchInput { swipeUp() }
         ui.mainClock.advanceTimeBy(1000)
-        ui.onNodeWithContentDescription("Info").assertIsNotDisplayed()
+        ui.onNodeWithContentDescription("Info").assertIsDisplayed()
         ui.onNode(hasSetTextAction() and hasText("Search")).assertIsDisplayed()
         ui.onNodeWithText("Your electrical & electronics workbench").assertIsNotDisplayed()
         save("catalogue-scrolled")

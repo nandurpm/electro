@@ -183,7 +183,30 @@ constructor(
      *   observable state. Recoverable storage failures are exposed through error state;
      *   cancellation is rethrown.
      */
-    fun theme(light: Boolean) = update { it.copy(light = light) }
+    fun theme(light: Boolean) = update { it.copy(light = light, themeMode = if (light) "light" else "dark") }
+
+    /** Persists appearance while retaining the legacy Boolean for older installation data.
+ * @param mode One of dark, light or system.
+ * @return Unit; persistence errors surface through the shared error state.
+ */
+    fun appearance(mode: String) = update { it.copy(themeMode = mode, light = mode == "light") }
+
+    /** Records public navigation only; bounds the persistent list to twenty stable IDs.
+ * @param id Public registry identifier, excluding protected controller details.
+ * @return Unit; records at most twenty most-recent distinct routes.
+ */
+    fun visited(id: String) = update { it.copy(recent = (listOf(id) + it.recent.filterNot { old -> old == id }).take(20)) }
+
+    /** Saves an explicit calculation snapshot without changing the existing raw-input journal.
+ * @param text Explicitly saved public calculator result, inputs and model.
+ * @return Unit; retains at most fifty snapshots in existing storage.
+ */
+    fun saveCalculation(text: String) = update { it.copy(calculations = (listOf(text) + it.calculations).take(50)) }
+
+    /** Clears explicit result history only; raw calculator input and favourites are retained.
+ * @return Unit; clears result history after UI confirmation, retaining raw inputs and favorites.
+ */
+    fun clearCalculations() = update { it.copy(calculations = emptyList()) }
 
     /**
      * Toggles catalogue order inside the atomic preference transformation.

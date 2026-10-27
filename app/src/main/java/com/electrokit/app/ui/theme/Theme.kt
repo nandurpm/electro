@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /** Deep navy brand surface for app bars and branded loading states. */
-val BrandNavy = Color(0xFF12243A)
+val BrandNavy = Color(0xFF0B1120)
 /** High-contrast toolbar foreground. */
 val TopBarText = Color(0xFFF5F8FC)
 /** Theme-aware emphasis for headings and active controls. */
@@ -18,10 +18,10 @@ val Divider: Color
 /** Midnight palette with cool teal emphasis and warm amber highlights. */
 private val Dark =
     darkColorScheme(
-        primary = Color(0xFF64DFC9),
-        onPrimary = Color(0xFF003A33),
-        primaryContainer = Color(0xFF174A49),
-        onPrimaryContainer = Color(0xFFC7F6EA),
+        primary = Color(0xFF93B4FF),
+        onPrimary = Color(0xFF08204B),
+        primaryContainer = Color(0xFF17366B),
+        onPrimaryContainer = Color(0xFFDAE6FF),
         secondary = Color(0xFFB7D0E3),
         onSecondary = Color(0xFF173046),
         secondaryContainer = Color(0xFF263A4E),
@@ -38,17 +38,17 @@ private val Dark =
         outlineVariant = Color(0xFF35475B),
         inverseSurface = Color(0xFFE6EEF6),
         inverseOnSurface = Color(0xFF1C2B3D),
-        inversePrimary = Color(0xFF00695C),
-        surfaceTint = Color(0xFF64DFC9),
+        inversePrimary = Color(0xFF1D4ED8),
+        surfaceTint = Color(0xFF93B4FF),
         surfaceDim = Color(0xFF0A111D),
         surfaceBright = Color(0xFF34485F),
         surfaceContainerLowest = Color(0xFF0B1422),
         surfaceContainerLow = Color(0xFF111D2E),
-        surfaceContainer = Color(0xFF1A293D),
+        surfaceContainer = Color(0xFF172033),
         surfaceContainerHigh = Color(0xFF202F43),
         surfaceContainerHighest = Color(0xFF29394E),
-        background = Color(0xFF0C1422),
-        surface = Color(0xFF121E2F),
+        background = Color(0xFF0B1120),
+        surface = Color(0xFF172033),
         surfaceVariant = Color(0xFF233449),
         onBackground = Color(0xFFEDF3FA),
         onSurface = Color(0xFFEDF3FA),
@@ -58,10 +58,10 @@ private val Dark =
 /** Soft neutral palette with the same teal-and-amber brand accents. */
 private val Light =
     lightColorScheme(
-        primary = Color(0xFF00695C),
+        primary = Color(0xFF1D4ED8),
         onPrimary = Color(0xFFFFFFFF),
-        primaryContainer = Color(0xFFC5F1E8),
-        onPrimaryContainer = Color(0xFF00483F),
+        primaryContainer = Color(0xFFDBEAFE),
+        onPrimaryContainer = Color(0xFF172554),
         secondary = Color(0xFF385F78),
         onSecondary = Color(0xFFFFFFFF),
         secondaryContainer = Color(0xFFDCEBF4),
@@ -78,8 +78,8 @@ private val Light =
         outlineVariant = Color(0xFFCAD5DF),
         inverseSurface = Color(0xFF26394C),
         inverseOnSurface = Color(0xFFECF3F8),
-        inversePrimary = Color(0xFF64DFC9),
-        surfaceTint = Color(0xFF00695C),
+        inversePrimary = Color(0xFF93B4FF),
+        surfaceTint = Color(0xFF1D4ED8),
         surfaceDim = Color(0xFFD8E1E9),
         surfaceBright = Color(0xFFF8FAFC),
         surfaceContainerLowest = Color(0xFFFFFFFF),
@@ -87,7 +87,7 @@ private val Light =
         surfaceContainer = Color(0xFFE9EFF5),
         surfaceContainerHigh = Color(0xFFE1EAF2),
         surfaceContainerHighest = Color(0xFFD7E2EC),
-        background = Color(0xFFF5F7FA),
+        background = Color(0xFFF8FAFC),
         surface = Color(0xFFFFFFFF),
         surfaceVariant = Color(0xFFE8EEF4),
         onBackground = Color(0xFF182638),

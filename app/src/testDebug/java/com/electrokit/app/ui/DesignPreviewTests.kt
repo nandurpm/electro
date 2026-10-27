@@ -32,8 +32,9 @@ class DesignPreviewTests {
      */
     private fun ready() {
         ui.waitUntil(30000) {
-            ui.onAllNodesWithText("Resistor Colour Code").fetchSemanticsNodes().isNotEmpty()
+            ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty()
         }
+        ui.onNodeWithText("Tools").performClick()
     }
 
     /**
@@ -77,7 +78,7 @@ class DesignPreviewTests {
      */
     private fun theme(light: Boolean) {
         ui.onNodeWithContentDescription("Menu").performClick()
-        ui.onNodeWithText("Settings").performClick()
+        ui.onNode(hasText("Settings") and hasClickAction() and !hasAnyAncestor(hasTestTag("main_navigation"))).performClick()
         val wanted =
             if (light) androidx.compose.ui.state.ToggleableState.On
             else androidx.compose.ui.state.ToggleableState.Off

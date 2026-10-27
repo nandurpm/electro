@@ -37,23 +37,31 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.rgb(18, 36, 58)),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.rgb(12, 20, 34)),
         )
-        // Personal workbench: reclaim system-bar strips; edge swipes reveal transient controls.
+        // Keep system information visible; Compose handles safe drawing insets below.
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
-            systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
         }
         setContent {
             val vm: AppViewModel = viewModel()
             val prefs = vm.preferences.collectAsStateWithLifecycle().value
             val loaded = vm.loaded.collectAsStateWithLifecycle().value
-            val light = if (loaded) prefs.light else startupLight
+            val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val light = if (loaded) when (prefs.themeMode) {
+                "system" -> !systemDark
+                "light" -> true
+                "dark" -> false
+                else -> prefs.light
+            } else startupLight
             SideEffect {
-                if (loaded) StartupTheme.remember(this, prefs.light)
+                if (loaded) StartupTheme.remember(this, light)
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
                 window.navigationBarColor =
                     if (light && android.os.Build.VERSION.SDK_INT >= 26) 0xFFF5F7FA.toInt()
                     else 0xFF0C1422.toInt()
                 androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
                     .isAppearanceLightNavigationBars = light
+                androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                    .isAppearanceLightStatusBars = light
             }
             ElectroTheme(light) { ElectroApp(vm, prefs) }
         }
