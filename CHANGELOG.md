@@ -1,5 +1,15 @@
 # Changes
 
+## 3.0.2 — drawing code dictionary alignment (source only, not yet built or signed)
+
+- Aligned the engineering component dictionary with the supplied DMRC drawing code dictionary (146 rows). Technical records go from 245 to 325: 6 re-coded and 80 added.
+- Re-coded: `K49` → `K99`, `E-BK` → `EBK`, `S-BK` → `SBK1` with `SBK2` added, `INV` → `NV` (VFD drive) with `INV` retained as the inverter-fault signal, `EK05`/`EK15` → `EL05`/`EL15`.
+- Added the dictionary entries that were missing: `OL2`, `MT2`, `MPC`, `ICP`, `EXT`, `HM`, `LCD2`, `LCD3`, `MHP1`, `MHP2`, `MT1 PTC`, `MT2 PTC`, `DSS`, the lighting and socket group, the fan, speaker and metering group, the MCC/TMB/BMB plugs, and the signal/terminal designations.
+- Added a `dmrc-codes` source record with the dictionary checksum, so every new entry carries its provenance.
+- `X1–X10`, `Y5–Y6` and `Q13–Q14` are recorded as grouped ranges because the individual point functions are not supplied, following the existing `Q9–Q12` precedent.
+- Switches `S11–S58`, `K03`, `OP`, `BIT0–BIT3`, `BM`, `RS485` and `INS` come from the photograph transcriptions and are retained; they are not part of the supplied dictionary.
+- NOT changed: versionCode/versionName, signing, access-code design, Kotlin sources and the 125 exact fault rows.
+
 ## 3.0.1 — audit fixes (source only, not yet built or signed)
 
 - Engineering code verification now runs off the UI thread; Unlock is disabled while checking.

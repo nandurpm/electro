@@ -13,7 +13,7 @@ Offline native Android engineering workbench. Version **3.0**, code **14**, appl
 - Eight-dimensional unit converter with explicit source/destination units.
 - **114 image-backed component/diagram entries**, locally bundled with sampled off-thread decoding and an 8 MiB decoded cache. Generated artwork is illustrative, not manufacturer wiring authority.
 - Multimeter, T568A/B, RS-485, RS-232, Modbus, CAN and interface lessons. The meter includes an interactive native drawing with mode/jack explanations.
-- Preserved engineering module: 125 exact fault records, 245 technical records, 14 source-photo transcriptions and 15 engineering calculators.
+- Preserved engineering module: 125 exact fault records, 325 technical records, 14 source-photo transcriptions and 15 engineering calculators.
 
 Exact manufacturer ratings, terminal drawings and part-specific test procedures have not been supplied for every image. Pages identify those gaps. Cable estimates do not select code-compliant ampacity/protection. New external reference downloads were blocked by this environment's network policy; citations are provided for review and are not represented as freshly verified equipment documentation.
 
