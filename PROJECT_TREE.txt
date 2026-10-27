@@ -353,13 +353,18 @@ Electro/
   scripts/check_comments.py
   scripts/check_contrast.py
   scripts/check_reference_links.py
+  scripts/check_verification.py
   scripts/package_project.py
+  scripts/record_verification.py
   scripts/requirements-dev.txt
   scripts/test_quality_checks.py
+  scripts/test_verification.py
   scripts/validate_assets.py
   scripts/validate_engineering.py
   scripts/validate_library.py
   settings.gradle.kts
+  signing/original-release-certificate.sha256
+  verification/README.md
   verification/apk-badging.txt
   verification/apk-permissions.txt
   verification/apk-signature.txt
@@ -368,6 +373,7 @@ Electro/
   verification/comments.txt
   verification/contrast.txt
   verification/engineering.txt
+  verification/library.txt
   verification/lint-results-debug.html
   verification/lint-results-debug.txt
   verification/lint-results-debug.xml
@@ -383,9 +389,13 @@ Electro/
   verification/tests-debug/TEST-com.electrokit.app.domain.EngineeringModuleTests.xml
   verification/tests-debug/TEST-com.electrokit.app.domain.FieldUnitTests.xml
   verification/tests-debug/TEST-com.electrokit.app.domain.FormattingRegressionTests.xml
+  verification/tests-debug/TEST-com.electrokit.app.domain.LocalPinTests.xml
+  verification/tests-debug/TEST-com.electrokit.app.domain.UnitConversionsTests.xml
+  verification/tests-debug/TEST-com.electrokit.app.domain.WorkbenchToolsTests.xml
   verification/tests-debug/TEST-com.electrokit.app.ui.AndroidUiRegressionTests.xml
   verification/tests-debug/TEST-com.electrokit.app.ui.DesignPreviewTests.xml
   verification/tests-debug/TEST-com.electrokit.app.ui.EngineeringUiTests.xml
+  verification/tests-debug/TEST-com.electrokit.app.ui.WorkbenchUiTests.xml
   verification/tests-debug/TEST-com.electrokit.app.viewmodel.InputJournalTests.xml
   verification/tests-debug/TEST-com.electrokit.app.viewmodel.RetryRegressionTests.xml
   verification/tests-release/TEST-com.electrokit.app.data.DataRegressionTests.xml
@@ -394,3 +404,6 @@ Electro/
   verification/tests-release/TEST-com.electrokit.app.domain.EngineeringModuleTests.xml
   verification/tests-release/TEST-com.electrokit.app.domain.FieldUnitTests.xml
   verification/tests-release/TEST-com.electrokit.app.domain.FormattingRegressionTests.xml
+  verification/tests-release/TEST-com.electrokit.app.domain.LocalPinTests.xml
+  verification/tests-release/TEST-com.electrokit.app.domain.UnitConversionsTests.xml
+  verification/tests-release/TEST-com.electrokit.app.domain.WorkbenchToolsTests.xml

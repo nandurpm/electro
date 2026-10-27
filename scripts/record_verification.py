@@ -106,11 +106,20 @@ def record(apk, build_log, variants, require_signed=False):
             'apk_sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'apk_bytes': apk.stat().st_size,
             'signing': {'status': 'verified_original_release' if signed else 'unsigned', 'certificate_sha256': digest[1] if digest else None, 'expected_certificate_sha256': expected},
             'release_publishable': signed, 'physical_device_tested': False, 'emulator_tested': False,
+            'remote_ci_executed': os.environ.get('GITHUB_ACTIONS') == 'true',
             'internet_permission': 'android.permission.INTERNET' in badging,
             'external_references_rechecked': False,
         }
         assert not summary['internet_permission']
         (stage / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+        (stage / 'README.md').write_text(
+            f'# Current ELECTRO {version} verification\n\n'
+            f'Version code: {code}. Signing status: {summary["signing"]["status"]}. '
+            'Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.\n\n'
+            'Run python scripts/check_verification.py --apk PATH to verify the snapshot; production also requires --require-signed. '
+            'Original signing identity lives separately in signing/original-release-certificate.sha256. '
+            'External references and physical-device checks are explicitly unrun when not verified.\n'
+        )
         evidence = ROOT / 'verification'
         backup = Path(temp) / 'previous'
         evidence.rename(backup)

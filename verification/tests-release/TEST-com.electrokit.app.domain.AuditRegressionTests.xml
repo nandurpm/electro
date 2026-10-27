@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-26T11:58:10" hostname="build-host" time="0.727">
+<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:53" hostname="cd711711733c" time="0.922">
   <properties/>
-  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.014"/>
+  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.011"/>
   <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.012"/>
-  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.021"/>
-  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.004"/>
-  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.007"/>
-  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.512"/>
-  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
-  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.08"/>
+  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.007"/>
+  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
+  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.005"/>
+  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.672"/>
+  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
+  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.106"/>
   <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
   <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.066"/>
-  <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
+  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.102"/>
+  <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
   <system-out><![CDATA[Extreme per-field cases exercised: 1984
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>

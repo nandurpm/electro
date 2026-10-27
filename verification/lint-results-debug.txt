@@ -1,4 +1,4 @@
-[project]/app/src/main/AndroidManifest.xml:4: Warning: Attribute enableOnBackInvokedCallback is only used in API level 33 and higher (current min is 24) [UnusedAttribute]
+/workspace/electro/app/src/main/AndroidManifest.xml:4: Warning: Attribute enableOnBackInvokedCallback is only used in API level 33 and higher (current min is 24) [UnusedAttribute]
  <application android:enableOnBackInvokedCallback="true" android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:supportsRtl="true" android:theme="@style/AppTheme">
               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -19,47 +19,58 @@
    can be unused too, such as the new <tag> element in layouts introduced in
    API 21.
 
-[project]/gradle/libs.versions.toml:2: Warning: A newer version of com.android.application than 8.7.3 is available: 9.4.1 [AndroidGradlePluginVersion]
-agp = "8.7.3"
-      ~~~~~~~
-[project]/gradle/libs.versions.toml:2: Warning: A newer version of com.android.application than 8.7.3 is available: 9.4.1 [AndroidGradlePluginVersion]
-agp = "8.7.3"
-      ~~~~~~~
+/workspace/electro/app/src/main/res/drawable/ic_database.xml:1: Warning: The resource R.drawable.ic_database appears to be unused [UnusedResources]
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24"><path android:fillColor="#FFFFFFFF" android:pathData="M3,5C3,1 21,1 21,5L21,19C21,23 3,23 3,19ZM5,5C5,7 19,7 19,5C19,3 5,3 5,5M5,9L5,12C5,14 19,14 19,12L19,9C15,11 9,11 5,9M5,16L5,19C5,21 19,21 19,19L19,16C15,18 9,18 5,16" android:fillType="evenOdd"/></vector>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/drawable/ic_energy.xml:1: Warning: The resource R.drawable.ic_energy appears to be unused [UnusedResources]
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24"><path android:fillColor="#FFFFFFFF" android:pathData="M13,2L4,14h7l-1,8L21,9h-8z"/></vector>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:5: Warning: The resource R.string.light_theme appears to be unused [UnusedResources]
+ <string name="light_theme">Light theme</string>
+         ~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:14: Warning: The resource R.string.ui_about appears to be unused [UnusedResources]
+ <string name="ui_about">About</string>
+         ~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:27: Warning: The resource R.string.menu appears to be unused [UnusedResources]
+ <string name="menu">Menu</string>
+         ~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:28: Warning: The resource R.string.default_order appears to be unused [UnusedResources]
+ <string name="default_order">Default order</string>
+         ~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:29: Warning: The resource R.string.sort_az appears to be unused [UnusedResources]
+ <string name="sort_az">Sort A–Z</string>
+         ~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:30: Warning: The resource R.string.catalogue_calculators appears to be unused [UnusedResources]
+ <string name="catalogue_calculators">Your electrical &amp; electronics workbench</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:31: Warning: The resource R.string.catalogue_pinouts appears to be unused [UnusedResources]
+ <string name="catalogue_pinouts">Find the right connection</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:32: Warning: The resource R.string.catalogue_resources appears to be unused [UnusedResources]
+ <string name="catalogue_resources">Reference, made simple</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:69: Warning: The resource R.string.settings_note appears to be unused [UnusedResources]
+ <string name="settings_note">Settings, favourites, modules and calculator values are saved on this device.</string>
+         ~~~~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:76: Warning: The resource R.plurals.tool_count appears to be unused [UnusedResources]
+ <plurals name="tool_count"><item quantity="one">%1$d tool • available offline</item><item quantity="other">%1$d tools • available offline</item></plurals>
+          ~~~~~~~~~~~~~~~~~
+/workspace/electro/app/src/main/res/values/strings.xml:133: Warning: The resource R.string.engine_fault_count appears to be unused [UnusedResources]
+ <string name="engine_fault_count">125 original fault records • search, filters and bookmarks</string>
+         ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Explanation for issues of type "AndroidGradlePluginVersion":
-   This detector looks for usage of the Android Gradle Plugin where the
-   version you are using is not the current stable release. Using older
-   versions is fine, and there are cases where you deliberately want to stick
-   with an older version. However, you may simply not be aware that a more
-   recent version is available, and that is what this lint check helps find.
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
 
-[project]/gradle/libs.versions.toml:4: Warning: A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.09.00 [GradleDependency]
-compose = "2024.12.01"
-          ~~~~~~~~~~~~
-[project]/gradle/libs.versions.toml:6: Warning: A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1 [GradleDependency]
-androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
-                                                               ~~~~~~~~
-[project]/gradle/libs.versions.toml:6: Warning: A newer version of androidx.core:core-ktx than 1.15.0 is available: 1.19.1 [GradleDependency]
-androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
-                                                               ~~~~~~~~
-[project]/gradle/libs.versions.toml:7: Warning: A newer version of androidx.activity:activity-compose than 1.9.3 is available: 1.13.0 [GradleDependency]
-activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
-                                                                      ~~~~~~~
-[project]/gradle/libs.versions.toml:14: Warning: A newer version of androidx.navigation:navigation-compose than 2.8.5 is available: 2.10.2 [GradleDependency]
-navigation = { module = "androidx.navigation:navigation-compose", version = "2.8.5" }
-                                                                            ~~~~~~~
-[project]/gradle/libs.versions.toml:15: Warning: A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.8.7 is available: 2.11.0 [GradleDependency]
-lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.7" }
-                                                                                 ~~~~~~~
-[project]/gradle/libs.versions.toml:16: Warning: A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.8.7 is available: 2.11.0 [GradleDependency]
-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.8.7" }
-                                                                                   ~~~~~~~
 
-   Explanation for issues of type "GradleDependency":
-   This detector looks for usages of libraries where the version you are using
-   is not the current stable release. Using older versions is fine, and there
-   are cases where you deliberately want to stick with an older version.
-   However, you may simply not be aware that a more recent version is
-   available, and that is what this lint check helps find.
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
 
-0 errors, 10 warnings
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests =true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests =true.
+   ,
+
+0 errors, 14 warnings

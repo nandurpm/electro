@@ -25,3 +25,9 @@ The earlier `docs/BUILD_REPORT.md` records the 2.1.0 baseline's 120 debug/JVM/Ro
 Review confirmed that the old committed verification reports still described 2.0.3. All current verification files are regenerated for 3.0 after the reviewed build; unrun external references and unsigned signing status are explicit. New regression fixtures reject old summary/badging versions and unsigned publication. The original certificate fingerprint is independent of regenerated APK signatures.
 
 Band-calculator Reset now clears the cached `bandResult` synchronously, before the new band effect runs. A UI regression covers both resistor and inductor reset/display/copy paths. Dependency and API-level lint warnings remain documented; dependency pins and application functionality were preserved.
+
+## Reviewed 3.0 results
+
+After the reset/evidence corrections, `testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleRelease` passed: **121 debug/UI tests and 80 release tests**, with no failures/errors/skips and no lint errors. Eight Python tests passed. Every file under `verification/` was regenerated from the actual 3.0/code-14 unsigned release APK and current reports. The original certificate fingerprint was preserved in the separate signing identity file.
+
+The unsigned artifact is explicitly marked `release_publishable: false`. No signed APK or final release is claimed while the original signing secrets remain missing. The version guard rejects the stale 2.0.3/12 evidence described in review, and `--require-signed` rejects the current unsigned state. Original dependency/API warnings remain warnings; no dependency upgrades were needed for these corrections.
