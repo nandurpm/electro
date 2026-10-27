@@ -142,15 +142,16 @@ Include these identifiers and functions from my photographs:
 | Identifier | Component |
 |---|---|
 | T1 | Control Transformer |
-| E-BK | Emergency Brake |
-| S-BK | Service Brake |
+| EBK | Emergency Brake |
+| SBK1 | Service Brake 1 |
+| SBK2 | Service Brake 2 |
 | PES | Safety Controller |
 | OL1 | Overcurrent Relay |
 | MT1 | Motor 1 |
 | G01 | 24 V SMPS |
 | G02 | Brake Power Supply |
 | G03 | Emergency Brake Power Supply |
-| INV | VVVF Drive |
+| NV | VFD Drive |
 | FL02/FL03 | Three-phase / Single-phase EMI Filters |
 | K10 | Brake Contactor |
 | K12 | VVVF Mode Contactor |
@@ -160,7 +161,7 @@ Include these identifiers and functions from my photographs:
 | K16 | Star Contactor |
 | K17 | Delta Contactor |
 | K20 | Safety Contactor |
-| K49 | Power ON Contactor |
+| K99 | Power ON Contactor |
 | Q01 | Main Circuit Breaker |
 | Q02 | 2-Pole 230 V Input MCB |
 | Q03 | Lighting RCBO |
@@ -181,6 +182,18 @@ Include these identifiers and functions from my photographs:
 | XS2 | Bottom Inspection Plug |
 
 The above identifiers are transcribed from the handwritten notes. Treat unclear or potentially inconsistent labels as requiring verification rather than silently changing them.
+
+**Dictionary alignment (3.0.2).** The supplied DMRC drawing code dictionary resolves four of the labels above that were previously read from handwriting. They have been re-coded in the app and are listed here as changed, not silently substituted:
+
+| Previous reading | Dictionary code | Resolution |
+|---|---|---|
+| E-BK | EBK | Emergency brake; no separate suffix in the dictionary. |
+| S-BK | SBK1 and SBK2 | Two service-brake designations, recorded as two entries. |
+| INV | NV | NV is the VFD drive. INV is retained separately as the inverter *fault* signal. |
+| K49 | K99 | Power ON contactor. |
+| EK05 / EK15 | EL05 / EL15 | Top and bottom traffic lights; the handwritten K is an L. |
+
+The same alignment added the dictionary entries that were absent from the app (power and protection devices, controllers, displays, lighting, fans, metering, plugs and signal terminals) and recorded `X1–X10`, `Y5–Y6` and `Q13–Q14` as grouped ranges because the individual point functions are not supplied.
 
 For each component provide:
 

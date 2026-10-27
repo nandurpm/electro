@@ -333,6 +333,16 @@ The 1.1.1 personal-use update removes reserved footer space and optional enablem
 ````markdown
 # Changes
 
+## 3.0.2 — drawing code dictionary alignment (source only, not yet built or signed)
+
+- Aligned the engineering component dictionary with the supplied DMRC drawing code dictionary (146 rows). Technical records go from 245 to 325: 6 re-coded and 80 added.
+- Re-coded: `K49` → `K99`, `E-BK` → `EBK`, `S-BK` → `SBK1` with `SBK2` added, `INV` → `NV` (VFD drive) with `INV` retained as the inverter-fault signal, `EK05`/`EK15` → `EL05`/`EL15`.
+- Added the dictionary entries that were missing: `OL2`, `MT2`, `MPC`, `ICP`, `EXT`, `HM`, `LCD2`, `LCD3`, `MHP1`, `MHP2`, `MT1 PTC`, `MT2 PTC`, `DSS`, the lighting and socket group, the fan, speaker and metering group, the MCC/TMB/BMB plugs, and the signal/terminal designations.
+- Added a `dmrc-codes` source record with the dictionary checksum, so every new entry carries its provenance.
+- `X1–X10`, `Y5–Y6` and `Q13–Q14` are recorded as grouped ranges because the individual point functions are not supplied, following the existing `Q9–Q12` precedent.
+- Switches `S11–S58`, `K03`, `OP`, `BIT0–BIT3`, `BM`, `RS485` and `INS` come from the photograph transcriptions and are retained; they are not part of the supplied dictionary.
+- NOT changed: versionCode/versionName, signing, access-code design, Kotlin sources and the 125 exact fault rows.
+
 ## 3.0.1 — audit fixes (source only, not yet built or signed)
 
 - Engineering code verification now runs off the UI thread; Unlock is disabled while checking.
@@ -587,7 +597,7 @@ Offline native Android engineering workbench. Version **3.0**, code **14**, appl
 - Eight-dimensional unit converter with explicit source/destination units.
 - **114 image-backed component/diagram entries**, locally bundled with sampled off-thread decoding and an 8 MiB decoded cache. Generated artwork is illustrative, not manufacturer wiring authority.
 - Multimeter, T568A/B, RS-485, RS-232, Modbus, CAN and interface lessons. The meter includes an interactive native drawing with mode/jack explanations.
-- Preserved engineering module: 125 exact fault records, 245 technical records, 14 source-photo transcriptions and 15 engineering calculators.
+- Preserved engineering module: 125 exact fault records, 325 technical records, 14 source-photo transcriptions and 15 engineering calculators.
 
 Exact manufacturer ratings, terminal drawings and part-specific test procedures have not been supplied for every image. Pages identify those gaps. Cable estimates do not select code-compliant ampacity/protection. New external reference downloads were blocked by this environment's network policy; citations are provided for review and are not represented as freshly verified equipment documentation.
 
@@ -3018,8 +3028,8 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "diagram": "transformer"
     },
     {
-      "id": "component-E-BK",
-      "title": "E-BK — Emergency brake",
+      "id": "component-EBK",
+      "title": "EBK — Emergency brake",
       "section": "panel",
       "summary": "Emergency/auxiliary braking designation in the notes. Actuation and certified performance depend on the approved brake design.",
       "body": [
@@ -3043,10 +3053,10 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "diagram": "brake"
     },
     {
-      "id": "component-S-BK",
-      "title": "S-BK — Service brake",
+      "id": "component-SBK1",
+      "title": "SBK1 — Service brake 1",
       "section": "panel",
-      "summary": "Normal stopping/holding brake designation; release and applied feedback are separate functions.",
+      "summary": "Normal stopping/holding brake designation one; release and applied feedback are separate functions.",
       "body": [
         "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
         "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
@@ -3207,8 +3217,8 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "diagram": "supply"
     },
     {
-      "id": "component-INV",
-      "title": "INV — VVVF drive",
+      "id": "component-NV",
+      "title": "NV — VFD drive",
       "section": "panel",
       "summary": "Controls motor voltage and frequency. Drive fault signals do not establish the integrity of an independent safety circuit.",
       "body": [
@@ -3444,8 +3454,8 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "diagram": "contactor"
     },
     {
-      "id": "component-K49",
-      "title": "K49 — Power ON contactor",
+      "id": "component-K99",
+      "title": "K99 — Power ON contactor",
       "section": "panel",
       "summary": "Switches the designated main/control branch; downstream voltage may remain from other supplies.",
       "body": [
@@ -3906,12 +3916,12 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "diagram": "relay"
     },
     {
-      "id": "component-EK05",
-      "title": "EK05 — Top traffic light",
+      "id": "component-EL05",
+      "title": "EL05 — Top traffic light",
       "section": "panel",
       "summary": "Recorded top-landing traffic indication. It is not a safety-ready indication unless the approved design says so.",
       "body": [
-        "Identifier uncertainty: the handwritten K could be L; verify EK05/EK15 versus EL05/EL15 on the installed drawing.",
+        "Identifier: EL05 in the supplied code dictionary; the handwritten note reads EK, so confirm the label on the installed drawing before ordering parts.",
         "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
         "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
         "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
@@ -3927,12 +3937,12 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "diagram": "indicator"
     },
     {
-      "id": "component-EK15",
-      "title": "EK15 — Bottom traffic light",
+      "id": "component-EL15",
+      "title": "EL15 — Bottom traffic light",
       "section": "panel",
       "summary": "Recorded bottom-landing traffic indication, separate from a permission to enter the machine space.",
       "body": [
-        "Identifier uncertainty: the handwritten K could be L; verify EK05/EK15 versus EL05/EL15 on the installed drawing.",
+        "Identifier: EL15 in the supplied code dictionary; the handwritten note reads EK, so confirm the label on the installed drawing before ordering parts.",
         "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
         "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
         "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
@@ -3966,6 +3976,918 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "status": "User notes — not OEM verified",
       "related": [],
       "diagram": "indicator"
+    },
+    {
+      "id": "component-OL2",
+      "title": "OL2 — Overcurrent relay 2",
+      "section": "panel",
+      "summary": "Second motor overload/overcurrent protection circuit, where a double-drive arrangement is fitted. It is not interchangeable with motor thermal sensing.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "relay"
+    },
+    {
+      "id": "component-MT2",
+      "title": "MT2 — Motor 2",
+      "section": "panel",
+      "summary": "Second traction/drive motor, where a double-drive arrangement is fitted. Nameplate data is not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "motor-principle",
+        "component-MT1"
+      ],
+      "diagram": "motor"
+    },
+    {
+      "id": "component-SBK2",
+      "title": "SBK2 — Service brake 2",
+      "section": "panel",
+      "summary": "Second service brake designation, where a double-drive arrangement is fitted; release and applied feedback are separate functions.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "service-brake",
+        "component-SBK1"
+      ],
+      "diagram": "brake"
+    },
+    {
+      "id": "component-MPC",
+      "title": "MPC — Main processor controller",
+      "section": "panel",
+      "summary": "Main controller providing digital I/O and motion sequencing. Program, I/O mapping and safe-state architecture are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "input-I1",
+        "output-Q1"
+      ],
+      "diagram": "controller"
+    },
+    {
+      "id": "component-ICP",
+      "title": "ICP — Isolation communication port",
+      "section": "panel",
+      "summary": "Isolated communications interface to the controller. Protocol, connector pinout and isolation rating are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "extra-RS485"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "component-EXT",
+      "title": "EXT — Input/output extension unit",
+      "section": "panel",
+      "summary": "Expands the available controller I/O. Point mapping, addressing and terminal arrangement are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "controller"
+    },
+    {
+      "id": "component-HM",
+      "title": "HM — HMI display",
+      "section": "panel",
+      "summary": "Operator display for indication and parameter entry. Menu structure, access levels and displayed messages are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-LCD2",
+      "title": "LCD2 — Top decking fault display",
+      "section": "panel",
+      "summary": "Top-landing fault indication display. Its displayed text is not a verified fault-tree output.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "fault-collection"
+      ],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-LCD3",
+      "title": "LCD3 — Bottom decking fault display",
+      "section": "panel",
+      "summary": "Bottom-landing fault indication display. Its displayed text is not a verified fault-tree output.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "fault-collection"
+      ],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-MHP1",
+      "title": "MHP1 — Motor 1 heat protection relay",
+      "section": "panel",
+      "summary": "Relay responding to drive motor one thermal protection. Trip class, set point and reset mode are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-MT1"
+      ],
+      "diagram": "relay"
+    },
+    {
+      "id": "component-MHP2",
+      "title": "MHP2 — Motor 2 heat protection relay",
+      "section": "panel",
+      "summary": "Relay responding to drive motor two thermal protection. Trip class, set point and reset mode are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-MT2"
+      ],
+      "diagram": "relay"
+    },
+    {
+      "id": "component-MT1-PTC",
+      "title": "MT1 PTC — Motor 1 thermistor",
+      "section": "panel",
+      "summary": "Thermal sensing element embedded in motor 1. Its resistance-to-temperature characteristic and wiring arrangement are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-MT1"
+      ],
+      "diagram": "sensor"
+    },
+    {
+      "id": "component-MT2-PTC",
+      "title": "MT2 PTC — Motor 2 thermistor",
+      "section": "panel",
+      "summary": "Thermal sensing element embedded in motor 2. Its resistance-to-temperature characteristic and wiring arrangement are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-MT2"
+      ],
+      "diagram": "sensor"
+    },
+    {
+      "id": "component-PID",
+      "title": "PID — Temperature monitor",
+      "section": "panel",
+      "summary": "Digital temperature monitoring module. Sensor type, alarm thresholds and output assignment are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-RTD"
+      ],
+      "diagram": "controller"
+    },
+    {
+      "id": "component-RTD",
+      "title": "RTD — PT100 temperature sensor",
+      "section": "panel",
+      "summary": "Resistance temperature sensor, nominal 100 Ω at 0 °C. Tolerance class, wiring arrangement and mounting are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-PID"
+      ],
+      "diagram": "sensor"
+    },
+    {
+      "id": "component-DT",
+      "title": "DT — Energy meter",
+      "section": "panel",
+      "summary": "Three-phase electrical energy meter. CT ratio, accuracy class, pulse output and tariff configuration are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-CT1"
+      ],
+      "diagram": "controller"
+    },
+    {
+      "id": "component-CT1",
+      "title": "CT1 — Current transformer, R phase",
+      "section": "panel",
+      "summary": "Measures R-phase current. Ratio, accuracy class, burden and secondary wiring are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-DT"
+      ],
+      "diagram": "transformer"
+    },
+    {
+      "id": "component-CT2",
+      "title": "CT2 — Current transformer, S phase",
+      "section": "panel",
+      "summary": "Measures S-phase current. Ratio, accuracy class, burden and secondary wiring are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-DT"
+      ],
+      "diagram": "transformer"
+    },
+    {
+      "id": "component-CT3",
+      "title": "CT3 — Current transformer, T phase",
+      "section": "panel",
+      "summary": "Measures T-phase current. Ratio, accuracy class, burden and secondary wiring are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-DT"
+      ],
+      "diagram": "transformer"
+    },
+    {
+      "id": "component-INV",
+      "title": "INV — Inverter fault",
+      "section": "panel",
+      "summary": "Fault indication reported from the drive, not a device in its own right. A drive fault does not establish the state of an independent safety circuit.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-NV",
+        "input-I14"
+      ],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-LS01",
+      "title": "LS01 — MCC light switch",
+      "section": "panel",
+      "summary": "Switches the MCC lighting circuit. Its supply source and protection are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "switch"
+    },
+    {
+      "id": "component-LS02",
+      "title": "LS02 — Top pit light switch",
+      "section": "panel",
+      "summary": "Switches the top pit lighting circuit. Its supply source and protection are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "switch"
+    },
+    {
+      "id": "component-LS06",
+      "title": "LS06 — Bottom pit light switch",
+      "section": "panel",
+      "summary": "Switches the bottom pit lighting circuit. Its supply source and protection are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "switch"
+    },
+    {
+      "id": "component-EL00",
+      "title": "EL00 — MCC light",
+      "section": "panel",
+      "summary": "Lighting inside the MCC. Fitting type and supply source are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-EL02",
+      "title": "EL02 — Top pit light",
+      "section": "panel",
+      "summary": "Upper pit lighting. Fitting type and supply source are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-EL12",
+      "title": "EL12 — Bottom pit light",
+      "section": "panel",
+      "summary": "Lower pit lighting. Fitting type and supply source are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-EP1",
+      "title": "EP1 — MCC single-phase socket",
+      "section": "panel",
+      "summary": "Single-phase maintenance socket in the MCC. Its supply source, protection and RCD coverage are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "component-EP2",
+      "title": "EP2 — TMB single-phase socket",
+      "section": "panel",
+      "summary": "Single-phase socket in the top machine/controller section. Its supply source and protection are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "component-EP3",
+      "title": "EP3 — BMB single-phase socket",
+      "section": "panel",
+      "summary": "Single-phase socket in the bottom section. Its supply source and protection are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "component-LUB",
+      "title": "LUB — Auto lubrication pump",
+      "section": "panel",
+      "summary": "Lubrication pump motor and device driven by the lubrication relay. Cycle timing, reservoir level monitoring and fault feedback are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-KR03"
+      ],
+      "diagram": "motor"
+    },
+    {
+      "id": "component-EL01",
+      "title": "EL01 — Top step gap light",
+      "section": "panel",
+      "summary": "Illuminates the top comb/step gap area. It is an aid to observation, not a safety device.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-EL03",
+      "title": "EL03 — Comb light, top left-hand side",
+      "section": "panel",
+      "summary": "Upper left-hand comb illumination. Fitting type and supply source are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-EL04",
+      "title": "EL04 — Comb light, top right-hand side",
+      "section": "panel",
+      "summary": "Upper right-hand comb illumination. Fitting type and supply source are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-EL11",
+      "title": "EL11 — Bottom step gap light",
+      "section": "panel",
+      "summary": "Illuminates the bottom comb/step gap area. It is an aid to observation, not a safety device.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-EL13",
+      "title": "EL13 — Comb light, bottom left-hand side",
+      "section": "panel",
+      "summary": "Lower left-hand comb illumination. Fitting type and supply source are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-EL14",
+      "title": "EL14 — Comb light, bottom right-hand side",
+      "section": "panel",
+      "summary": "Lower right-hand comb illumination. Fitting type and supply source are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-SPK1",
+      "title": "SPK1 — Public announcement speaker 1",
+      "section": "panel",
+      "summary": "Upper landing announcement speaker. Tapping, impedance and amplifier assignment are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-PAS"
+      ],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-SPK2",
+      "title": "SPK2 — Public announcement speaker 2",
+      "section": "panel",
+      "summary": "Lower landing announcement speaker. Tapping, impedance and amplifier assignment are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-PAS"
+      ],
+      "diagram": "indicator"
+    },
+    {
+      "id": "component-FAN1",
+      "title": "FAN1 — MCC fan, top left-hand side",
+      "section": "panel",
+      "summary": "Ventilation fan at the MCC top left. Airflow direction, rating and thermal control are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-K05"
+      ],
+      "diagram": "motor"
+    },
+    {
+      "id": "component-FAN2",
+      "title": "FAN2 — MCC fan, top right-hand side",
+      "section": "panel",
+      "summary": "Ventilation fan at the MCC top right. Airflow direction, rating and thermal control are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-K05"
+      ],
+      "diagram": "motor"
+    },
+    {
+      "id": "component-FAN3",
+      "title": "FAN3 — MCC fan, bottom left-hand side",
+      "section": "panel",
+      "summary": "Ventilation fan at the MCC bottom left. Airflow direction, rating and thermal control are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-K05"
+      ],
+      "diagram": "motor"
+    },
+    {
+      "id": "component-FAN4",
+      "title": "FAN4 — MCC fan, bottom right-hand side",
+      "section": "panel",
+      "summary": "Ventilation fan at the MCC bottom right. Airflow direction, rating and thermal control are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-K05"
+      ],
+      "diagram": "motor"
+    },
+    {
+      "id": "component-FAN5",
+      "title": "FAN5 — Top machine room fan",
+      "section": "panel",
+      "summary": "Upper machinery space fan. Airflow direction, rating and control source are not supplied.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "4885(1).jpg",
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "motor"
     },
     {
       "id": "input-I1",
@@ -4230,7 +5152,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       ],
       "status": "User notes — not OEM verified",
       "related": [
-        "component-INV"
+        "component-NV"
       ],
       "diagram": "terminal"
     },
@@ -4615,6 +5537,27 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "diagram": "terminal"
     },
     {
+      "id": "output-Q13–Q14",
+      "title": "Q13–Q14 — MPC digital outputs",
+      "section": "io",
+      "summary": "Remaining MPC digital output points; individual functions are not supplied.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-MPC"
+      ],
+      "diagram": "terminal"
+    },
+    {
       "id": "extra-X11",
       "title": "X11 — Floor plate switch 2",
       "section": "wiring",
@@ -4865,6 +5808,696 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "sources": [
         "4892.jpg",
         "4893.jpg"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-M1",
+      "title": "M1 — MCC low-voltage plug 1",
+      "section": "wiring",
+      "summary": "Multicontact low-voltage harness connector; pins must be matched against the drawing before any reconnection.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-M2",
+      "title": "M2 — MCC low-voltage plug 2",
+      "section": "wiring",
+      "summary": "Multicontact low-voltage harness connector; pins must be matched against the drawing before any reconnection.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-M3",
+      "title": "M3 — MCC high-voltage plug",
+      "section": "wiring",
+      "summary": "Multicontact power connector. Do not assume it is isolated because the controller is switched off.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-TM1",
+      "title": "TM1 — TMB low-voltage plug 1",
+      "section": "wiring",
+      "summary": "Top controller harness connector; pins must be matched against the drawing.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-TM2",
+      "title": "TM2 — TMB low-voltage plug 2",
+      "section": "wiring",
+      "summary": "Top controller harness connector; pins must be matched against the drawing.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "component-T1-plug",
+      "title": "T1 — TMB plug T1",
+      "section": "wiring",
+      "summary": "Top controller low-voltage harness plug. The same text T1 also denotes the control transformer on the power page.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-T1"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-T2",
+      "title": "T2 — TMB plug T2",
+      "section": "wiring",
+      "summary": "Top controller harness plug; pins must be matched against the drawing.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-T3",
+      "title": "T3 — TMB plug T3",
+      "section": "wiring",
+      "summary": "Top controller harness plug; pins must be matched against the drawing.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-T4",
+      "title": "T4 — TMB plug T4",
+      "section": "wiring",
+      "summary": "Top controller harness plug; pins must be matched against the drawing.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-TB1",
+      "title": "TB1 — TMB–BMB low-voltage plug",
+      "section": "wiring",
+      "summary": "Inter-controller low-voltage connection between the top and bottom sections; pins must be matched against the drawing.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-TB2",
+      "title": "TB2 — TMB–BMB high-voltage plug",
+      "section": "wiring",
+      "summary": "Inter-controller high-voltage connection between the top and bottom sections; isolate and prove dead before separation.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-B1",
+      "title": "B1 — BMB low-voltage plug 1",
+      "section": "wiring",
+      "summary": "Bottom controller harness connector; pins must be matched against the drawing.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-B2",
+      "title": "B2 — BMB low-voltage plug 2",
+      "section": "wiring",
+      "summary": "Bottom controller harness connector; pins must be matched against the drawing.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-B3",
+      "title": "B3 — BMB high-voltage plug",
+      "section": "wiring",
+      "summary": "Bottom controller power connector. Do not assume it is isolated because the controller is switched off.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-NSB",
+      "title": "NSB — BMB inspection plug",
+      "section": "wiring",
+      "summary": "Bottom controller inspection connector. Inspection operation remains a controlled, reduced-speed mode, not a normal run mode.",
+      "body": [
+        "Typical location: controller harness and plug interface. Pin numbering, keying and mating part must be read from the installed drawing; none is inferred here.",
+        "Connections: pin-to-wire assignment, contact size, current rating and voltage rating are not supplied.",
+        "Inspection overview: identify the plug by its label and drawing page, record the mated state before separating it, and confirm the mating keyway before reconnecting.",
+        "Safety: isolate and prove dead before working on any harness; never assume a low-voltage plug is de-energised."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "device-INS"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-301",
+      "title": "301 — Control supply positive (+24 V)",
+      "section": "wiring",
+      "summary": "Circuit-wire potential on the low-voltage drawing; verify the voltage at its source rather than assuming 24 V.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-302",
+      "title": "302 — Control supply return (−24 V)",
+      "section": "wiring",
+      "summary": "Return line for 301; verify the voltage and polarity at its source.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "extra-301"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-201",
+      "title": "201 — 230 V supply line terminal",
+      "section": "wiring",
+      "summary": "Line terminal designation. The supplied dictionary also describes it as a 24 V DC supply reference on the power page, so confirm the page before use.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-202",
+      "title": "202 — 230 V supply line terminal (return)",
+      "section": "wiring",
+      "summary": "Return terminal designation. The supplied dictionary describes it as a DC return circuit reference, so confirm the page before use.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "extra-201"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-SA",
+      "title": "SA — Safety serial communication A",
+      "section": "wiring",
+      "summary": "Safety communication line label; the protocol and transmission arrangement are unconfirmed.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-SB",
+      "title": "SB — Safety serial communication B",
+      "section": "wiring",
+      "summary": "Safety communication line label; the protocol and transmission arrangement are unconfirmed.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "extra-SA"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-XA",
+      "title": "XA — Power/relay interconnect XA",
+      "section": "wiring",
+      "summary": "Wiring terminal/interconnect designation between the power and relay sections; the associated conductors are not supplied.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-XB",
+      "title": "XB — Power/relay interconnect XB",
+      "section": "wiring",
+      "summary": "Wiring terminal/interconnect designation between the power and relay sections; the associated conductors are not supplied.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "extra-XA"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-XL",
+      "title": "XL — 230 V supply line terminal",
+      "section": "wiring",
+      "summary": "Line/phase supply terminal designation; verify the potential at its source.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-XN",
+      "title": "XN — Neutral supply terminal",
+      "section": "wiring",
+      "summary": "Neutral supply terminal designation; verify the supply arrangement at its source.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "extra-XL"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-ULP",
+      "title": "ULP — UPS-backed line reference",
+      "section": "wiring",
+      "summary": "UPS-fed supply circuit label. The battery autonomy and protected loads are not supplied.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-LP1",
+      "title": "LP1 — Lighting supply line",
+      "section": "wiring",
+      "summary": "Lighting circuit feed label; the associated protection and RCD coverage are not supplied.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-RS485-D+",
+      "title": "RS485 D+ — RS-485 positive data line",
+      "section": "wiring",
+      "summary": "Differential serial bus positive conductor. Termination, bias and reference potential must be confirmed on site.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "extra-RS485"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-RS485-D-",
+      "title": "RS485 D- — RS-485 negative data line",
+      "section": "wiring",
+      "summary": "Differential serial bus negative conductor. Termination, bias and reference potential must be confirmed on site.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "extra-RS485"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-X1–X10",
+      "title": "X1–X10 — PES input terminals",
+      "section": "wiring",
+      "summary": "Individual PES input point designations; the function of each point is not supplied. X11–X20 are recorded separately.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-PES"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-Y5–Y6",
+      "title": "Y5–Y6 — FCB output points",
+      "section": "wiring",
+      "summary": "Fault-collection output channel designations; the function of each channel is not supplied.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "component-FCB1",
+        "component-FCB2"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-COM",
+      "title": "COM — Common terminal",
+      "section": "wiring",
+      "summary": "Common connection for a group of I/O. Which group it serves must be read from the drawing.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "extra-BM"
+      ],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-NC",
+      "title": "NC — Normally closed contact",
+      "section": "wiring",
+      "summary": "Contact closed in the normal unactuated state. The specific device contact it refers to is not identified.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-NO",
+      "title": "NO — Normally open contact",
+      "section": "wiring",
+      "summary": "Contact open in the normal unactuated state. The specific device contact it refers to is not identified.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [],
+      "diagram": "terminal"
+    },
+    {
+      "id": "extra-PG",
+      "title": "PG n:XY — Drawing cross reference",
+      "section": "wiring",
+      "summary": "Page number and drawing coordinate reference; it is not a device identifier and cannot be measured.",
+      "body": [
+        "Drawing meaning: a circuit-wire, terminal or point designation rather than a physical device; the same label can repeat on different pages.",
+        "Connections: polarity, potential and terminal assignment must be read from the referenced drawing page. Nothing is inferred from the label alone.",
+        "Inspection overview: confirm the label against the approved drawing before probing, then measure at the source to establish the expected potential.",
+        "Safety: treat every labelled conductor as live until it is isolated and proved dead with an approved instrument."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
       ],
       "status": "User notes — not OEM verified",
       "related": [],
@@ -5904,6 +7537,27 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "diagram": "switch"
     },
     {
+      "id": "device-DSS",
+      "title": "DSS — S.O.S switch",
+      "section": "sensors",
+      "summary": "Safety-related S.O.S input. The acronym is not expanded in the supplied dictionary and the commanded action is not verified.",
+      "body": [
+        "Typical location: controller/power assembly for switching and supplies; field location for motors, brakes, detectors and indicators. Exact job position is not verified.",
+        "Connections: not verified; no coil voltage, terminal pinout, wire colour or contact rating is inferred.",
+        "Inspection overview: identify the installed part and approved drawing; compare recorded indication and device condition only under the authorised isolation/test procedure.",
+        "Safety: stored drive energy, mechanical motion and separate power supplies require the equipment-specific isolation procedure. Do not bridge safety circuits."
+      ],
+      "sources": [
+        "dmrc-codes",
+        "general"
+      ],
+      "status": "User notes — not OEM verified",
+      "related": [
+        "device-RMS"
+      ],
+      "diagram": "switch"
+    },
+    {
       "id": "motor-example",
       "title": "15 kW induction motor — recorded example",
       "section": "motor",
@@ -5956,7 +7610,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       ],
       "status": "Educational reference — verify application",
       "related": [
-        "component-INV",
+        "component-NV",
         "motor-example"
       ],
       "diagram": "motor"
@@ -5977,8 +7631,8 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       ],
       "status": "User notes — not OEM verified",
       "related": [
-        "component-S-BK",
-        "component-E-BK"
+        "component-SBK1",
+        "component-EBK"
       ],
       "diagram": "brake"
     },
@@ -5998,8 +7652,8 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       ],
       "status": "User notes — not OEM verified",
       "related": [
-        "component-S-BK",
-        "component-E-BK"
+        "component-SBK1",
+        "component-EBK"
       ],
       "diagram": "brake"
     },
@@ -6019,8 +7673,8 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       ],
       "status": "User notes — not OEM verified",
       "related": [
-        "component-S-BK",
-        "component-E-BK",
+        "component-SBK1",
+        "component-EBK",
         "input-I8",
         "input-I9"
       ],
@@ -6042,8 +7696,8 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       ],
       "status": "User notes — not OEM verified",
       "related": [
-        "component-S-BK",
-        "component-E-BK"
+        "component-SBK1",
+        "component-EBK"
       ],
       "diagram": "brake"
     },
@@ -6705,7 +8359,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       ],
       "status": "Educational — not an OEM-verified operating sequence",
       "related": [
-        "component-INV",
+        "component-NV",
         "component-PES"
       ],
       "diagram": "process"
@@ -6727,7 +8381,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       ],
       "status": "Educational — not an OEM-verified operating sequence",
       "related": [
-        "component-INV",
+        "component-NV",
         "component-PES"
       ],
       "diagram": "process"
@@ -6878,7 +8532,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "possibleCauses": "A motion/drive discrepancy, sensing condition, or signal/circuit fault may be involved. No overspeed threshold or protective test procedure is inferred from a generic explanation.",
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
-        "component-INV"
+        "component-NV"
       ],
       "sources": [
         "supplied"
@@ -7534,7 +9188,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -7718,7 +9372,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -7737,7 +9391,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -7756,7 +9410,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -7775,7 +9429,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -7794,7 +9448,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -7813,7 +9467,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -7832,7 +9486,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -7851,7 +9505,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "checks": "Record the event and isolate/control access as required by the approved procedure. Qualified personnel should compare the actual device state and approved drawings. Do not bridge protective devices. Clear the cause and confirm return-to-service requirements before any reset.",
       "related": [
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -8836,7 +10490,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "related": [
         "component-PES",
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -8934,7 +10588,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "related": [
         "component-PES",
         "brake-feedback",
-        "component-S-BK"
+        "component-SBK1"
       ],
       "sources": [
         "supplied"
@@ -9194,6 +10848,15 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "status": "Manufacturer publication — planning context",
       "sha256": "",
       "url": "https://www.schindler.lu/content/dam/website/lu/docs/schindler-escalators-planning-guide-en.pdf/_jcr_content/renditions/original./schindler-escalators-planning-guide-en.pdf"
+    },
+    {
+      "id": "dmrc-codes",
+      "title": "DMRC drawing code dictionary (supplied)",
+      "type": "User-provided records",
+      "text": "Supplied 146-row drawing code dictionary (DMRC_Electro_Code_Dictionary.xlsx) listing code, drawing name, category and function for the escalator control drawing set. Device names and categories are taken from it; ratings, terminal assignments and test values are not.",
+      "status": "User supplied — not OEM approved",
+      "sha256": "d90c690ab29c9ef7b42215c623ce7c9ada2fae9c6d73c8c678d6df217eb978b3",
+      "url": ""
     }
   ],
   "markers": [
@@ -9222,7 +10885,7 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
       "source": "4908.jpg"
     },
     {
-      "record": "component-E-BK",
+      "record": "component-EBK",
       "x": 890,
       "y": 235,
       "source": "4908.jpg"
@@ -42414,15 +44077,16 @@ Include these identifiers and functions from my photographs:
 | Identifier | Component |
 |---|---|
 | T1 | Control Transformer |
-| E-BK | Emergency Brake |
-| S-BK | Service Brake |
+| EBK | Emergency Brake |
+| SBK1 | Service Brake 1 |
+| SBK2 | Service Brake 2 |
 | PES | Safety Controller |
 | OL1 | Overcurrent Relay |
 | MT1 | Motor 1 |
 | G01 | 24 V SMPS |
 | G02 | Brake Power Supply |
 | G03 | Emergency Brake Power Supply |
-| INV | VVVF Drive |
+| NV | VFD Drive |
 | FL02/FL03 | Three-phase / Single-phase EMI Filters |
 | K10 | Brake Contactor |
 | K12 | VVVF Mode Contactor |
@@ -42432,7 +44096,7 @@ Include these identifiers and functions from my photographs:
 | K16 | Star Contactor |
 | K17 | Delta Contactor |
 | K20 | Safety Contactor |
-| K49 | Power ON Contactor |
+| K99 | Power ON Contactor |
 | Q01 | Main Circuit Breaker |
 | Q02 | 2-Pole 230 V Input MCB |
 | Q03 | Lighting RCBO |
@@ -42453,6 +44117,18 @@ Include these identifiers and functions from my photographs:
 | XS2 | Bottom Inspection Plug |
 
 The above identifiers are transcribed from the handwritten notes. Treat unclear or potentially inconsistent labels as requiring verification rather than silently changing them.
+
+**Dictionary alignment (3.0.2).** The supplied DMRC drawing code dictionary resolves four of the labels above that were previously read from handwriting. They have been re-coded in the app and are listed here as changed, not silently substituted:
+
+| Previous reading | Dictionary code | Resolution |
+|---|---|---|
+| E-BK | EBK | Emergency brake; no separate suffix in the dictionary. |
+| S-BK | SBK1 and SBK2 | Two service-brake designations, recorded as two entries. |
+| INV | NV | NV is the VFD drive. INV is retained separately as the inverter *fault* signal. |
+| K49 | K99 | Power ON contactor. |
+| EK05 / EK15 | EL05 / EL15 | Top and bottom traffic lights; the handwritten K is an L. |
+
+The same alignment added the dictionary entries that were absent from the app (power and protection devices, controllers, displays, lighting, fans, metering, plugs and signal terminals) and recorded `X1–X10`, `Y5–Y6` and `Q13–Q14` as grouped ranges because the individual point functions are not supplied.
 
 For each component provide:
 
@@ -46065,7 +47741,7 @@ light errorContainer: 13.26:1
 ## verification/engineering.txt
 
 ````text
-PASS: 125 exact faults, 245 technical records, 14 photographs, 15 tools; all sources and routes resolve.
+PASS: 125 exact faults, 325 technical records, 14 photographs, 15 tools; all sources and routes resolve.
 
 ````
 
