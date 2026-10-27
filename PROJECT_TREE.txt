@@ -366,6 +366,7 @@ Electro/
   scripts/validate_library.py
   settings.gradle.kts
   signing/original-release-certificate.sha256
+  signing/published-3.0.1-certificate.sha256
   signing/release-certificate.sha256
   verification/README.md
   verification/apk-badging.txt

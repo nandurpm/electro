@@ -365,6 +365,8 @@ The 1.1.1 personal-use update removes reserved footer space and optional enablem
 
 ## 3.0.2 — reference-based UI release
 
+- New signing identity explicitly authorized after loss of the previous credentials. Existing application ID retained; older-key installations cannot be upgraded in place.
+
 - Applied the supplied ELECTRO reference through navy/cyan themes, lightning branding, compact bordered panels, illustrated home banner, six quick actions and grouped settings. Existing Compose routes, calculators and persistence remain connected.
 - Release version 3.0.2/code 16 and pinned signing checks to the published 3.0.1 certificate. GitHub Actions signs with the published release identity and regenerates evidence before packaging.
 - Validation: 121 debug/UI tests, 80 release tests, 10 Python tests, no lint errors. Physical-device validation remains unrun.
@@ -718,7 +720,7 @@ All Kotlin paths below are under `app/src/main/java/com/electrokit/app/`.
 
 Images/metadata: `app/src/main/assets/components/` and `components.json`. Original engineering content: `app/src/main/assets/engineering.json` and `engineering_tools.json`. Android strings/icons: `app/src/main/res/`.
 
-The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.2 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the published 3.0.1 certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
+The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.2 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the active, user-authorized release certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
 
 ## Maintenance guides
 
@@ -731,7 +733,9 @@ The missing nested project files were restored from the existing `FULL_SOURCE.md
 - [Testing](docs/TESTING_GUIDE.md)
 - [Audit and limitations](docs/AUDIT_REPORT.md)
 
-Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the published 3.0.1 private key and all values outside the repository. A release is signed only when valid credentials are supplied.
+Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the new 3.0.2 private key and all values outside the repository. A release is signed only when valid credentials are supplied.
+
+ELECTRO 3.0.2 uses a newly authorized signing key. It cannot update older-key installations; uninstalling those installations removes their local data. Keep the separate private signing backup for future updates.
 
 ````
 
@@ -43982,21 +43986,15 @@ These Git commands also work in PowerShell. Tags trigger release automation and 
 ## docs/RELEASE_3_0.md
 
 ````markdown
-# ELECTRO current build and signing status
+# ELECTRO 3.0.2 release
 
-Current source: ELECTRO 3.0.2, versionCode 16, application ID com.electrokit.app.
+Version 3.0.2 / code 16 uses the new signing identity explicitly authorized by the user after the previous credentials could not be recovered. The application ID remains com.electrokit.app.
 
-The reference-driven UI revision uses the existing Compose architecture and bundled art. GitHub Actions builds and signs this revision using repository secrets, verifies the published certificate, and regenerates evidence before packaging. The existing GitHub 3.0.1 APK predates this UI revision; do not present that APK as the redesigned app.
+The active certificate is recorded in signing/release-certificate.sha256. The published 3.0.1 and original certificates are retained separately as historical records. This release cannot update an installation signed with either previous key. Uninstalling the old app removes its local data.
 
-The active public certificate in `signing/release-certificate.sha256` is verified against the published `electro-3.0.1` APK:
+The new private key and passwords are provided in a separate private backup, outside the repository and public source archive. Future builds must reuse that key. GitHub Actions requires the four ELECTROKIT signing secrets from the new backup; the old secrets fail keystore validation.
 
-`d9823b341c6951b6dc912230fd46f2d61d7b3c315de2ae31fbb112345d1a9070`
-
-The original certificate remains in `signing/original-release-certificate.sha256` as a historical record. The locally generated replacement key also differs from the published APK. Neither is accepted by the release workflow. Compatible release signing requires the published APK's private key ; this revision increments versionCode to 16.
-
-Configure ELECTROKIT_KEYSTORE_BASE64, ELECTROKIT_STORE_PASSWORD, ELECTROKIT_KEY_ALIAS and ELECTROKIT_KEY_PASSWORD in GitHub Actions using that published key. Private credentials must remain outside source archives. The fingerprint cannot recreate a lost key.
-
-The workflow regenerates every file under verification from the actual signed artifact and executed reports before creating the release source archive. Physical-device checks and external reference validation are not claimed. The historical docs/BUILD_REPORT.md describes the earlier baseline.
+Local tests passed: 121 debug/UI tests, 80 release tests, 10 Python tests, and zero lint errors. Signed verification is generated from the actual APK. Physical-device installation and external reference checks remain unrun.
 
 ````
 
@@ -47596,10 +47594,17 @@ include(":app")
 
 ````
 
-## signing/release-certificate.sha256
+## signing/published-3.0.1-certificate.sha256
 
 ````text
 d9823b341c6951b6dc912230fd46f2d61d7b3c315de2ae31fbb112345d1a9070
+
+````
+
+## signing/release-certificate.sha256
+
+````text
+a91eebe326f10f654f74afa00a51a38066b79d662ff01406ecf870e1bba8b2b5
 
 ````
 
@@ -47608,7 +47613,7 @@ d9823b341c6951b6dc912230fd46f2d61d7b3c315de2ae31fbb112345d1a9070
 ````markdown
 # Current ELECTRO 3.0.2 verification
 
-Version code: 16. Signing status: unsigned. Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.
+Version code: 16. Signing status: verified_release. Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.
 
 Run python scripts/check_verification.py --apk PATH to verify the snapshot; production also requires --require-signed. Active signing identity lives separately in signing/release-certificate.sha256. External references and physical-device checks are explicitly unrun when not verified.
 
@@ -47736,9 +47741,23 @@ uses-permission: name='com.electrokit.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSI
 ## verification/apk-signature.txt
 
 ````text
-UNSIGNED RELEASE — not production ready
-DOES NOT VERIFY
-ERROR: Missing META-INF/MANIFEST.MF
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=ELECTRO, OU=Android Release, O=ELECTRO, C=IN
+Signer #1 certificate SHA-256 digest: a91eebe326f10f654f74afa00a51a38066b79d662ff01406ecf870e1bba8b2b5
+Signer #1 certificate SHA-1 digest: 42b4e8c9c39627c26cfce794b614538977f3940b
+Signer #1 certificate MD5 digest: 39805872d4d950c820b84bc3159f2611
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 3072
+Signer #1 public key SHA-256 digest: dab945572b032502ee0587fd7d2d875b976cf2f0e750b917ca7f6a04a430e8cc
+Signer #1 public key SHA-1 digest: e59338bac71be6a38e6e8a36bc778e167ceddcde
+Signer #1 public key MD5 digest: 6463bc8d7b4b5d860edb1ffea3aca2f0
 
 ````
 
@@ -47754,52 +47773,24 @@ PASS: 31 calculators, 55 pin-outs, 21 resources, 3 modules; all routes, tables, 
 ````text
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
+> Task :app:buildKotlinToolingMetadata UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :app:preBuild UP-TO-DATE
-> Task :app:preDebugBuild UP-TO-DATE
-> Task :app:generateDebugBuildConfig
-> Task :app:checkDebugAarMetadata UP-TO-DATE
-> Task :app:generateDebugResValues UP-TO-DATE
-> Task :app:mapDebugSourceSetPaths UP-TO-DATE
-> Task :app:generateDebugResources UP-TO-DATE
-> Task :app:mergeDebugResources UP-TO-DATE
-> Task :app:packageDebugResources UP-TO-DATE
-> Task :app:parseDebugLocalResources UP-TO-DATE
-> Task :app:createDebugCompatibleScreenManifests
-> Task :app:extractDeepLinksDebug UP-TO-DATE
-> Task :app:processDebugMainManifest
-> Task :app:processDebugManifest
-> Task :app:javaPreCompileDebug UP-TO-DATE
-> Task :app:preDebugUnitTestBuild UP-TO-DATE
-> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
-> Task :app:mergeDebugShaders UP-TO-DATE
-> Task :app:compileDebugShaders NO-SOURCE
-> Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:mergeDebugAssets
-> Task :app:buildKotlinToolingMetadata UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
-> Task :app:generateReleaseBuildConfig
+> Task :app:generateReleaseBuildConfig UP-TO-DATE
 > Task :app:checkReleaseAarMetadata UP-TO-DATE
 > Task :app:generateReleaseResValues UP-TO-DATE
 > Task :app:mapReleaseSourceSetPaths UP-TO-DATE
 > Task :app:generateReleaseResources UP-TO-DATE
 > Task :app:mergeReleaseResources UP-TO-DATE
 > Task :app:packageReleaseResources UP-TO-DATE
-> Task :app:processDebugManifestForPackage
 > Task :app:parseReleaseLocalResources UP-TO-DATE
 > Task :app:createReleaseCompatibleScreenManifests
 > Task :app:extractDeepLinksRelease UP-TO-DATE
-> Task :app:processReleaseMainManifest
+> Task :app:processReleaseMainManifest UP-TO-DATE
 > Task :app:processReleaseManifest
+> Task :app:processReleaseManifestForPackage UP-TO-DATE
 > Task :app:javaPreCompileRelease UP-TO-DATE
-> Task :app:preReleaseUnitTestBuild UP-TO-DATE
-> Task :app:javaPreCompileReleaseUnitTest UP-TO-DATE
-> Task :app:mergeReleaseShaders UP-TO-DATE
-> Task :app:compileReleaseShaders NO-SOURCE
-> Task :app:generateReleaseAssets UP-TO-DATE
-> Task :app:mergeReleaseAssets
-> Task :app:preDebugAndroidTestBuild SKIPPED
-> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :app:extractProguardFiles UP-TO-DATE
 > Task :app:mergeReleaseJniLibFolders UP-TO-DATE
 > Task :app:mergeReleaseNativeLibs UP-TO-DATE
@@ -47809,80 +47800,40 @@ Daemon will be stopped at the end of the build
 > Task :app:checkReleaseDuplicateClasses UP-TO-DATE
 > Task :app:mergeReleaseArtProfile UP-TO-DATE
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
-> Task :app:compressReleaseAssets
-> Task :app:processDebugResources
+> Task :app:mergeReleaseShaders UP-TO-DATE
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets UP-TO-DATE
+> Task :app:compressReleaseAssets UP-TO-DATE
 > Task :app:extractReleaseVersionControlInfo
-> Task :app:processReleaseManifestForPackage
-> Task :app:packageDebugUnitTestForUnitTest
-> Task :app:generateDebugUnitTestConfig
 > Task :app:collectReleaseDependencies UP-TO-DATE
 > Task :app:sdkReleaseDependencyData UP-TO-DATE
+> Task :app:validateSigningRelease UP-TO-DATE
 > Task :app:writeReleaseAppMetadata UP-TO-DATE
-> Task :app:writeReleaseSigningConfigVersions UP-TO-DATE
+> Task :app:writeReleaseSigningConfigVersions
 > Task :app:processReleaseResources
-> Task :app:packageReleaseUnitTestForUnitTest
-> Task :app:generateReleaseUnitTestConfig
-> Task :app:convertLinkedResourcesToProtoRelease
-> Task :app:compileDebugKotlin
-> Task :app:compileReleaseKotlin
-> Task :app:compileDebugJavaWithJavac
-> Task :app:processDebugJavaRes UP-TO-DATE
-> Task :app:bundleDebugClassesToRuntimeJar
-> Task :app:bundleDebugClassesToCompileJar
-> Task :app:compileReleaseJavaWithJavac
-> Task :app:processReleaseJavaRes UP-TO-DATE
-> Task :app:bundleReleaseClassesToRuntimeJar
-> Task :app:bundleReleaseClassesToCompileJar
-> Task :app:generateDebugAndroidTestLintModel
-> Task :app:compileDebugUnitTestKotlin
-> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
-> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
-> Task :app:compileReleaseUnitTestKotlin
-
-> Task :app:testDebugUnitTest
-
-> Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
-> Task :app:processReleaseUnitTestJavaRes UP-TO-DATE
-
-> Task :app:testReleaseUnitTest
-
-> Task :app:generateDebugLintReportModel
-> Task :app:generateDebugUnitTestLintModel
-> Task :app:generateReleaseLintReportModel
-> Task :app:generateReleaseUnitTestLintModel
-> Task :app:generateReleaseLintVitalReportModel
-> Task :app:expandReleaseArtProfileWildcards
+> Task :app:compileReleaseKotlin UP-TO-DATE
+> Task :app:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :app:generateReleaseLintVitalReportModel UP-TO-DATE
+> Task :app:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :app:expandReleaseArtProfileWildcards UP-TO-DATE
 > Task :app:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :app:processReleaseJavaRes UP-TO-DATE
 > Task :app:mergeReleaseJavaResource UP-TO-DATE
-> Task :app:lintAnalyzeDebugAndroidTest
-> Task :app:lintAnalyzeDebugUnitTest
-> Task :app:lintAnalyzeDebug
-> Task :app:minifyReleaseWithR8
-> Task :app:lintAnalyzeReleaseUnitTest
-> Task :app:lintAnalyzeRelease
-> Task :app:lintVitalAnalyzeRelease
-> Task :app:lintVitalReportRelease SKIPPED
-> Task :app:lintVitalRelease SKIPPED
-
-> Task :app:lintReportDebug
-Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-debug.html
-
-> Task :app:lintDebug
-
-> Task :app:lintReportRelease
-Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-release.html
-
-> Task :app:lintRelease
-> Task :app:compileReleaseArtProfile
+> Task :app:minifyReleaseWithR8 UP-TO-DATE
+> Task :app:compileReleaseArtProfile UP-TO-DATE
+> Task :app:convertLinkedResourcesToProtoRelease
 > Task :app:shrinkReleaseRes
 > Task :app:convertShrunkResourcesToBinaryRelease
 > Task :app:optimizeReleaseResources
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
 > Task :app:packageRelease
 > Task :app:createReleaseApkListingFileRedirect
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 2m 29s
-99 actionable tasks: 57 executed, 42 up-to-date
+BUILD SUCCESSFUL in 11s
+51 actionable tasks: 13 executed, 38 up-to-date
 
 ````
 
@@ -52466,7 +52417,7 @@ For more information, see <a href="https://developer.android.com/studio/write/li
 ````text
 ..........
 ----------------------------------------------------------------------
-Ran 10 tests in 0.006s
+Ran 10 tests in 0.005s
 
 OK
 PASS: current 3.0/14 evidence; signing=verified_release.
@@ -52603,9 +52554,9 @@ PASS: current 3.0/14 evidence; signing=unsigned.
   "version": "3.0.2",
   "version_code": 16,
   "application_id": "com.electrokit.app",
-  "generated_at_utc": "2026-10-27T16:33:00.145134+00:00",
-  "source_commit": "ffca022d05a22731ad01a5af493709ecce6df25b",
-  "source_tree_dirty": false,
+  "generated_at_utc": "2026-10-27T16:50:48.343160+00:00",
+  "source_commit": "24bceeade978b3e81ac4b662503ea4256dca3bc0",
+  "source_tree_dirty": true,
   "tests": {
     "debug": {
       "tests": 121,
@@ -52638,15 +52589,15 @@ PASS: current 3.0/14 evidence; signing=unsigned.
       }
     }
   },
-  "artifact": "app/build/outputs/apk/release/app-release-unsigned.apk",
-  "apk_sha256": "305eecd70c0d19ed4df3d6066076f73f108278dc37c449ea0cd670c6b9698008",
-  "apk_bytes": 11236815,
+  "artifact": "app/build/outputs/apk/release/app-release.apk",
+  "apk_sha256": "5519b879b7eb2a22ef971a2fd365b09f81d6f05534e209dc28f32ad0334e5921",
+  "apk_bytes": 11249103,
   "signing": {
-    "status": "unsigned",
-    "certificate_sha256": null,
-    "expected_certificate_sha256": "d9823b341c6951b6dc912230fd46f2d61d7b3c315de2ae31fbb112345d1a9070"
+    "status": "verified_release",
+    "certificate_sha256": "a91eebe326f10f654f74afa00a51a38066b79d662ff01406ecf870e1bba8b2b5",
+    "expected_certificate_sha256": "a91eebe326f10f654f74afa00a51a38066b79d662ff01406ecf870e1bba8b2b5"
   },
-  "release_publishable": false,
+  "release_publishable": true,
   "physical_device_tested": false,
   "emulator_tested": false,
   "remote_ci_executed": false,

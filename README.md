@@ -98,7 +98,7 @@ All Kotlin paths below are under `app/src/main/java/com/electrokit/app/`.
 
 Images/metadata: `app/src/main/assets/components/` and `components.json`. Original engineering content: `app/src/main/assets/engineering.json` and `engineering_tools.json`. Android strings/icons: `app/src/main/res/`.
 
-The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.2 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the published 3.0.1 certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
+The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.2 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the active, user-authorized release certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
 
 ## Maintenance guides
 
@@ -111,4 +111,6 @@ The missing nested project files were restored from the existing `FULL_SOURCE.md
 - [Testing](docs/TESTING_GUIDE.md)
 - [Audit and limitations](docs/AUDIT_REPORT.md)
 
-Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the published 3.0.1 private key and all values outside the repository. A release is signed only when valid credentials are supplied.
+Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the new 3.0.2 private key and all values outside the repository. A release is signed only when valid credentials are supplied.
+
+ELECTRO 3.0.2 uses a newly authorized signing key. It cannot update older-key installations; uninstalling those installations removes their local data. Keep the separate private signing backup for future updates.

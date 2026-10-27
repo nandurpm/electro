@@ -2,9 +2,9 @@
   "version": "3.0.2",
   "version_code": 16,
   "application_id": "com.electrokit.app",
-  "generated_at_utc": "2026-10-27T16:33:00.145134+00:00",
-  "source_commit": "ffca022d05a22731ad01a5af493709ecce6df25b",
-  "source_tree_dirty": false,
+  "generated_at_utc": "2026-10-27T16:50:48.343160+00:00",
+  "source_commit": "24bceeade978b3e81ac4b662503ea4256dca3bc0",
+  "source_tree_dirty": true,
   "tests": {
     "debug": {
       "tests": 121,
@@ -37,15 +37,15 @@
       }
     }
   },
-  "artifact": "app/build/outputs/apk/release/app-release-unsigned.apk",
-  "apk_sha256": "305eecd70c0d19ed4df3d6066076f73f108278dc37c449ea0cd670c6b9698008",
-  "apk_bytes": 11236815,
+  "artifact": "app/build/outputs/apk/release/app-release.apk",
+  "apk_sha256": "5519b879b7eb2a22ef971a2fd365b09f81d6f05534e209dc28f32ad0334e5921",
+  "apk_bytes": 11249103,
   "signing": {
-    "status": "unsigned",
-    "certificate_sha256": null,
-    "expected_certificate_sha256": "d9823b341c6951b6dc912230fd46f2d61d7b3c315de2ae31fbb112345d1a9070"
+    "status": "verified_release",
+    "certificate_sha256": "a91eebe326f10f654f74afa00a51a38066b79d662ff01406ecf870e1bba8b2b5",
+    "expected_certificate_sha256": "a91eebe326f10f654f74afa00a51a38066b79d662ff01406ecf870e1bba8b2b5"
   },
-  "release_publishable": false,
+  "release_publishable": true,
   "physical_device_tested": false,
   "emulator_tested": false,
   "remote_ci_executed": false,

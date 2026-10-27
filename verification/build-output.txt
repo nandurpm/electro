@@ -1,51 +1,23 @@
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
+> Task :app:buildKotlinToolingMetadata UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :app:preBuild UP-TO-DATE
-> Task :app:preDebugBuild UP-TO-DATE
-> Task :app:generateDebugBuildConfig
-> Task :app:checkDebugAarMetadata UP-TO-DATE
-> Task :app:generateDebugResValues UP-TO-DATE
-> Task :app:mapDebugSourceSetPaths UP-TO-DATE
-> Task :app:generateDebugResources UP-TO-DATE
-> Task :app:mergeDebugResources UP-TO-DATE
-> Task :app:packageDebugResources UP-TO-DATE
-> Task :app:parseDebugLocalResources UP-TO-DATE
-> Task :app:createDebugCompatibleScreenManifests
-> Task :app:extractDeepLinksDebug UP-TO-DATE
-> Task :app:processDebugMainManifest
-> Task :app:processDebugManifest
-> Task :app:javaPreCompileDebug UP-TO-DATE
-> Task :app:preDebugUnitTestBuild UP-TO-DATE
-> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
-> Task :app:mergeDebugShaders UP-TO-DATE
-> Task :app:compileDebugShaders NO-SOURCE
-> Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:mergeDebugAssets
-> Task :app:buildKotlinToolingMetadata UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
-> Task :app:generateReleaseBuildConfig
+> Task :app:generateReleaseBuildConfig UP-TO-DATE
 > Task :app:checkReleaseAarMetadata UP-TO-DATE
 > Task :app:generateReleaseResValues UP-TO-DATE
 > Task :app:mapReleaseSourceSetPaths UP-TO-DATE
 > Task :app:generateReleaseResources UP-TO-DATE
 > Task :app:mergeReleaseResources UP-TO-DATE
 > Task :app:packageReleaseResources UP-TO-DATE
-> Task :app:processDebugManifestForPackage
 > Task :app:parseReleaseLocalResources UP-TO-DATE
 > Task :app:createReleaseCompatibleScreenManifests
 > Task :app:extractDeepLinksRelease UP-TO-DATE
-> Task :app:processReleaseMainManifest
+> Task :app:processReleaseMainManifest UP-TO-DATE
 > Task :app:processReleaseManifest
+> Task :app:processReleaseManifestForPackage UP-TO-DATE
 > Task :app:javaPreCompileRelease UP-TO-DATE
-> Task :app:preReleaseUnitTestBuild UP-TO-DATE
-> Task :app:javaPreCompileReleaseUnitTest UP-TO-DATE
-> Task :app:mergeReleaseShaders UP-TO-DATE
-> Task :app:compileReleaseShaders NO-SOURCE
-> Task :app:generateReleaseAssets UP-TO-DATE
-> Task :app:mergeReleaseAssets
-> Task :app:preDebugAndroidTestBuild SKIPPED
-> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :app:extractProguardFiles UP-TO-DATE
 > Task :app:mergeReleaseJniLibFolders UP-TO-DATE
 > Task :app:mergeReleaseNativeLibs UP-TO-DATE
@@ -55,77 +27,37 @@ Daemon will be stopped at the end of the build
 > Task :app:checkReleaseDuplicateClasses UP-TO-DATE
 > Task :app:mergeReleaseArtProfile UP-TO-DATE
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
-> Task :app:compressReleaseAssets
-> Task :app:processDebugResources
+> Task :app:mergeReleaseShaders UP-TO-DATE
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets UP-TO-DATE
+> Task :app:compressReleaseAssets UP-TO-DATE
 > Task :app:extractReleaseVersionControlInfo
-> Task :app:processReleaseManifestForPackage
-> Task :app:packageDebugUnitTestForUnitTest
-> Task :app:generateDebugUnitTestConfig
 > Task :app:collectReleaseDependencies UP-TO-DATE
 > Task :app:sdkReleaseDependencyData UP-TO-DATE
+> Task :app:validateSigningRelease UP-TO-DATE
 > Task :app:writeReleaseAppMetadata UP-TO-DATE
-> Task :app:writeReleaseSigningConfigVersions UP-TO-DATE
+> Task :app:writeReleaseSigningConfigVersions
 > Task :app:processReleaseResources
-> Task :app:packageReleaseUnitTestForUnitTest
-> Task :app:generateReleaseUnitTestConfig
-> Task :app:convertLinkedResourcesToProtoRelease
-> Task :app:compileDebugKotlin
-> Task :app:compileReleaseKotlin
-> Task :app:compileDebugJavaWithJavac
-> Task :app:processDebugJavaRes UP-TO-DATE
-> Task :app:bundleDebugClassesToRuntimeJar
-> Task :app:bundleDebugClassesToCompileJar
-> Task :app:compileReleaseJavaWithJavac
-> Task :app:processReleaseJavaRes UP-TO-DATE
-> Task :app:bundleReleaseClassesToRuntimeJar
-> Task :app:bundleReleaseClassesToCompileJar
-> Task :app:generateDebugAndroidTestLintModel
-> Task :app:compileDebugUnitTestKotlin
-> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
-> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
-> Task :app:compileReleaseUnitTestKotlin
-
-> Task :app:testDebugUnitTest
-
-> Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
-> Task :app:processReleaseUnitTestJavaRes UP-TO-DATE
-
-> Task :app:testReleaseUnitTest
-
-> Task :app:generateDebugLintReportModel
-> Task :app:generateDebugUnitTestLintModel
-> Task :app:generateReleaseLintReportModel
-> Task :app:generateReleaseUnitTestLintModel
-> Task :app:generateReleaseLintVitalReportModel
-> Task :app:expandReleaseArtProfileWildcards
+> Task :app:compileReleaseKotlin UP-TO-DATE
+> Task :app:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :app:generateReleaseLintVitalReportModel UP-TO-DATE
+> Task :app:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :app:expandReleaseArtProfileWildcards UP-TO-DATE
 > Task :app:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :app:processReleaseJavaRes UP-TO-DATE
 > Task :app:mergeReleaseJavaResource UP-TO-DATE
-> Task :app:lintAnalyzeDebugAndroidTest
-> Task :app:lintAnalyzeDebugUnitTest
-> Task :app:lintAnalyzeDebug
-> Task :app:minifyReleaseWithR8
-> Task :app:lintAnalyzeReleaseUnitTest
-> Task :app:lintAnalyzeRelease
-> Task :app:lintVitalAnalyzeRelease
-> Task :app:lintVitalReportRelease SKIPPED
-> Task :app:lintVitalRelease SKIPPED
-
-> Task :app:lintReportDebug
-Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-debug.html
-
-> Task :app:lintDebug
-
-> Task :app:lintReportRelease
-Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-release.html
-
-> Task :app:lintRelease
-> Task :app:compileReleaseArtProfile
+> Task :app:minifyReleaseWithR8 UP-TO-DATE
+> Task :app:compileReleaseArtProfile UP-TO-DATE
+> Task :app:convertLinkedResourcesToProtoRelease
 > Task :app:shrinkReleaseRes
 > Task :app:convertShrunkResourcesToBinaryRelease
 > Task :app:optimizeReleaseResources
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
 > Task :app:packageRelease
 > Task :app:createReleaseApkListingFileRedirect
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 2m 29s
-99 actionable tasks: 57 executed, 42 up-to-date
+BUILD SUCCESSFUL in 11s
+51 actionable tasks: 13 executed, 38 up-to-date
