@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=ElectroKit, OU=Offline Android, O=ElectroKit, C=IN
+Signer #1 certificate SHA-256 digest: 68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa
+Signer #1 certificate SHA-1 digest: 3bb4ae7f47da9cfd3ed7a7df68ea9ee472c34be8
+Signer #1 certificate MD5 digest: 52ef74dbf021dc5d64c4340204afb26b
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 3072
+Signer #1 public key SHA-256 digest: ad7e0738f91d0047745c17e13b9de50bbbc324f13ed85976337aaddfe2b0c37c
+Signer #1 public key SHA-1 digest: 4f5b9022c83c3126a87db5b3fb77c0e3127ea2b3
+Signer #1 public key MD5 digest: adf1d5657111d3d66da9a68a1dab4506

@@ -1,5 +1,17 @@
 # Changes
 
+## 2.1.0 — development build (2026-10-27)
+
+- Restored the original complete Android project from checksum-verified embedded source.
+- Added five primary destinations, dark-blue/light/system appearance, fixed header/search and visible system bars.
+- Integrated 114 local component images, generic component details, bookmarks and bounded off-thread image loading.
+- Added communication/multimeter lessons, an interactive meter illustration, seven public utilities and an eight-dimensional converter.
+- Added session-only engineering access, manual locking, basic attempt throttling and protected-window handling.
+- Preserved original calculator/reference/database routes, exact engineering/fault records and existing local input/preferences.
+- Added recent tools and bounded saved calculation history; invalidated explicit results after input/mode changes.
+- Added Android regression coverage, source/asset validators, debug/release workflows and maintenance guides.
+- Production signing, real-device upgrade/accessibility checks and independent external reference verification remain unrun; see docs/AUDIT_REPORT.md.
+
 ## 2.0.3
 
 - Full-screen workbench with compact navigation, scrolling introductions and pinned catalogue search.

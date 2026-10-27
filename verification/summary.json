@@ -1,0 +1,52 @@
+{
+  "version": "2.0.3",
+  "version_code": 12,
+  "tests": {
+    "debug": {
+      "tests": 100,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "release": {
+      "tests": 68,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "debug": {
+      "errors": 0,
+      "warnings": 10,
+      "warning_ids": {
+        "UnusedAttribute": 1,
+        "AndroidGradlePluginVersion": 2,
+        "GradleDependency": 7
+      }
+    },
+    "release": {
+      "errors": 0,
+      "warnings": 5,
+      "warning_ids": {
+        "UnusedAttribute": 1,
+        "GradleDependency": 4
+      }
+    }
+  },
+  "physical_device_tested": false,
+  "emulator_tested": false,
+  "remote_ci_executed": false,
+  "apk_sha256": "4b73cf6fdda7b9b988f270383780bba7c991cb12cb4bc277c2b3d846348621c4",
+  "apk_bytes": 1751157,
+  "assets_match_source": true,
+  "internet_permission": false,
+  "faults_unchanged_from_2_0_1": true,
+  "source_records_unchanged": true,
+  "domain_changes": [
+    "Engineering.kt",
+    "Calculators.kt",
+    "EngineeringTools.kt"
+  ],
+  "photo_hashes_match": true
+}

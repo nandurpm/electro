@@ -1,0 +1,406 @@
+[
+  {
+    "id": "three-phase",
+    "title": "Three-phase power",
+    "formula": "S = √3 VLL I; P = S PF; Q = S √(1 − PF²)",
+    "fields": [
+      {
+        "key": "v",
+        "label": "Line-to-line voltage",
+        "unit": "V",
+        "sample": "415",
+        "options": []
+      },
+      {
+        "key": "i",
+        "label": "Line current",
+        "unit": "A",
+        "sample": "30",
+        "options": []
+      },
+      {
+        "key": "pf",
+        "label": "True power factor",
+        "unit": "",
+        "sample": "0.76",
+        "options": []
+      }
+    ],
+    "assumptions": "Balanced sinusoidal three-phase model. Q relation assumes sinusoidal current; with harmonics, non-active power is not necessarily fundamental kVAR. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "single-phase",
+    "title": "Single-phase power",
+    "formula": "S = V I; P = S PF; Q = S √(1 − PF²)",
+    "fields": [
+      {
+        "key": "v",
+        "label": "Voltage",
+        "unit": "V",
+        "sample": "230",
+        "options": []
+      },
+      {
+        "key": "i",
+        "label": "Current",
+        "unit": "A",
+        "sample": "10",
+        "options": []
+      },
+      {
+        "key": "pf",
+        "label": "True power factor",
+        "unit": "",
+        "sample": "0.9",
+        "options": []
+      }
+    ],
+    "assumptions": "Sinusoidal single-phase model. PF must be 0–1; harmonics require a more complete power analysis. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "motor-current",
+    "title": "Motor current estimate",
+    "formula": "I = Pout / (√3 VLL PF η)",
+    "fields": [
+      {
+        "key": "p",
+        "label": "Mechanical output power",
+        "unit": "kW",
+        "sample": "15",
+        "options": []
+      },
+      {
+        "key": "v",
+        "label": "Line-to-line voltage",
+        "unit": "V",
+        "sample": "415",
+        "options": []
+      },
+      {
+        "key": "pf",
+        "label": "Power factor",
+        "unit": "",
+        "sample": "0.76",
+        "options": []
+      },
+      {
+        "key": "eta",
+        "label": "Efficiency",
+        "unit": "%",
+        "sample": "91.2",
+        "options": []
+      }
+    ],
+    "assumptions": "Balanced three-phase sinusoidal input model. Output power is shaft power; efficiency is a percentage, not an assumed default. This does not size protection or a VVVF input circuit. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "efficiency",
+    "title": "Motor efficiency",
+    "formula": "η = 100 Pout / Pin",
+    "fields": [
+      {
+        "key": "out",
+        "label": "Mechanical output power",
+        "unit": "kW",
+        "sample": "15",
+        "options": []
+      },
+      {
+        "key": "in",
+        "label": "Measured active input power",
+        "unit": "kW",
+        "sample": "16.45",
+        "options": []
+      }
+    ],
+    "assumptions": "Input and output measurements must describe the same operating point. Efficiency must not exceed 100%. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "power-factor",
+    "title": "Power factor",
+    "formula": "PF = P / S",
+    "fields": [
+      {
+        "key": "p",
+        "label": "Active power",
+        "unit": "kW",
+        "sample": "15",
+        "options": []
+      },
+      {
+        "key": "s",
+        "label": "Apparent power",
+        "unit": "kVA",
+        "sample": "18",
+        "options": []
+      }
+    ],
+    "assumptions": "Positive consuming load. P and S must describe the same measurement interval; true PF can differ from displacement cos φ. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "torque",
+    "title": "Motor shaft torque",
+    "formula": "T = 60 P / (2π n)",
+    "fields": [
+      {
+        "key": "p",
+        "label": "Mechanical shaft power",
+        "unit": "kW",
+        "sample": "15",
+        "options": []
+      },
+      {
+        "key": "n",
+        "label": "Shaft speed",
+        "unit": "rpm",
+        "sample": "975",
+        "options": []
+      }
+    ],
+    "assumptions": "Steady shaft power at the entered speed; starting, braking and transient torque are not calculated. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "slip",
+    "title": "Synchronous speed and slip",
+    "formula": "ns = 120 f / poles; slip = 100 (ns − n) / ns",
+    "fields": [
+      {
+        "key": "f",
+        "label": "Supply frequency",
+        "unit": "Hz",
+        "sample": "50",
+        "options": []
+      },
+      {
+        "key": "poles",
+        "label": "Number of poles",
+        "unit": "",
+        "sample": "6",
+        "options": []
+      },
+      {
+        "key": "n",
+        "label": "Rotor speed",
+        "unit": "rpm",
+        "sample": "975",
+        "options": []
+      }
+    ],
+    "assumptions": "Enter the pole count explicitly. This motoring-mode tool accepts 0 ≤ n ≤ ns; generating operation is outside scope. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "frequency-speed",
+    "title": "Frequency and rotor speed",
+    "formula": "ns = 120 f / poles; n = ns (1 − slip/100)",
+    "fields": [
+      {
+        "key": "f",
+        "label": "Frequency",
+        "unit": "Hz",
+        "sample": "50",
+        "options": []
+      },
+      {
+        "key": "poles",
+        "label": "Number of poles",
+        "unit": "",
+        "sample": "6",
+        "options": []
+      },
+      {
+        "key": "slip",
+        "label": "Assumed slip",
+        "unit": "%",
+        "sample": "2.5",
+        "options": []
+      }
+    ],
+    "assumptions": "Slip is explicitly entered. Frequency alone does not determine an induction motor’s loaded shaft speed. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "capacity",
+    "title": "Theoretical passenger capacity",
+    "formula": "C = 3600 v occupants / step pitch",
+    "fields": [
+      {
+        "key": "v",
+        "label": "Step-band speed",
+        "unit": "m/s",
+        "sample": "0.5",
+        "options": []
+      },
+      {
+        "key": "pitch",
+        "label": "Step pitch along travel",
+        "unit": "m",
+        "sample": "0.4",
+        "options": []
+      },
+      {
+        "key": "occupancy",
+        "label": "Assumed persons per step",
+        "unit": "",
+        "sample": "1",
+        "options": []
+      }
+    ],
+    "assumptions": "Ideal kinematic estimate, not a rated/certified capacity or measured flow. Step width does not uniquely determine occupancy; enter occupancy explicitly. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "gear",
+    "title": "Gear reduction",
+    "formula": "ratio = nin / nout; nout = nin / ratio",
+    "fields": [
+      {
+        "key": "n",
+        "label": "Input shaft speed",
+        "unit": "rpm",
+        "sample": "975",
+        "options": []
+      },
+      {
+        "key": "ratio",
+        "label": "Reduction ratio",
+        "unit": "",
+        "sample": "30",
+        "options": []
+      }
+    ],
+    "assumptions": "One idealised reduction stage. Slip, losses and compound stages require separate treatment. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "step-speed",
+    "title": "Step speed from validated geometry",
+    "formula": "v = (motor rpm / ratio) × teeth × chain pitch / 60",
+    "fields": [
+      {
+        "key": "n",
+        "label": "Motor shaft speed",
+        "unit": "rpm",
+        "sample": "975",
+        "options": []
+      },
+      {
+        "key": "ratio",
+        "label": "Total motor-to-step-sprocket reduction",
+        "unit": "",
+        "sample": "30",
+        "options": []
+      },
+      {
+        "key": "teeth",
+        "label": "Step-chain sprocket teeth",
+        "unit": "",
+        "sample": "20",
+        "options": []
+      },
+      {
+        "key": "pitch",
+        "label": "Step-chain pitch",
+        "unit": "m",
+        "sample": "0.05",
+        "options": []
+      }
+    ],
+    "assumptions": "Pitch-line chain-speed model using validated geometry. Enter the total reduction and actual chain pitch/tooth count. This is not an approved escalator speed selection. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "energy",
+    "title": "Electrical energy consumption",
+    "formula": "E = active power × operating time",
+    "fields": [
+      {
+        "key": "p",
+        "label": "Active input power",
+        "unit": "kW",
+        "sample": "5",
+        "options": []
+      },
+      {
+        "key": "h",
+        "label": "Operating time",
+        "unit": "h",
+        "sample": "8",
+        "options": []
+      }
+    ],
+    "assumptions": "Constant active power over the entered duration. For variable duty, integrate measured power or calculate separate periods; do not use shaft power as electrical input. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "geometry",
+    "title": "Inclined rise / projection",
+    "formula": "H = L sin θ; horizontal projection = L cos θ",
+    "fields": [
+      {
+        "key": "length",
+        "label": "Inclined path length",
+        "unit": "m",
+        "sample": "10",
+        "options": []
+      },
+      {
+        "key": "angle",
+        "label": "Inclination angle",
+        "unit": "°",
+        "sample": "30",
+        "options": []
+      }
+    ],
+    "assumptions": "Inclined straight section only. Horizontal landings and transition curves are excluded. Does not specify clearances, support reactions or civil pit dimensions. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "unit-converter",
+    "title": "Electrical and mechanical unit converter",
+    "formula": "y = x × stated conversion factor",
+    "fields": [
+      {
+        "key": "conversion",
+        "label": "Conversion",
+        "unit": "",
+        "sample": "W → kW",
+        "options": [
+          "W → kW",
+          "kW → W",
+          "A → mA",
+          "mA → A",
+          "mm → m",
+          "m → mm",
+          "m/s → km/h",
+          "km/h → m/s",
+          "kWh → J",
+          "J → kWh"
+        ]
+      },
+      {
+        "key": "x",
+        "label": "Value in the selected source unit",
+        "unit": "",
+        "sample": "1000",
+        "options": []
+      }
+    ],
+    "assumptions": "Exact scale conversion for the selected pair. Plain values and engineering suffixes are accepted; pasted explicit units are checked against the selected source unit. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  },
+  {
+    "id": "gear-ratio",
+    "title": "Gear ratio from measured shaft speeds",
+    "formula": "ratio = input rpm / output rpm",
+    "fields": [
+      {
+        "key": "input",
+        "label": "Input shaft speed",
+        "unit": "rpm",
+        "sample": "975",
+        "options": []
+      },
+      {
+        "key": "output",
+        "label": "Output shaft speed",
+        "unit": "rpm",
+        "sample": "32.5",
+        "options": []
+      }
+    ],
+    "assumptions": "Positive steady shaft speeds with identified input/output shafts. This is a speed ratio, not proof of an approved gear arrangement. Load example supplies educational input values, not an equipment specification; validate all job geometry and operating parameters before use."
+  }
+]

@@ -1,0 +1,52 @@
+name: Android CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+      - name: Install exact Android packages
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+      - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947
+      - name: Verify wrapper JAR
+        run: echo '498495120a03b9a6ab5d155f5de3c8f0d986a449153702fb80fc80e134484f17  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
+      - name: Python validation
+        run: |
+          python3 -m venv "$RUNNER_TEMP/electro-python"
+          source "$RUNNER_TEMP/electro-python/bin/activate"
+          python -m pip install -r scripts/requirements-dev.txt
+          python scripts/check_comments.py
+          python -m unittest discover -s scripts -p 'test_*.py'
+          python scripts/validate_assets.py
+          python scripts/validate_engineering.py
+          python scripts/validate_library.py
+          python scripts/check_contrast.py
+          python scripts/package_project.py --check
+      - name: Test, lint and build debug APK
+        run: ./gradlew --no-daemon --max-workers=4 testDebugUnitTest lintDebug assembleDebug
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: ELECTRO-debug-and-reports
+          path: |
+            app/build/outputs/apk/debug/
+            app/build/reports/
+            app/build/test-results/
+            app/build/design-previews/
+          retention-days: 14
