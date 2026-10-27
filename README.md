@@ -2,7 +2,7 @@
 
 **Electrical • Electronics • Engineering**
 
-Offline native Android engineering workbench. Development version **2.1.0**, code **13**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline native Android engineering workbench. Version **3.0**, code **14**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 ## Features
 

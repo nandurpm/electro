@@ -207,6 +207,7 @@ Electro/
   docs/COMMANDS.md
   docs/DEVELOPMENT_GUIDE.md
   docs/GITHUB_RELEASE_GUIDE.md
+  docs/RELEASE_3_0.md
   docs/TESTING_GUIDE.md
   docs/UPDATE_GUIDE.md
   documentation/ENGINEERING_REQUIREMENTS.md
@@ -227,6 +228,12 @@ Electro/
   gradle/wrapper/gradle-wrapper.properties
   gradlew
   gradlew.bat
+  photos/Catalog_Previews/a_comprehensive_high_resolution_catalog_collage_i.png
+  photos/Catalog_Previews/a_wide_high_resolution_infographic_catalog_image.png
+  photos/Catalog_Previews/electronic_components_asset_sheet.png
+  photos/Catalog_Previews/escalator_parts_and_controls_catalog.png
+  photos/Catalog_Previews/industrial_electrical_components_grid.png
+  photos/Catalog_Previews/industrial_sensors_and_control_equipment_grid.png
   photos/Communication_Modules/CAN_Bus_Module.png
   photos/Communication_Modules/CAN_Twisted_Pair.png
   photos/Communication_Modules/Cellular_Module.png
@@ -265,6 +272,54 @@ Electro/
   photos/Connectors_and_Communication/USB_Type_B.png
   photos/Connectors_and_Communication/USB_Type_C.png
   photos/Connectors_and_Communication/VGA_DB15.png
+  photos/Electrical/Control_Transformer.png
+  photos/Electrical/Emergency_Stop_Button.png
+  photos/Electrical/Green_Push_Button.png
+  photos/Electrical/Induction_Motor.png
+  photos/Electrical/MCCB.png
+  photos/Electrical/Magnetic_Contactor.png
+  photos/Electrical/Plug_In_Relay.png
+  photos/Electrical/Red_Indicator_Lamp.png
+  photos/Electrical/SMPS_Power_Supply.png
+  photos/Electrical/Selector_Switch.png
+  photos/Electrical/Single_Pole_MCB.png
+  photos/Electrical/Start_Stop_Station.png
+  photos/Electrical/Terminal_Block.png
+  photos/Electrical/Thermal_Overload_Relay_A.png
+  photos/Electrical/Thermal_Overload_Relay_B.png
+  photos/Electrical/Three_Pole_MCB.png
+  photos/Electronics/Axial_Resistor.png
+  photos/Electronics/Breadboard.png
+  photos/Electronics/Bridge_Rectifier.png
+  photos/Electronics/Ceramic_Capacitor.png
+  photos/Electronics/Crystal_Oscillator.png
+  photos/Electronics/DIP_Integrated_Circuit.png
+  photos/Electronics/Electrolytic_Capacitor.png
+  photos/Electronics/Film_Capacitor.png
+  photos/Electronics/Inductor.png
+  photos/Electronics/LED.png
+  photos/Electronics/Power_Transistor.png
+  photos/Electronics/Rectifier_Diode.png
+  photos/Electronics/TO220_MOSFET.png
+  photos/Electronics/TO92_Transistor.png
+  photos/Electronics/Trimmer_Potentiometer.png
+  photos/Electronics/Zener_Diode.png
+  photos/Escalator/Comb_Plate.png
+  photos/Escalator/Electromagnetic_Brake.png
+  photos/Escalator/Emergency_Stop.png
+  photos/Escalator/Escalator_Control_Cabinet.png
+  photos/Escalator/Escalator_HMI.png
+  photos/Escalator/Escalator_Step.png
+  photos/Escalator/Gear_Reducer.png
+  photos/Escalator/Handrail_Drive_Roller.png
+  photos/Escalator/Main_Drive_Motor.png
+  photos/Escalator/Safety_Limit_Switch.png
+  photos/Escalator/Skirt_Brush.png
+  photos/Escalator/Skirt_Switch.png
+  photos/Escalator/Sprocket.png
+  photos/Escalator/Step_Chain.png
+  photos/Escalator/Step_Lighting.png
+  photos/Escalator/Variable_Frequency_Drive.png
   photos/MANIFEST.json
   photos/README.txt
   photos/Sensors_and_Controls/Capacitive_Proximity_Sensor.png

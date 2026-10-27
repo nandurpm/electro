@@ -2,7 +2,7 @@
 
 1. Fetch current source, preserve local changes and create a feature branch.
 2. Modify the owning source/data files and add regression coverage.
-3. Increase `versionCode` and update `versionName` in `app/build.gradle.kts`; current development version is 2.1.0/code 13.
+3. Increase `versionCode` and update `versionName` in `app/build.gradle.kts`; current version is 3.0/code 14.
 4. Update `CHANGELOG.md`, including migration implications.
 5. Run Python validators and Android tests/lint/debug build. Inspect actual APK metadata and reports.
 6. Regenerate packaging/checksums and commit complete directories, including the wrapper JAR/catalog.

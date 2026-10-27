@@ -1,5 +1,11 @@
 # Changes
 
+## 3.0 — release preparation (2026-10-27)
+
+- Set the application name to ELECTRO, versionName to 3.0 and versionCode to 14.
+- Retain the validated native workbench, original application ID, local data and engineering records.
+- Release build/signature verification is recorded separately in docs/RELEASE_3_0.md.
+
 ## 2.1.0 — development build (2026-10-27)
 
 - Restored the original complete Android project from checksum-verified embedded source.
