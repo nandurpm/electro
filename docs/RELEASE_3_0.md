@@ -4,7 +4,7 @@ Application name: **ELECTRO**. Version name: **3.0**. Version code: **14**. Appl
 
 The local optimized, non-debuggable release build passed `testReleaseUnitTest lintRelease assembleRelease`: **80 tests, 0 failures/errors/skips**, and no lint errors. R8 code/resource shrinking completed. Android SDK metadata confirms the requested name/version and SDK 24/35 bounds. Current output is `app/build/outputs/apk/release/app-release-unsigned.apk`; it is **unsigned**, not an installable production release.
 
-The user selected the original signing identity. No replacement key has been generated. The original public certificate record in `verification/apk-signature.txt` has SHA-256:
+The user selected the original signing identity. No replacement key has been generated. The immutable original public certificate record in `signing/original-release-certificate.sha256` has SHA-256:
 
 `68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa`
 
@@ -19,3 +19,9 @@ The previous hosted release run failed inside the third-party Android setup acti
 When signed verification succeeds, the workflow packages `ELECTRO-3.0.apk` and the matching `ELECTRO-3.0-source.zip`. Manual execution uploads artifacts; a matching `v3.0` tag publishes both. Do not create the final release tag until the original signing identity has been verified.
 
 The earlier `docs/BUILD_REPORT.md` records the 2.1.0 baseline's 120 debug/JVM/Robolectric tests; these are historical results, not a new 3.0 debug run. Device installation, production upgrade behavior and TalkBack remain unrun. See the audit report for existing engineering-content limitations.
+
+## Verification/reset review correction
+
+Review confirmed that the old committed verification reports still described 2.0.3. All current verification files are regenerated for 3.0 after the reviewed build; unrun external references and unsigned signing status are explicit. New regression fixtures reject old summary/badging versions and unsigned publication. The original certificate fingerprint is independent of regenerated APK signatures.
+
+Band-calculator Reset now clears the cached `bandResult` synchronously, before the new band effect runs. A UI regression covers both resistor and inductor reset/display/copy paths. Dependency and API-level lint warnings remain documented; dependency pins and application functionality were preserved.

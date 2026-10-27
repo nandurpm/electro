@@ -8,11 +8,14 @@ covered by the resulting checksums.
 import argparse
 import base64
 import hashlib
+import re
+import zipfile
 from pathlib import Path
 
 root=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser()
 parser.add_argument('--check',action='store_true')
+parser.add_argument('--archive',type=Path,help='Write a ZIP of the current public source and regenerated evidence')
 args=parser.parse_args()
 generated={'FULL_SOURCE.md','PROJECT_TREE.txt','SHA256SUMS.txt'}
 def files():
@@ -51,3 +54,10 @@ else:
     (root/'FULL_SOURCE.md').write_text(''.join(listing))
     (root/'SHA256SUMS.txt').write_text(''.join(checksum(p)+'  '+str(p.relative_to(root))+'\n' for p in files() if p.name!='SHA256SUMS.txt'))
     print(f'Generated listing, tree and checksums for {len(names)} files.')
+if args.archive:
+    version=re.search(r'versionName\s*=\s*"([^"]+)"',(root/'app/build.gradle.kts').read_text())[1]
+    args.archive.parent.mkdir(parents=True,exist_ok=True)
+    with zipfile.ZipFile(args.archive,'w',compression=zipfile.ZIP_DEFLATED) as archive:
+        for path in files():
+            archive.write(path,f'ELECTRO-{version}/'+str(path.relative_to(root)))
+    print(f'Archived current source/evidence: {args.archive}')

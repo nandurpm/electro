@@ -126,6 +126,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                         text = { Text(stringResource(R.string.ui_reset)) },
                         onClick = {
                             more = false
+                            bandResult = ""
                             mode = 0
                             vm.mode(entry.id, 0)
                             update(spec.fields.associate { it.key to it.initial })

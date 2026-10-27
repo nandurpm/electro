@@ -14,6 +14,6 @@ Known limits:
 - English only; new workbench text needs resource extraction before additional translations.
 - Scientific arithmetic is not a computer algebra system. Cable sizing models voltage drop, not full standards-based selection/protection.
 - No original release key, real-device installation, upgrade migration, TalkBack speech or hardware checks were available.
-- Recovered `verification/` records are historical. Use current `app/build/` outputs and `BUILD_REPORT.md` for this run.
+- Stale verification artifacts were confirmed in review and replaced with generated 3.0 evidence. A version/artifact/signature guard rejects the reported mismatch. Historical reports remain available in Git history and the explicitly labeled 2.1.0 build report.
 
 No claim is made that every manufacturer pinout, component model or language is fully documented or certified.
