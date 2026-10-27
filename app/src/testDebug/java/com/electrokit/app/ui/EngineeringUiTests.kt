@@ -65,16 +65,14 @@ class EngineeringUiTests {
      */
     @org.junit.After fun restoreFontScale() { org.robolectric.RuntimeEnvironment.setFontScale(1f) }
 
-    /** Verifies library navigation and original transcription access after the visual redesign.
-     * @return Unit; missing source routes fail the assertions.
+    /** Verifies that the mobile engineering dashboard does not expose source filenames or hashes.
+     * @return Unit; provenance controls must remain hidden from the mobile UI.
      */
-    @Test fun sourceReferencesRemainReachable() {
+    @Test fun mobileUiHidesSourceReferences() {
         home()
-        ui.onNode(verticalList()).performScrollToNode(hasText("Technical Reference Library"))
-        ui.onNodeWithText("Technical Reference Library").performClick()
-        ui.onNode(verticalList()).performScrollToNode(hasText("4884.jpg", substring = true))
-        ui.onNode(hasText("4884.jpg", substring = true) and hasClickAction()).performClick()
-        ui.onNodeWithText("Photograph transcription").assertExists()
+        ui.onAllNodesWithText("Technical Reference Library").assertCountEquals(0)
+        ui.onAllNodesWithText("Original source SHA-256").assertCountEquals(0)
+        ui.onAllNodesWithText("4886(1).jpg").assertCountEquals(0)
     }
 
     /** Verifies full navigation labels and catalogue usability at 200 percent font size.
@@ -108,7 +106,7 @@ class EngineeringUiTests {
         ui.onNodeWithText("Engineering").performClick()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("789")
         ui.onNodeWithText("Unlock").performClick()
-        ui.waitUntil(30000) { ui.onAllNodes(hasSetTextAction() and hasText("Search all engineering references and tools")).fetchSemanticsNodes().isNotEmpty() }
+        ui.waitUntil(30000) { ui.onAllNodes(hasSetTextAction() and hasText("Search engineering topics and tools")).fetchSemanticsNodes().isNotEmpty() }
     }
 
     /**
@@ -161,7 +159,7 @@ class EngineeringUiTests {
         ui.onNode(verticalList())
             .performScrollToNode(hasText("S21A — Drive chain switch — suffix A not verified"))
         ui.onNodeWithText("S21A — Drive chain switch — suffix A not verified").performClick()
-        ui.onNodeWithText("Source and verification status").assertExists()
+        ui.onNodeWithText("Content status").assertExists()
     }
 
     /**
@@ -200,7 +198,7 @@ class EngineeringUiTests {
         ui.onNodeWithText("Close drawing").performClick()
         ui.onNode(hasSetTextAction()).performTextReplacement("I13")
         ui.onNodeWithText("I13 — 0.45 / 0.65 Speed Selection Switch").performClick()
-        ui.onNodeWithText("Source and verification status").assertExists()
+        ui.onNodeWithText("Content status").assertExists()
         save("terminal")
     }
 

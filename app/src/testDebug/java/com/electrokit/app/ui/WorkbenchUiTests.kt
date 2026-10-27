@@ -37,12 +37,12 @@ class WorkbenchUiTests {
         ui.onNodeWithText("Access code not accepted.").assertIsDisplayed()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("789")
         ui.onNodeWithText("Unlock").performClick()
-        ui.onNode(hasSetTextAction() and hasText("Search all engineering references and tools")).assertExists()
+        ui.onNode(hasSetTextAction() and hasText("Search engineering topics and tools")).assertExists()
         ui.activityRule.scenario.recreate()
         ui.waitForIdle()
         ui.onNodeWithText("Lock engineering").performClick()
         ui.onNodeWithText("Engineering access").assertIsDisplayed()
-        ui.onNode(hasText("Search all engineering references and tools")).assertDoesNotExist()
+        ui.onNodeWithText("Search engineering topics and tools").assertDoesNotExist()
     }
 
     /** @return Unit; activity-local state never becomes a persisted grant for a fresh session. */

@@ -393,15 +393,12 @@ private fun componentNotes(asset: ComponentAsset): List<Pair<String, String>> {
  */
 @Composable
 private fun LearningDetail(page: LearningPage, prefs: PreferencesState, vm: AppViewModel, back: () -> Unit) {
-    val context = LocalContext.current
     val id = "learn:${page.id}"
     Scaffold(topBar = { Bar(page.title, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite lesson") } } }) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item { Text("LEARN • OFFLINE REFERENCE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium) }
             if (page.id == "multimeter") item { MultimeterLesson() }
             items(page.sections) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(20.dp)) { SectionTitle(title); Text(body) } } }
-            item { SectionTitle("Original technical references"); Text("Links are reference citations stored offline. Use current manufacturer documentation for real equipment.") }
-            items(page.sources) { source -> Text(source); TextButton({ share(context, source) }) { Text("Share reference link") } }
         }
     }
 }

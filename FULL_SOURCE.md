@@ -36904,12 +36904,10 @@ private fun EngineeringContentScreen(
     val (data, tools) = pair
     val record = data.records.firstOrNull { route == "record:" + it.id }
     val fault = data.faults.firstOrNull { route == "fault:" + it.code }
-    val source = data.sources.firstOrNull { route == "source:" + it.id }
     val tool = tools.firstOrNull { route == "tool:" + it.id }
     val title =
         record?.title
             ?: fault?.let { it.code + " — " + it.message }
-            ?: source?.title
             ?: tool?.title
             ?: data.sections.firstOrNull { it.id == route }?.title
             ?: stringResource(R.string.engine_title)
@@ -37014,14 +37012,6 @@ private fun EngineeringContentScreen(
                                 navigate("fault:" + other.code)
                             }
                         }
-                        items(fault.sources) { id ->
-                            EngineeringLink(
-                                stringResource(R.string.engine_source) + ": " + id,
-                                "",
-                            ) {
-                                navigate("source:" + id)
-                            }
-                        }
                     } else if (record != null) {
                         item { EngineeringHeading(record.title, if (record.title.substringAfter(" — ") == record.summary) "" else record.summary) }
                         item {
@@ -37032,9 +37022,7 @@ private fun EngineeringContentScreen(
                                     "\n" +
                                     record.body.joinToString("\n") +
                                     "\n" +
-                                    record.status +
-                                    "\n" +
-                                    record.sources.joinToString(),
+                                    record.status,
                                 record.id in prefs.favourites,
                             ) {
                                 vm.star(record.id)
@@ -37082,41 +37070,6 @@ private fun EngineeringContentScreen(
                                 navigate("fault:" + other.code)
                             }
                         }
-                        items(record.sources) { id ->
-                            EngineeringLink(
-                                stringResource(R.string.engine_source) + ": " + id,
-                                "",
-                            ) {
-                                navigate("source:" + id)
-                            }
-                        }
-                    } else if (source != null) {
-                        item { EngineeringHeading(source.id, source.title) }
-                        item { EngineeringNote(source.type, source.status) }
-                        item { Text(source.text, style = MaterialTheme.typography.bodyLarge) }
-                        if (source.sha256.isNotBlank())
-                            item {
-                                EngineeringNote(
-                                    stringResource(R.string.engine_checksum),
-                                    source.sha256,
-                                )
-                            }
-                        if (source.url.isNotBlank())
-                            item {
-                                DetailActions(source.url, null, null)
-                                Text(source.url)
-                            }
-                        item {
-                            Text(
-                                stringResource(R.string.engine_source_records),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                        }
-                        items(data.records.filter { source.id in it.sources }) { other ->
-                            EngineeringLink(other.title, other.summary) {
-                                navigate("record:" + other.id)
-                            }
-                        }
                     } else {
                         item {
                             EngineeringHeading(
@@ -37153,12 +37106,6 @@ private fun EngineeringContentScreen(
                             }
                         }
                         if (route == "cbm") item { CbmDemo(data, navigate) }
-                        if (route == "library")
-                            items(data.sources) { src ->
-                                EngineeringLink(src.id + " — " + src.title, src.status) {
-                                    navigate("source:" + src.id)
-                                }
-                            }
                         if (route == "wiring")
                             items(data.records.filter { it.section == "panel" }) { r ->
                                 EngineeringLink(r.title, r.summary) { navigate("record:" + r.id) }
@@ -37214,7 +37161,7 @@ private fun EngineeringHome(
                 item {
                     Text(stringResource(R.string.engine_quick_actions), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
-                items(data.sections.filter { it.id in listOf("faults", "formulas", "library") }) { section ->
+                items(data.sections.filter { it.id in listOf("faults", "formulas") }) { section ->
                     EngineeringLink(section.title, stringResource(when (section.id) {
                         "faults" -> R.string.engine_fault_action
                         "formulas" -> R.string.engine_formula_action
@@ -37266,15 +37213,6 @@ private fun EngineeringHome(
                 }
                 items(tools.filter { (it.title + " " + it.formula).contains(q, true) }) { tool ->
                     EngineeringLink(tool.title, tool.formula) { navigate("tool:" + tool.id) }
-                }
-                items(
-                    data.sources.filter {
-                        (it.id + " " + it.title + " " + it.text).contains(q, true)
-                    }
-                ) { src ->
-                    EngineeringLink(src.id + " — " + src.title, src.status) {
-                        navigate("source:" + src.id)
-                    }
                 }
                 items(registry.filter { it.title.contains(q, true) }.distinctBy { it.contentId }) { entry ->
                     EngineeringLink(entry.title, stringResource(R.string.engine_existing_tool)) {
@@ -38321,15 +38259,12 @@ private fun componentNotes(asset: ComponentAsset): List<Pair<String, String>> {
  */
 @Composable
 private fun LearningDetail(page: LearningPage, prefs: PreferencesState, vm: AppViewModel, back: () -> Unit) {
-    val context = LocalContext.current
     val id = "learn:${page.id}"
     Scaffold(topBar = { Bar(page.title, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite lesson") } } }) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item { Text("LEARN • OFFLINE REFERENCE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium) }
             if (page.id == "multimeter") item { MultimeterLesson() }
             items(page.sections) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(20.dp)) { SectionTitle(title); Text(body) } } }
-            item { SectionTitle("Original technical references"); Text("Links are reference citations stored offline. Use current manufacturer documentation for real equipment.") }
-            items(page.sources) { source -> Text(source); TextButton({ share(context, source) }) { Text("Share reference link") } }
         }
     }
 }
@@ -39099,19 +39034,16 @@ class EngineeringViewModel(application: Application) : AndroidViewModel(applicat
  <string name="engine_title">Elevator &amp; Escalator Engineering</string>
  <string name="engine_tab">Engineering</string>
  <string name="engine_intro">Electrical, mechanical and control references for your engineering work. User notes and educational examples are labelled separately.</string>
- <string name="engine_global_search">Search all engineering references and tools</string>
- <string name="engine_load_error">Engineering references could not be loaded. Retry to read the bundled data again.</string>
+ <string name="engine_global_search">Search engineering topics and tools</string>
+ <string name="engine_load_error">Engineering content could not be loaded. Retry to read the bundled data again.</string>
  <string name="engine_classification">Recorded classification</string>
  <string name="engine_reset_notice">Reset classification is not restart permission</string>
  <string name="engine_reset_explanation">Auto and Manual are copied from the supplied list. Clear the cause and follow the approved return-to-service procedure; do not bridge protective devices.</string>
  <string name="engine_checks">Safe inspection overview</string>
  <string name="engine_association">Related topics — not verified wiring</string>
  <string name="engine_related_faults">Related fault references</string>
- <string name="engine_source">Source</string>
- <string name="engine_verification">Source and verification status</string>
- <string name="engine_checksum">Original source SHA-256</string>
- <string name="engine_source_records">Records citing this source</string>
- <string name="engine_reference_notice">Original educational content and user notes. Exact wiring, safety limits and equipment sequences require approved job documents.</string>
+ <string name="engine_verification">Content status</string>
+ <string name="engine_reference_notice">Offline educational content and user notes. Exact wiring, safety limits and equipment sequences require approved job documents.</string>
  <string name="engine_existing_power">Existing power calculator</string>
  <string name="engine_preserved">Original calculator retained in the existing toolkit.</string>
  <string name="engine_simulated">SIMULATED — educational samples only</string>
@@ -41284,16 +41216,14 @@ class EngineeringUiTests {
      */
     @org.junit.After fun restoreFontScale() { org.robolectric.RuntimeEnvironment.setFontScale(1f) }
 
-    /** Verifies library navigation and original transcription access after the visual redesign.
-     * @return Unit; missing source routes fail the assertions.
+    /** Verifies that the mobile engineering dashboard does not expose source filenames or hashes.
+     * @return Unit; provenance controls must remain hidden from the mobile UI.
      */
-    @Test fun sourceReferencesRemainReachable() {
+    @Test fun mobileUiHidesSourceReferences() {
         home()
-        ui.onNode(verticalList()).performScrollToNode(hasText("Technical Reference Library"))
-        ui.onNodeWithText("Technical Reference Library").performClick()
-        ui.onNode(verticalList()).performScrollToNode(hasText("4884.jpg", substring = true))
-        ui.onNode(hasText("4884.jpg", substring = true) and hasClickAction()).performClick()
-        ui.onNodeWithText("Photograph transcription").assertExists()
+        ui.onAllNodesWithText("Technical Reference Library").assertCountEquals(0)
+        ui.onAllNodesWithText("Original source SHA-256").assertCountEquals(0)
+        ui.onAllNodesWithText("4886(1).jpg").assertCountEquals(0)
     }
 
     /** Verifies full navigation labels and catalogue usability at 200 percent font size.
@@ -41327,7 +41257,7 @@ class EngineeringUiTests {
         ui.onNodeWithText("Engineering").performClick()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("789")
         ui.onNodeWithText("Unlock").performClick()
-        ui.waitUntil(30000) { ui.onAllNodes(hasSetTextAction() and hasText("Search all engineering references and tools")).fetchSemanticsNodes().isNotEmpty() }
+        ui.waitUntil(30000) { ui.onAllNodes(hasSetTextAction() and hasText("Search engineering topics and tools")).fetchSemanticsNodes().isNotEmpty() }
     }
 
     /**
@@ -41380,7 +41310,7 @@ class EngineeringUiTests {
         ui.onNode(verticalList())
             .performScrollToNode(hasText("S21A — Drive chain switch — suffix A not verified"))
         ui.onNodeWithText("S21A — Drive chain switch — suffix A not verified").performClick()
-        ui.onNodeWithText("Source and verification status").assertExists()
+        ui.onNodeWithText("Content status").assertExists()
     }
 
     /**
@@ -41419,7 +41349,7 @@ class EngineeringUiTests {
         ui.onNodeWithText("Close drawing").performClick()
         ui.onNode(hasSetTextAction()).performTextReplacement("I13")
         ui.onNodeWithText("I13 — 0.45 / 0.65 Speed Selection Switch").performClick()
-        ui.onNodeWithText("Source and verification status").assertExists()
+        ui.onNodeWithText("Content status").assertExists()
         save("terminal")
     }
 
@@ -41537,12 +41467,12 @@ class WorkbenchUiTests {
         ui.onNodeWithText("Access code not accepted.").assertIsDisplayed()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("789")
         ui.onNodeWithText("Unlock").performClick()
-        ui.onNode(hasSetTextAction() and hasText("Search all engineering references and tools")).assertExists()
+        ui.onNode(hasSetTextAction() and hasText("Search engineering topics and tools")).assertExists()
         ui.activityRule.scenario.recreate()
         ui.waitForIdle()
         ui.onNodeWithText("Lock engineering").performClick()
         ui.onNodeWithText("Engineering access").assertIsDisplayed()
-        ui.onNode(hasText("Search all engineering references and tools")).assertDoesNotExist()
+        ui.onNodeWithText("Search engineering topics and tools").assertDoesNotExist()
     }
 
     /** @return Unit; activity-local state never becomes a persisted grant for a fresh session. */

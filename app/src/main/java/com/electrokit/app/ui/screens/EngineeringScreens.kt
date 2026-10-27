@@ -93,12 +93,10 @@ private fun EngineeringContentScreen(
     val (data, tools) = pair
     val record = data.records.firstOrNull { route == "record:" + it.id }
     val fault = data.faults.firstOrNull { route == "fault:" + it.code }
-    val source = data.sources.firstOrNull { route == "source:" + it.id }
     val tool = tools.firstOrNull { route == "tool:" + it.id }
     val title =
         record?.title
             ?: fault?.let { it.code + " — " + it.message }
-            ?: source?.title
             ?: tool?.title
             ?: data.sections.firstOrNull { it.id == route }?.title
             ?: stringResource(R.string.engine_title)
@@ -203,14 +201,6 @@ private fun EngineeringContentScreen(
                                 navigate("fault:" + other.code)
                             }
                         }
-                        items(fault.sources) { id ->
-                            EngineeringLink(
-                                stringResource(R.string.engine_source) + ": " + id,
-                                "",
-                            ) {
-                                navigate("source:" + id)
-                            }
-                        }
                     } else if (record != null) {
                         item { EngineeringHeading(record.title, if (record.title.substringAfter(" — ") == record.summary) "" else record.summary) }
                         item {
@@ -221,9 +211,7 @@ private fun EngineeringContentScreen(
                                     "\n" +
                                     record.body.joinToString("\n") +
                                     "\n" +
-                                    record.status +
-                                    "\n" +
-                                    record.sources.joinToString(),
+                                    record.status,
                                 record.id in prefs.favourites,
                             ) {
                                 vm.star(record.id)
@@ -271,41 +259,6 @@ private fun EngineeringContentScreen(
                                 navigate("fault:" + other.code)
                             }
                         }
-                        items(record.sources) { id ->
-                            EngineeringLink(
-                                stringResource(R.string.engine_source) + ": " + id,
-                                "",
-                            ) {
-                                navigate("source:" + id)
-                            }
-                        }
-                    } else if (source != null) {
-                        item { EngineeringHeading(source.id, source.title) }
-                        item { EngineeringNote(source.type, source.status) }
-                        item { Text(source.text, style = MaterialTheme.typography.bodyLarge) }
-                        if (source.sha256.isNotBlank())
-                            item {
-                                EngineeringNote(
-                                    stringResource(R.string.engine_checksum),
-                                    source.sha256,
-                                )
-                            }
-                        if (source.url.isNotBlank())
-                            item {
-                                DetailActions(source.url, null, null)
-                                Text(source.url)
-                            }
-                        item {
-                            Text(
-                                stringResource(R.string.engine_source_records),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                        }
-                        items(data.records.filter { source.id in it.sources }) { other ->
-                            EngineeringLink(other.title, other.summary) {
-                                navigate("record:" + other.id)
-                            }
-                        }
                     } else {
                         item {
                             EngineeringHeading(
@@ -342,12 +295,6 @@ private fun EngineeringContentScreen(
                             }
                         }
                         if (route == "cbm") item { CbmDemo(data, navigate) }
-                        if (route == "library")
-                            items(data.sources) { src ->
-                                EngineeringLink(src.id + " — " + src.title, src.status) {
-                                    navigate("source:" + src.id)
-                                }
-                            }
                         if (route == "wiring")
                             items(data.records.filter { it.section == "panel" }) { r ->
                                 EngineeringLink(r.title, r.summary) { navigate("record:" + r.id) }
@@ -403,7 +350,7 @@ private fun EngineeringHome(
                 item {
                     Text(stringResource(R.string.engine_quick_actions), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
-                items(data.sections.filter { it.id in listOf("faults", "formulas", "library") }) { section ->
+                items(data.sections.filter { it.id in listOf("faults", "formulas") }) { section ->
                     EngineeringLink(section.title, stringResource(when (section.id) {
                         "faults" -> R.string.engine_fault_action
                         "formulas" -> R.string.engine_formula_action
@@ -455,15 +402,6 @@ private fun EngineeringHome(
                 }
                 items(tools.filter { (it.title + " " + it.formula).contains(q, true) }) { tool ->
                     EngineeringLink(tool.title, tool.formula) { navigate("tool:" + tool.id) }
-                }
-                items(
-                    data.sources.filter {
-                        (it.id + " " + it.title + " " + it.text).contains(q, true)
-                    }
-                ) { src ->
-                    EngineeringLink(src.id + " — " + src.title, src.status) {
-                        navigate("source:" + src.id)
-                    }
                 }
                 items(registry.filter { it.title.contains(q, true) }.distinctBy { it.contentId }) { entry ->
                     EngineeringLink(entry.title, stringResource(R.string.engine_existing_tool)) {
