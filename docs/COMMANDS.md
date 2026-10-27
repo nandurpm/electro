@@ -21,15 +21,15 @@ Unless stated otherwise, run from the repository root `electro`. Requirements: G
 | Release tests/lint/build | `./gradlew testReleaseUnitTest lintRelease assembleRelease` | `.\gradlew.bat testReleaseUnitTest lintRelease assembleRelease` | Signed `app-release.apk` only with valid original credentials; otherwise unsigned output is not production-ready |
 | Clean generated outputs | `./gradlew clean` | `.\gradlew.bat clean` | Deletes build outputs; next build must regenerate them |
 | Find APKs | `find app/build/outputs/apk -name '*.apk' -print` | `Get-ChildItem app\build\outputs\apk -Recurse -Filter *.apk` | Actual artifact paths; no output means no APK exists |
-| Check debug package | `"$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk` | `& "$env:ANDROID_HOME\build-tools\35.0.0\aapt.exe" dump badging .\app\build\outputs\apk\debug\app-debug.apk` | `com.electrokit.app`, version 2.1.0/code 13 |
+| Check debug package | `"$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk` | `& "$env:ANDROID_HOME\build-tools\35.0.0\aapt.exe" dump badging .\app\build\outputs\apk\debug\app-debug.apk` | `com.electrokit.app`, version 3.0/code 14 |
 | Verify debug signature | `"$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/debug/app-debug.apk` | `& "$env:ANDROID_HOME\build-tools\35.0.0\apksigner.bat" verify --verbose --print-certs .\app\build\outputs\apk\debug\app-debug.apk` | Valid development certificate; compare original certificate separately for release updates |
 | Check whitespace | `git diff --check` | Same | Empty output on success |
 | Stage intentional files | `git add app docs scripts .github README.md CHANGELOG.md` | Same | Index contains reviewed changes; inspect `git diff --cached` |
 | Commit | `git commit -m 'Describe the verified change'` | Same | New local commit; does not push or release |
 | Push branch | `git push -u origin feature/my-change` | Same | Remote feature branch; requires write permission |
 | Open PR (GitHub CLI authenticated) | `gh pr create --base main --head feature/my-change --title 'Describe change' --body-file /tmp/electro-pr.md` | `gh pr create --base main --head feature/my-change --title 'Describe change' --body-file "$env:TEMP\electro-pr.md"` | PR link; first write the reviewed description file. Git authentication alone does not establish GitHub API access |
-| Release tag (after review) | `git tag -a v2.1.0 -m 'ELECTRO 2.1.0'` then `git push origin v2.1.0` | Same | Triggers signed-release workflow; do not run as an ordinary test |
-| Publish verified signed file manually | `gh release create v2.1.0 app/build/outputs/apk/release/app-release.apk --verify-tag --title 'ELECTRO 2.1.0' --generate-notes` | Same paths may use backslashes | Public release, requiring reviewed tag, verified original signature and GitHub API write access |
+| Release tag (after review) | `git tag -a v3.0 -m 'ELECTRO 3.0'` then `git push origin v3.0` | Same | Triggers signed-release workflow; do not run as an ordinary test |
+| Publish verified signed file manually | `gh release create v3.0 app/build/outputs/apk/release/app-release.apk --verify-tag --title 'ELECTRO 3.0' --generate-notes` | Same paths may use backslashes | Public release, requiring reviewed tag, verified original signature and GitHub API write access |
 
 Version editing is a source change: update `versionCode` and `versionName` in `app/build.gradle.kts`, review the diff, update changelog and rebuild. Do not blindly replace every version string across dependencies/history.
 

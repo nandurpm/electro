@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   debug:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -27,9 +27,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
       - name: Install exact Android packages
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+        run: |
+          set -euo pipefail
+          sdkmanager_path="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager_path"
+          "$sdkmanager_path" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
       - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947
       - name: Verify wrapper JAR
         run: echo '498495120a03b9a6ab5d155f5de3c8f0d986a449153702fb80fc80e134484f17  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
@@ -72,19 +76,37 @@ permissions:
   contents: read
 jobs:
   signed-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Check original release signing secrets
+        env:
+          ELECTROKIT_KEYSTORE_BASE64: ${{ secrets.ELECTROKIT_KEYSTORE_BASE64 }}
+          ELECTROKIT_STORE_PASSWORD: ${{ secrets.ELECTROKIT_STORE_PASSWORD }}
+          ELECTROKIT_KEY_ALIAS: ${{ secrets.ELECTROKIT_KEY_ALIAS }}
+          ELECTROKIT_KEY_PASSWORD: ${{ secrets.ELECTROKIT_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in ELECTROKIT_KEYSTORE_BASE64 ELECTROKIT_STORE_PASSWORD ELECTROKIT_KEY_ALIAS ELECTROKIT_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then echo "::error::Missing original signing secret: $name"; missing=1; fi
+          done
+          test "$missing" = 0
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
-      - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+      - name: Use the hosted runner Android SDK
+        run: |
+          set -euo pipefail
+          sdkmanager_path="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager_path"
+          "$sdkmanager_path" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
       - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947
       - name: Verify wrapper JAR
         run: echo '498495120a03b9a6ab5d155f5de3c8f0d986a449153702fb80fc80e134484f17  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
@@ -105,12 +127,23 @@ jobs:
           printf '%s' "$ELECTROKIT_KEYSTORE_BASE64" | base64 --decode > "$ELECTROKIT_KEYSTORE"
           ./gradlew --no-daemon --max-workers=4 testReleaseUnitTest lintRelease assembleRelease
           test -f app/build/outputs/apk/release/app-release.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk | tee "$RUNNER_TEMP/electro-signature.txt"
+          expected=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' verification/apk-signature.txt)
+          actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/electro-signature.txt")
+          test -n "$expected"
+          if [ "$actual" != "$expected" ]; then echo 'Signing certificate does not match the original ELECTRO release identity.' >&2; exit 1; fi
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk
+      - name: Package APK and matching source
+        run: |
+          set -euo pipefail
+          version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
+          mkdir -p app/build/outputs/distribution
+          cp app/build/outputs/apk/release/app-release.apk "app/build/outputs/distribution/ELECTRO-$version.apk"
+          git archive --format=zip --prefix="ELECTRO-$version/" --output="app/build/outputs/distribution/ELECTRO-$version-source.zip" HEAD
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ELECTRO-signed-release
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/distribution/
           if-no-files-found: error
       - name: Publish matching version tag
         if: startsWith(github.ref, 'refs/tags/v')
@@ -121,7 +154,7 @@ jobs:
           set -euo pipefail
           version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
           test "$RELEASE_TAG" = "v$version"
-          gh release create "$RELEASE_TAG" app/build/outputs/apk/release/app-release.apk --verify-tag --title "ELECTRO $version" --generate-notes
+          gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --verify-tag --title "ELECTRO $version" --generate-notes
 
 ````
 
@@ -285,6 +318,12 @@ The 1.1.1 personal-use update removes reserved footer space and optional enablem
 
 ````markdown
 # Changes
+
+## 3.0 — release preparation (2026-10-27)
+
+- Set the application name to ELECTRO, versionName to 3.0 and versionCode to 14.
+- Retain the validated native workbench, original application ID, local data and engineering records.
+- Release build/signature verification is recorded separately in docs/RELEASE_3_0.md.
 
 ## 2.1.0 — development build (2026-10-27)
 
@@ -524,7 +563,7 @@ Third-party libraries and the Gradle wrapper retain their own licenses.
 
 **Electrical • Electronics • Engineering**
 
-Offline native Android engineering workbench. Development version **2.1.0**, code **13**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline native Android engineering workbench. Version **3.0**, code **14**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 ## Features
 
@@ -801,8 +840,8 @@ android {
         applicationId = "com.electrokit.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 13
-        versionName = "2.1.0"
+        versionCode = 14
+        versionName = "3.0"
     }
     // Compose owns rendering; BuildConfig supplies the displayed version.
     buildFeatures {
@@ -38931,7 +38970,7 @@ class EngineeringViewModel(application: Application) : AndroidViewModel(applicat
 ````xml
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
- <string name="app_name">Electro</string>
+ <string name="app_name">ELECTRO</string>
  <string name="settings">Settings</string>
  <string name="light_theme">Light theme</string>
  <string name="share_results">Share results</string>
@@ -41998,15 +42037,15 @@ Unless stated otherwise, run from the repository root `electro`. Requirements: G
 | Release tests/lint/build | `./gradlew testReleaseUnitTest lintRelease assembleRelease` | `.\gradlew.bat testReleaseUnitTest lintRelease assembleRelease` | Signed `app-release.apk` only with valid original credentials; otherwise unsigned output is not production-ready |
 | Clean generated outputs | `./gradlew clean` | `.\gradlew.bat clean` | Deletes build outputs; next build must regenerate them |
 | Find APKs | `find app/build/outputs/apk -name '*.apk' -print` | `Get-ChildItem app\build\outputs\apk -Recurse -Filter *.apk` | Actual artifact paths; no output means no APK exists |
-| Check debug package | `"$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk` | `& "$env:ANDROID_HOME\build-tools\35.0.0\aapt.exe" dump badging .\app\build\outputs\apk\debug\app-debug.apk` | `com.electrokit.app`, version 2.1.0/code 13 |
+| Check debug package | `"$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk` | `& "$env:ANDROID_HOME\build-tools\35.0.0\aapt.exe" dump badging .\app\build\outputs\apk\debug\app-debug.apk` | `com.electrokit.app`, version 3.0/code 14 |
 | Verify debug signature | `"$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/debug/app-debug.apk` | `& "$env:ANDROID_HOME\build-tools\35.0.0\apksigner.bat" verify --verbose --print-certs .\app\build\outputs\apk\debug\app-debug.apk` | Valid development certificate; compare original certificate separately for release updates |
 | Check whitespace | `git diff --check` | Same | Empty output on success |
 | Stage intentional files | `git add app docs scripts .github README.md CHANGELOG.md` | Same | Index contains reviewed changes; inspect `git diff --cached` |
 | Commit | `git commit -m 'Describe the verified change'` | Same | New local commit; does not push or release |
 | Push branch | `git push -u origin feature/my-change` | Same | Remote feature branch; requires write permission |
 | Open PR (GitHub CLI authenticated) | `gh pr create --base main --head feature/my-change --title 'Describe change' --body-file /tmp/electro-pr.md` | `gh pr create --base main --head feature/my-change --title 'Describe change' --body-file "$env:TEMP\electro-pr.md"` | PR link; first write the reviewed description file. Git authentication alone does not establish GitHub API access |
-| Release tag (after review) | `git tag -a v2.1.0 -m 'ELECTRO 2.1.0'` then `git push origin v2.1.0` | Same | Triggers signed-release workflow; do not run as an ordinary test |
-| Publish verified signed file manually | `gh release create v2.1.0 app/build/outputs/apk/release/app-release.apk --verify-tag --title 'ELECTRO 2.1.0' --generate-notes` | Same paths may use backslashes | Public release, requiring reviewed tag, verified original signature and GitHub API write access |
+| Release tag (after review) | `git tag -a v3.0 -m 'ELECTRO 3.0'` then `git push origin v3.0` | Same | Triggers signed-release workflow; do not run as an ordinary test |
+| Publish verified signed file manually | `gh release create v3.0 app/build/outputs/apk/release/app-release.apk --verify-tag --title 'ELECTRO 3.0' --generate-notes` | Same paths may use backslashes | Public release, requiring reviewed tag, verified original signature and GitHub API write access |
 
 Version editing is a source change: update `versionCode` and `versionName` in `app/build.gradle.kts`, review the diff, update changelog and rebuild. Do not blindly replace every version string across dependencies/history.
 
@@ -42101,11 +42140,36 @@ PowerShell uses `.\gradlew.bat` and `& "$env:ANDROID_HOME\build-tools\35.0.0\apk
 After approving the exact release commit:
 
 ```bash
-git tag -a v2.1.0 -m 'ELECTRO 2.1.0'
-git push origin v2.1.0
+git tag -a v3.0 -m 'ELECTRO 3.0'
+git push origin v3.0
 ```
 
 These Git commands also work in PowerShell. Tags trigger release automation and are not ordinary test steps. This task does not imply a tag or GitHub Release has been published.
+
+````
+
+## docs/RELEASE_3_0.md
+
+````markdown
+# ELECTRO 3.0 release preparation
+
+Application name: **ELECTRO**. Version name: **3.0**. Version code: **14**. Application ID remains `com.electrokit.app`.
+
+The local optimized, non-debuggable release build passed `testReleaseUnitTest lintRelease assembleRelease`: **80 tests, 0 failures/errors/skips**, and no lint errors. R8 code/resource shrinking completed. Android SDK metadata confirms the requested name/version and SDK 24/35 bounds. Current output is `app/build/outputs/apk/release/app-release-unsigned.apk`; it is **unsigned**, not an installable production release.
+
+The user selected the original signing identity. No replacement key has been generated. The original public certificate record in `verification/apk-signature.txt` has SHA-256:
+
+`68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa`
+
+No original keystore or signing-password variables are configured in this workspace. GitHub denied access to repository signing-secret metadata. The release workflow can check/use original secrets in GitHub without disclosing the private key locally, and it now rejects any signed APK whose certificate differs from this original record.
+
+Required repository Actions secrets: `ELECTROKIT_KEYSTORE_BASE64`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS`, `ELECTROKIT_KEY_PASSWORD`. Configure the **original** values securely under repository Settings → Secrets and variables → Actions. Never paste passwords into chat or commit a keystore. A certificate fingerprint or an old APK cannot recreate its private signing key.
+
+The previous hosted release run failed inside the third-party Android setup action before signing. Workflows now pin Ubuntu 24.04 and use its documented preinstalled SDK, with explicit required-package checks. Signing prerequisites are checked early to avoid an expensive build when credentials are absent. Hosted execution is reported separately from successful local compilation.
+
+When signed verification succeeds, the workflow packages `ELECTRO-3.0.apk` and the matching `ELECTRO-3.0-source.zip`. Manual execution uploads artifacts; a matching `v3.0` tag publishes both. Do not create the final release tag until the original signing identity has been verified.
+
+The earlier `docs/BUILD_REPORT.md` records the 2.1.0 baseline's 120 debug/JVM/Robolectric tests; these are historical results, not a new 3.0 debug run. Device installation, production upgrade behavior and TalkBack remain unrun. See the audit report for existing engineering-content limitations.
 
 ````
 
@@ -42154,7 +42218,7 @@ Record device, Android version, commit/APK hash, steps and observed results. Kee
 
 1. Fetch current source, preserve local changes and create a feature branch.
 2. Modify the owning source/data files and add regression coverage.
-3. Increase `versionCode` and update `versionName` in `app/build.gradle.kts`; current development version is 2.1.0/code 13.
+3. Increase `versionCode` and update `versionName` in `app/build.gradle.kts`; current version is 3.0/code 14.
 4. Update `CHANGELOG.md`, including migration implications.
 5. Run Python validators and Android tests/lint/debug build. Inspect actual APK metadata and reports.
 6. Regenerate packaging/checksums and commit complete directories, including the wrapper JAR/catalog.
@@ -44284,6 +44348,30 @@ if "%OS%"=="Windows_NT" endlocal
 
 ````
 
+## photos/Catalog_Previews/a_comprehensive_high_resolution_catalog_collage_i.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Catalog_Previews/a_wide_high_resolution_infographic_catalog_image.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Catalog_Previews/electronic_components_asset_sheet.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Catalog_Previews/escalator_parts_and_controls_catalog.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Catalog_Previews/industrial_electrical_components_grid.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Catalog_Previews/industrial_sensors_and_control_equipment_grid.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
 ## photos/Communication_Modules/CAN_Bus_Module.png
 
 Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
@@ -44433,6 +44521,198 @@ Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
 Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
 
 ## photos/Connectors_and_Communication/VGA_DB15.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Control_Transformer.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Emergency_Stop_Button.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Green_Push_Button.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Induction_Motor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/MCCB.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Magnetic_Contactor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Plug_In_Relay.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Red_Indicator_Lamp.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/SMPS_Power_Supply.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Selector_Switch.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Single_Pole_MCB.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Start_Stop_Station.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Terminal_Block.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Thermal_Overload_Relay_A.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Thermal_Overload_Relay_B.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electrical/Three_Pole_MCB.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Axial_Resistor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Breadboard.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Bridge_Rectifier.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Ceramic_Capacitor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Crystal_Oscillator.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/DIP_Integrated_Circuit.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Electrolytic_Capacitor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Film_Capacitor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Inductor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/LED.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Power_Transistor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Rectifier_Diode.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/TO220_MOSFET.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/TO92_Transistor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Trimmer_Potentiometer.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Electronics/Zener_Diode.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Comb_Plate.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Electromagnetic_Brake.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Emergency_Stop.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Escalator_Control_Cabinet.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Escalator_HMI.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Escalator_Step.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Gear_Reducer.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Handrail_Drive_Roller.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Main_Drive_Motor.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Safety_Limit_Switch.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Skirt_Brush.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Skirt_Switch.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Sprocket.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Step_Chain.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Step_Lighting.png
+
+Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
+
+## photos/Escalator/Variable_Frequency_Drive.png
 
 Binary image asset; see this path and SHA256SUMS.txt for its exact bytes/hash.
 

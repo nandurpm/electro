@@ -28,8 +28,8 @@ PowerShell uses `.\gradlew.bat` and `& "$env:ANDROID_HOME\build-tools\35.0.0\apk
 After approving the exact release commit:
 
 ```bash
-git tag -a v2.1.0 -m 'ELECTRO 2.1.0'
-git push origin v2.1.0
+git tag -a v3.0 -m 'ELECTRO 3.0'
+git push origin v3.0
 ```
 
 These Git commands also work in PowerShell. Tags trigger release automation and are not ordinary test steps. This task does not imply a tag or GitHub Release has been published.
