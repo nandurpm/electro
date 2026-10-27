@@ -62,8 +62,21 @@ jobs:
           export ELECTROKIT_KEYSTORE="$RUNNER_TEMP/electro-release.keystore"
           trap 'rm -f "$ELECTROKIT_KEYSTORE"' EXIT
           umask 077
-          printf '%s' "$ELECTROKIT_KEYSTORE_BASE64" | base64 --decode > "$ELECTROKIT_KEYSTORE"
-          keytool -exportcert -keystore "$ELECTROKIT_KEYSTORE" -alias "$ELECTROKIT_KEY_ALIAS" -storepass:env ELECTROKIT_STORE_PASSWORD -file "$RUNNER_TEMP/release-cert.der"
+          if ! printf '%s' "$ELECTROKIT_KEYSTORE_BASE64" | base64 --decode > "$ELECTROKIT_KEYSTORE"; then
+            echo '::error::ELECTROKIT_KEYSTORE_BASE64 is not valid Base64.'
+            exit 1
+          fi
+          python3 - <<'PYCERT'
+          import os, subprocess
+          result = subprocess.run(['keytool', '-exportcert', '-keystore', os.environ['ELECTROKIT_KEYSTORE'], '-alias', os.environ['ELECTROKIT_KEY_ALIAS'], '-storepass:env', 'ELECTROKIT_STORE_PASSWORD', '-file', os.environ['RUNNER_TEMP'] + '/release-cert.der'], capture_output=True, text=True)
+          if result.returncode:
+              message = result.stdout + result.stderr
+              for name in ('ELECTROKIT_KEYSTORE_BASE64', 'ELECTROKIT_STORE_PASSWORD', 'ELECTROKIT_KEY_ALIAS', 'ELECTROKIT_KEY_PASSWORD'):
+                  value = os.environ.get(name)
+                  if value: message = message.replace(value, '[REDACTED]')
+              print('::error::Cannot open signing keystore: ' + message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
+              raise SystemExit(1)
+          PYCERT
           expected=$(cat signing/release-certificate.sha256)
           actual=$(sha256sum "$RUNNER_TEMP/release-cert.der" | cut -d ' ' -f1)
           if [ "$actual" != "$expected" ]; then echo "::error::Signing certificate mismatch. Expected $expected; found $actual"; exit 1; fi
