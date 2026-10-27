@@ -136,7 +136,7 @@ jobs:
           trap 'rm -f "$ELECTROKIT_KEYSTORE"' EXIT
           umask 077
           printf '%s' "$ELECTROKIT_KEYSTORE_BASE64" | base64 --decode > "$ELECTROKIT_KEYSTORE"
-          ./gradlew --no-daemon --max-workers=4 testReleaseUnitTest lintRelease assembleRelease | tee "$RUNNER_TEMP/electro-release-build.log"
+          ./gradlew --no-daemon --max-workers=4 testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleRelease | tee "$RUNNER_TEMP/electro-release-build.log"
           test -f app/build/outputs/apk/release/app-release.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk | tee "$RUNNER_TEMP/electro-signature.txt"
           expected=$(cat signing/release-certificate.sha256)
@@ -146,7 +146,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk
       - name: Record current signed release evidence
         run: |
-          "$RUNNER_TEMP/electro-python/bin/python" scripts/record_verification.py --apk app/build/outputs/apk/release/app-release.apk --build-log "$RUNNER_TEMP/electro-release-build.log" --variants release --require-signed
+          "$RUNNER_TEMP/electro-python/bin/python" scripts/record_verification.py --apk app/build/outputs/apk/release/app-release.apk --build-log "$RUNNER_TEMP/electro-release-build.log" --variants debug release --require-signed
       - name: Package APK and matching source
         run: |
           set -euo pipefail
@@ -154,7 +154,8 @@ jobs:
           mkdir -p app/build/outputs/distribution
           cp app/build/outputs/apk/release/app-release.apk "app/build/outputs/distribution/ELECTRO-$version.apk"
           python3 scripts/package_project.py --archive "app/build/outputs/distribution/ELECTRO-$version-source.zip"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ELECTRO-signed-release
           path: app/build/outputs/distribution/
@@ -333,10 +334,10 @@ The 1.1.1 personal-use update removes reserved footer space and optional enablem
 ````markdown
 # Changes
 
-## UI revision — local preview
+## 3.0.2 — reference-based UI release
 
 - Applied the supplied ELECTRO reference through navy/cyan themes, lightning branding, compact bordered panels, illustrated home banner, six quick actions and grouped settings. Existing Compose routes, calculators and persistence remain connected.
-- Regenerated verification for 3.0.1/code 15 and pinned signing checks to the published 3.0.1 certificate. Local release output is unsigned; the debug APK is a preview, not a compatible production update.
+- Release version 3.0.2/code 16 and pinned signing checks to the published 3.0.1 certificate. GitHub Actions signs with the published release identity and regenerates evidence before packaging.
 - Validation: 121 debug/UI tests, 80 release tests, 10 Python tests, no lint errors. Physical-device validation remains unrun.
 
 ## 3.0.2 — drawing code dictionary alignment (source only, not yet built or signed)
@@ -592,7 +593,7 @@ Third-party libraries and the Gradle wrapper retain their own licenses.
 
 **Electrical • Electronics • Engineering**
 
-Offline native Android engineering workbench. Version **3.0.1**, code **15**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline native Android engineering workbench. Version **3.0.2**, code **16**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 ## Features
 
@@ -688,7 +689,7 @@ All Kotlin paths below are under `app/src/main/java/com/electrokit/app/`.
 
 Images/metadata: `app/src/main/assets/components/` and `components.json`. Original engineering content: `app/src/main/assets/engineering.json` and `engineering_tools.json`. Android strings/icons: `app/src/main/res/`.
 
-The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.1 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the published 3.0.1 certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
+The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.2 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the published 3.0.1 certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
 
 ## Maintenance guides
 
@@ -864,8 +865,8 @@ android {
         applicationId = "com.electrokit.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 15
-        versionName = "3.0.1"
+        versionCode = 16
+        versionName = "3.0.2"
     }
     // Compose owns rendering; BuildConfig supplies the displayed version.
     buildFeatures {
@@ -43954,19 +43955,19 @@ These Git commands also work in PowerShell. Tags trigger release automation and 
 ````markdown
 # ELECTRO current build and signing status
 
-Current source: ELECTRO 3.0.1, versionCode 15, application ID com.electrokit.app.
+Current source: ELECTRO 3.0.2, versionCode 16, application ID com.electrokit.app.
 
-The reference-driven UI revision uses the existing Compose architecture and bundled art. Its current local release build is unsigned. The existing GitHub 3.0.1 APK predates this UI revision; do not present that APK as the redesigned app.
+The reference-driven UI revision uses the existing Compose architecture and bundled art. GitHub Actions builds and signs this revision using repository secrets, verifies the published certificate, and regenerates evidence before packaging. The existing GitHub 3.0.1 APK predates this UI revision; do not present that APK as the redesigned app.
 
 The active public certificate in `signing/release-certificate.sha256` is verified against the published `electro-3.0.1` APK:
 
 `d9823b341c6951b6dc912230fd46f2d61d7b3c315de2ae31fbb112345d1a9070`
 
-The original certificate remains in `signing/original-release-certificate.sha256` as a historical record. The locally generated replacement key also differs from the published APK. Neither is accepted by the release workflow. Compatible release signing requires the published APK's private key and an increased versionCode before the next publication.
+The original certificate remains in `signing/original-release-certificate.sha256` as a historical record. The locally generated replacement key also differs from the published APK. Neither is accepted by the release workflow. Compatible release signing requires the published APK's private key ; this revision increments versionCode to 16.
 
 Configure ELECTROKIT_KEYSTORE_BASE64, ELECTROKIT_STORE_PASSWORD, ELECTROKIT_KEY_ALIAS and ELECTROKIT_KEY_PASSWORD in GitHub Actions using that published key. Private credentials must remain outside source archives. The fingerprint cannot recreate a lost key.
 
-Every file under verification is regenerated from the current local artifact and reports, including explicit unsigned status. Physical-device checks and external reference validation are not claimed. The historical docs/BUILD_REPORT.md describes the earlier baseline.
+The workflow regenerates every file under verification from the actual signed artifact and executed reports before creating the release source archive. Physical-device checks and external reference validation are not claimed. The historical docs/BUILD_REPORT.md describes the earlier baseline.
 
 ````
 

@@ -2,7 +2,7 @@
 
 **Electrical • Electronics • Engineering**
 
-Offline native Android engineering workbench. Version **3.0.1**, code **15**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline native Android engineering workbench. Version **3.0.2**, code **16**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 ## Features
 
@@ -98,7 +98,7 @@ All Kotlin paths below are under `app/src/main/java/com/electrokit/app/`.
 
 Images/metadata: `app/src/main/assets/components/` and `components.json`. Original engineering content: `app/src/main/assets/engineering.json` and `engineering_tools.json`. Android strings/icons: `app/src/main/res/`.
 
-The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.1 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the published 3.0.1 certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
+The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.2 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the published 3.0.1 certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
 
 ## Maintenance guides
 

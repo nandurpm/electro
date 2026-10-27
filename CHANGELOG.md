@@ -1,9 +1,9 @@
 # Changes
 
-## UI revision — local preview
+## 3.0.2 — reference-based UI release
 
 - Applied the supplied ELECTRO reference through navy/cyan themes, lightning branding, compact bordered panels, illustrated home banner, six quick actions and grouped settings. Existing Compose routes, calculators and persistence remain connected.
-- Regenerated verification for 3.0.1/code 15 and pinned signing checks to the published 3.0.1 certificate. Local release output is unsigned; the debug APK is a preview, not a compatible production update.
+- Release version 3.0.2/code 16 and pinned signing checks to the published 3.0.1 certificate. GitHub Actions signs with the published release identity and regenerates evidence before packaging.
 - Validation: 121 debug/UI tests, 80 release tests, 10 Python tests, no lint errors. Physical-device validation remains unrun.
 
 ## 3.0.2 — drawing code dictionary alignment (source only, not yet built or signed)
