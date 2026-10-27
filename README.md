@@ -19,7 +19,7 @@ Exact manufacturer ratings, terminal drawings and part-specific test procedures 
 
 ## Engineering access
 
-Initial local code: **789**. Engineering and escalator image routes require verification. **Lock engineering** revokes the current grant. Rotation retains the Activity session; a new Activity/process starts locked. Public search/favorites omit protected fault snippets. Protected pages request Android's secure-window flag.
+The initial local code is defined in `LocalPin.kt` / `DEVELOPER_GUIDE.md` and is intentionally not published here. Engineering and escalator image routes require verification. **Lock engineering** revokes the current grant. Rotation retains the Activity session; a new Activity/process starts locked. Public search/favorites omit protected fault snippets. Protected pages request Android's secure-window flag.
 
 The salted PBKDF2 record, constant-time comparison and session-local attempt delay provide a **basic restriction**, not encryption or strong protection against APK extraction or reverse engineering. Restarting can bypass the attempt delay. Bundle only material you are authorized to distribute. No remote account/recovery is implemented.
 

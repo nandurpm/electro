@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.electrokit.app.viewmodel.EngineeringAccess
 
@@ -36,6 +37,8 @@ fun EngineeringGate(back: (() -> Unit)? = null, content: @Composable () -> Unit)
     } else {
         var pin by remember { mutableStateOf("") }
         var error by remember { mutableStateOf<String?>(null) }
+        var busy by remember { mutableStateOf(false) }
+        val scope = rememberCoroutineScope()
         Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
             if (back != null) TextButton(back) { Text("Back") }
             Text("Engineering access", style = MaterialTheme.typography.headlineMedium)
@@ -46,7 +49,18 @@ fun EngineeringGate(back: (() -> Unit)? = null, content: @Composable () -> Unit)
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 isError = error != null, modifier = Modifier.fillMaxWidth())
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Button(onClick = { error = access.unlock(pin); pin = "" }, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) { Text("Unlock") }
+            Button(
+                onClick = {
+                    val attempt = pin
+                    pin = ""
+                    busy = true
+                    scope.launch {
+                        try { error = access.unlockAsync(attempt) } finally { busy = false }
+                    }
+                },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            ) { Text("Unlock") }
             Text("Basic local restriction. It does not encrypt the bundled references.", style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 16.dp))
         }

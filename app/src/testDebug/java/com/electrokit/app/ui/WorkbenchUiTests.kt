@@ -34,9 +34,11 @@ class WorkbenchUiTests {
         ui.onNodeWithText("E217", substring = true).assertDoesNotExist()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("000")
         ui.onNodeWithText("Unlock").performClick()
+        ui.waitUntil(10000) { ui.onAllNodesWithText("Access code not accepted.").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithText("Access code not accepted.").assertIsDisplayed()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("789")
         ui.onNodeWithText("Unlock").performClick()
+        ui.waitUntil(10000) { ui.onAllNodes(hasSetTextAction() and hasText("Search engineering topics and tools")).fetchSemanticsNodes().isNotEmpty() }
         ui.onNode(hasSetTextAction() and hasText("Search engineering topics and tools")).assertExists()
         ui.activityRule.scenario.recreate()
         ui.waitForIdle()

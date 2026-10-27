@@ -195,7 +195,11 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                         vm.repository.registry.firstOrNull {
                             it.id == back.arguments?.getString("id")
                         }
-                    if (entry != null)
+                    val page = entry?.let { vm.repository.pages[it.contentId] }
+                    if (entry == null || (entry.screenType !in setOf("calculator", "module") && page == null)) {
+                        // Unknown or damaged registry route: return instead of showing a dead blank screen.
+                        LaunchedEffect(Unit) { nav.popBackStack() }
+                    } else
                         when (entry.screenType) {
                             "calculator" ->
                                 CalculatorScreen(entry, vm, prefs) { nav.popBackStack() }
@@ -203,7 +207,7 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                             else ->
                                 ReferenceScreen(
                                     entry,
-                                    vm.repository.pages.getValue(entry.contentId),
+                                    page!!,
                                 ) {
                                     nav.popBackStack()
                                 }

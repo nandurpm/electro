@@ -1,5 +1,13 @@
 # Changes
 
+## 3.0.1 — audit fixes (source only, not yet built or signed)
+
+- Engineering code verification now runs off the UI thread; Unlock is disabled while checking.
+- Unknown or damaged `entry/{id}` routes return to the previous screen instead of a blank screen or a crash.
+- DC cable calculator rejects a computed drop that is not below the supply voltage.
+- Removed the published access code from README. Stale 2.0.3 status files corrected.
+- NOT changed: versionCode/versionName, signing, access-code design, status-bar colour, string extraction.
+
 ## 3.0 — release preparation (2026-10-27)
 
 - Set the application name to ELECTRO, versionName to 3.0 and versionCode to 14.

@@ -71,6 +71,8 @@ object Messages {
      * Shared English calculation label/equation or validation text; centralised to prevent
      * inconsistent presentation.
      */
+    const val VOLTAGE_DROP_EXCEEDS_SUPPLY =
+        "Calculated drop exceeds the supply voltage; use a larger cross-section or a shorter run."
     const val SUPPLY_MUST_EXCEED_THE_LED_STRING_VOLTAGE =
         "Supply must exceed the LED string voltage."
     /**

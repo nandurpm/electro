@@ -333,6 +333,14 @@ The 1.1.1 personal-use update removes reserved footer space and optional enablem
 ````markdown
 # Changes
 
+## 3.0.1 — audit fixes (source only, not yet built or signed)
+
+- Engineering code verification now runs off the UI thread; Unlock is disabled while checking.
+- Unknown or damaged `entry/{id}` routes return to the previous screen instead of a blank screen or a crash.
+- DC cable calculator rejects a computed drop that is not below the supply voltage.
+- Removed the published access code from README. Stale 2.0.3 status files corrected.
+- NOT changed: versionCode/versionName, signing, access-code design, status-bar colour, string extraction.
+
 ## 3.0 — release preparation (2026-10-27)
 
 - Set the application name to ELECTRO, versionName to 3.0 and versionCode to 14.
@@ -526,18 +534,9 @@ Before relying on a new release, test API 24 and a recent Android version: insta
 ## HEADER_FIX_STATUS.md
 
 ````markdown
-# Header and system bars correction — source patch
+# Header and system bars — status
 
-Applied to 2.0.3 source; not yet a built release.
-
-- Removed scroll-driven toolbar hiding. Header remains in Scaffold topBar.
-- Retained pinned catalogue search and scrolling introduction/banner.
-- Removed immersive hide calls; clock/battery/system navigation remain visible.
-- Status inset is painted navy to match the toolbar, with white system icons.
-- System navigation inset is applied once at the root. Child navigation adds no second inset.
-- Updated the scroll regression to require visible Info/header after swiping.
-
-No APK was built or tested in this restored environment. Existing verification/ reports describe the earlier 2.0.3 release and are not evidence for this patch. Android SDK and release signing environment must be restored before delivering an installable update. Broader review remains pending.
+Historical: this described a 2.0.3 patch. The current shell pads the root with the theme background, so the status-bar area is not navy as that patch described. Not verified on a device; decide the intended look before changing it.
 
 ````
 
@@ -594,7 +593,7 @@ Exact manufacturer ratings, terminal drawings and part-specific test procedures 
 
 ## Engineering access
 
-Initial local code: **789**. Engineering and escalator image routes require verification. **Lock engineering** revokes the current grant. Rotation retains the Activity session; a new Activity/process starts locked. Public search/favorites omit protected fault snippets. Protected pages request Android's secure-window flag.
+The initial local code is defined in `LocalPin.kt` / `DEVELOPER_GUIDE.md` and is intentionally not published here. Engineering and escalator image routes require verification. **Lock engineering** revokes the current grant. Rotation retains the Activity session; a new Activity/process starts locked. Public search/favorites omit protected fault snippets. Protected pages request Android's secure-window flag.
 
 The salted PBKDF2 record, constant-time comparison and session-local attempt delay provide a **basic restriction**, not encryption or strong protection against APK extraction or reverse engineering. Restarting can bypass the attempt delay. Bundle only material you are authorized to distribute. No remote account/recovery is implemented.
 
@@ -823,15 +822,9 @@ The above are references, not a claim that every legacy pin assignment or every 
 ## TECHNICAL_VERIFICATION.md
 
 ````markdown
-# Current verification — 2.0.3
+# Verification status
 
-See AUDIT_RESOLUTION_2_0_3.md and verification/summary.json for current checks. Device/emulator testing remains unperformed. The release manifest binds the separately supplied APK and source archive by SHA-256 and records the public certificate fingerprint.
-
-## Historical implementation context
-
-# Current verification
-
-Current results are in REDESIGN_REVIEW.md and verification/. Earlier verification and engineering uncertainties remain in documentation/history. This redesign repair does not claim new OEM certification or physical-device testing.
+Version 3.0 evidence in verification/ was generated from an UNSIGNED build (apk_sha256 5da3aa39…). The separately delivered signed APK (sha256 1371076a…) is signed with certificate D9823B34…1A9070, which is NOT the recorded original identity 68A284D3…58BBAA. Treat 3.0.1 source changes as unbuilt and untested until `./gradlew testDebugUnitTest lintDebug` and a release build with the original keystore pass.
 
 ````
 
@@ -855,8 +848,8 @@ android {
         applicationId = "com.electrokit.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 14
-        versionName = "3.0"
+        versionCode = 15
+        versionName = "3.0.1"
     }
     // Compose owns rendering; BuildConfig supplies the displayed version.
     buildFeatures {
@@ -29798,6 +29791,7 @@ object Calculators {
                             (1 + (if (mode % 2 == 0) 0.00393 else 0.00403) * (n("temp") - 20))
                     val drop = Circuits.voltageDrop(pos("length"), area, pos("i"), rho)
                     val v = pos("v")
+                    require(drop < v) { Messages.VOLTAGE_DROP_EXCEEDS_SUPPLY }
                     out(
                         Messages.AREA_MM to area,
                         Messages.VOLTAGE_DROP_V to drop,
@@ -31259,6 +31253,8 @@ object Messages {
      * Shared English calculation label/equation or validation text; centralised to prevent
      * inconsistent presentation.
      */
+    const val VOLTAGE_DROP_EXCEEDS_SUPPLY =
+        "Calculated drop exceeds the supply voltage; use a larger cross-section or a shorter run."
     const val SUPPLY_MUST_EXCEED_THE_LED_STRING_VOLTAGE =
         "Supply must exceed the LED string voltage."
     /**
@@ -35182,7 +35178,11 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                         vm.repository.registry.firstOrNull {
                             it.id == back.arguments?.getString("id")
                         }
-                    if (entry != null)
+                    val page = entry?.let { vm.repository.pages[it.contentId] }
+                    if (entry == null || (entry.screenType !in setOf("calculator", "module") && page == null)) {
+                        // Unknown or damaged registry route: return instead of showing a dead blank screen.
+                        LaunchedEffect(Unit) { nav.popBackStack() }
+                    } else
                         when (entry.screenType) {
                             "calculator" ->
                                 CalculatorScreen(entry, vm, prefs) { nav.popBackStack() }
@@ -35190,7 +35190,7 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                             else ->
                                 ReferenceScreen(
                                     entry,
-                                    vm.repository.pages.getValue(entry.contentId),
+                                    page!!,
                                 ) {
                                     nav.popBackStack()
                                 }
@@ -36761,6 +36761,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.electrokit.app.viewmodel.EngineeringAccess
 
@@ -36787,6 +36788,8 @@ fun EngineeringGate(back: (() -> Unit)? = null, content: @Composable () -> Unit)
     } else {
         var pin by remember { mutableStateOf("") }
         var error by remember { mutableStateOf<String?>(null) }
+        var busy by remember { mutableStateOf(false) }
+        val scope = rememberCoroutineScope()
         Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
             if (back != null) TextButton(back) { Text("Back") }
             Text("Engineering access", style = MaterialTheme.typography.headlineMedium)
@@ -36797,7 +36800,18 @@ fun EngineeringGate(back: (() -> Unit)? = null, content: @Composable () -> Unit)
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 isError = error != null, modifier = Modifier.fillMaxWidth())
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Button(onClick = { error = access.unlock(pin); pin = "" }, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) { Text("Unlock") }
+            Button(
+                onClick = {
+                    val attempt = pin
+                    pin = ""
+                    busy = true
+                    scope.launch {
+                        try { error = access.unlockAsync(attempt) } finally { busy = false }
+                    }
+                },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            ) { Text("Unlock") }
             Text("Basic local restriction. It does not encrypt the bundled references.", style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 16.dp))
         }
@@ -38707,6 +38721,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.electrokit.app.domain.LocalPin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Activity-session access state: survives rotation, never persists across process recreation. */
 class EngineeringAccess : ViewModel() {
@@ -38738,13 +38754,28 @@ class EngineeringAccess : ViewModel() {
         if (protectedSurfaces == 0) window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
     }
 
-    /** Rate-limits failed attempts in memory; returns a user-facing outcome without echoing input.
+    /** Rate-limits failed attempts in memory; verifies on a background dispatcher so the slow KDF never blocks the UI thread.
+ * @param candidate Entered code, never copied into persistent state or error messages.
+ * @return Null on success; otherwise a user-facing rejection or temporary rate-limit message.
+ */
+    suspend fun unlockAsync(candidate: String): String? {
+        if (SystemClock.elapsedRealtime() < retryAt) return COOLDOWN_MESSAGE
+        val accepted = withContext(Dispatchers.Default) { LocalPin.verify(candidate) }
+        return finishAttempt(accepted)
+    }
+
+    /** Synchronous variant for unit tests and non-UI callers; same rules as [unlockAsync].
  * @param candidate Entered code, never copied into persistent state or error messages.
  * @return Null on success; otherwise a user-facing rejection or temporary rate-limit message.
  */
     fun unlock(candidate: String): String? {
-        if (SystemClock.elapsedRealtime() < retryAt) return "Too many attempts. Wait 30 seconds."
-        if (LocalPin.verify(candidate)) {
+        if (SystemClock.elapsedRealtime() < retryAt) return COOLDOWN_MESSAGE
+        return finishAttempt(LocalPin.verify(candidate))
+    }
+
+    /** Applies one verification outcome to the grant and the failure counter. */
+    private fun finishAttempt(accepted: Boolean): String? {
+        if (accepted) {
             unlocked = true
             failures = 0
             return null
@@ -38756,6 +38787,8 @@ class EngineeringAccess : ViewModel() {
         }
         return "Access code not accepted."
     }
+
+    private companion object { const val COOLDOWN_MESSAGE = "Too many attempts. Wait 30 seconds." }
 
     /** Immediately removes protected content from every composable sharing this session.
  * @return Unit; synchronously removes access for all destinations sharing this ViewModel.
@@ -41464,9 +41497,11 @@ class WorkbenchUiTests {
         ui.onNodeWithText("E217", substring = true).assertDoesNotExist()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("000")
         ui.onNodeWithText("Unlock").performClick()
+        ui.waitUntil(10000) { ui.onAllNodesWithText("Access code not accepted.").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithText("Access code not accepted.").assertIsDisplayed()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("789")
         ui.onNodeWithText("Unlock").performClick()
+        ui.waitUntil(10000) { ui.onAllNodes(hasSetTextAction() and hasText("Search engineering topics and tools")).fetchSemanticsNodes().isNotEmpty() }
         ui.onNode(hasSetTextAction() and hasText("Search engineering topics and tools")).assertExists()
         ui.activityRule.scenario.recreate()
         ui.waitForIdle()
@@ -45717,11 +45752,9 @@ include(":app")
 ## verification/README.md
 
 ````markdown
-# Current ELECTRO 3.0 verification
+# ELECTRO 3.0 verification snapshot
 
-Version code: 14. Signing status: unsigned. Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.
-
-Run python scripts/check_verification.py --apk PATH to verify the snapshot; production also requires --require-signed. Original signing identity lives separately in signing/original-release-certificate.sha256. External references and physical-device checks are explicitly unrun when not verified.
+Generated from an UNSIGNED release build; it does not describe the delivered signed APK. Regenerate with scripts/record_verification.py after building with the original keystore (--require-signed).
 
 ````
 

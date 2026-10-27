@@ -839,6 +839,7 @@ object Calculators {
                             (1 + (if (mode % 2 == 0) 0.00393 else 0.00403) * (n("temp") - 20))
                     val drop = Circuits.voltageDrop(pos("length"), area, pos("i"), rho)
                     val v = pos("v")
+                    require(drop < v) { Messages.VOLTAGE_DROP_EXCEEDS_SUPPLY }
                     out(
                         Messages.AREA_MM to area,
                         Messages.VOLTAGE_DROP_V to drop,
