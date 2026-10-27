@@ -109,9 +109,12 @@ class DesignPreviewTests {
     fun homePreview() {
         ready()
         theme(false)
+        ui.onNodeWithText("Home").performClick()
         save("home")
         theme(true)
         save("light")
+        ui.onNodeWithText("Settings").performClick()
+        save("settings")
     }
 
     /**

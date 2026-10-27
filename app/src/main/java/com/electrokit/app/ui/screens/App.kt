@@ -259,16 +259,16 @@ fun Bar(
                                 painterResource(R.drawable.ic_launcher),
                                 stringResource(R.string.logo_description),
                                 tint = Color.Unspecified,
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(38.dp),
                             )
                             Spacer(Modifier.width(6.dp))
                         }
-                        Text(
-                            title,
-                            Modifier.weight(1f),
-                            color = TopBarText,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
+                        Column(Modifier.weight(1f)) {
+                            Text(title, color = TopBarText,
+                                style = if (brand) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium)
+                            if (brand) Text("Engineering Toolkit", color = TopBarText,
+                                style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                     if (!split)
                         Row(verticalAlignment = Alignment.CenterVertically, content = actions)
@@ -320,7 +320,7 @@ fun Search(
         value,
         onChange,
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(8.dp),
         colors =
             OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -355,21 +355,21 @@ fun EntryRow(entry: Entry, openEntry: () -> Unit, star: Boolean? = null, onStar:
     Row(
         Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .border(
                 1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = .52f),
-                RoundedCornerShape(20.dp),
+                MaterialTheme.colorScheme.outlineVariant,
+                RoundedCornerShape(10.dp),
             )
-            .heightIn(min = 76.dp)
+            .heightIn(min = 68.dp)
             .clickable(onClick = openEntry)
             .padding(start = 16.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier.size(48.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
@@ -440,6 +440,7 @@ fun Databases(
         item { Text(stringResource(R.string.module_intro), Modifier.padding(16.dp)) }
         items(cards, key = { it.id }) { entry ->
             val id = entry.id
+
             Column(
                 Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     .clip(RoundedCornerShape(22.dp))

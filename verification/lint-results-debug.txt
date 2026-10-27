@@ -55,7 +55,7 @@
 /workspace/electro/app/src/main/res/values/strings.xml:76: Warning: The resource R.plurals.tool_count appears to be unused [UnusedResources]
  <plurals name="tool_count"><item quantity="one">%1$d tool • available offline</item><item quantity="other">%1$d tools • available offline</item></plurals>
           ~~~~~~~~~~~~~~~~~
-/workspace/electro/app/src/main/res/values/strings.xml:133: Warning: The resource R.string.engine_fault_count appears to be unused [UnusedResources]
+/workspace/electro/app/src/main/res/values/strings.xml:130: Warning: The resource R.string.engine_fault_count appears to be unused [UnusedResources]
  <string name="engine_fault_count">125 original fault records • search, filters and bookmarks</string>
          ~~~~~~~~~~~~~~~~~~~~~~~~~
 

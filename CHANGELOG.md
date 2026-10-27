@@ -1,12 +1,18 @@
 # Changes
 
-## 3.0.1 — audit fixes (source only, not yet built or signed)
+## UI revision — local preview
+
+- Applied the supplied ELECTRO reference through navy/cyan themes, lightning branding, compact bordered panels, illustrated home banner, six quick actions and grouped settings. Existing Compose routes, calculators and persistence remain connected.
+- Regenerated verification for 3.0.1/code 15 and pinned signing checks to the published 3.0.1 certificate. Local release output is unsigned; the debug APK is a preview, not a compatible production update.
+- Validation: 121 debug/UI tests, 80 release tests, 10 Python tests, no lint errors. Physical-device validation remains unrun.
+
+## 3.0.1 — audit fixes
 
 - Engineering code verification now runs off the UI thread; Unlock is disabled while checking.
 - Unknown or damaged `entry/{id}` routes return to the previous screen instead of a blank screen or a crash.
 - DC cable calculator rejects a computed drop that is not below the supply voltage.
 - Removed the published access code from README. Stale 2.0.3 status files corrected.
-- NOT changed: versionCode/versionName, signing, access-code design, status-bar colour, string extraction.
+- Version name 3.0.1, version code 15. Access-code design, status-bar colour and string extraction remain unchanged.
 
 ## 3.0 — release preparation (2026-10-27)
 

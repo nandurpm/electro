@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:53" hostname="cd711711733c" time="0.922">
+<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:15" hostname="4156269b6c2a" time="0.336">
   <properties/>
-  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.011"/>
-  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.012"/>
-  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.007"/>
-  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
-  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.005"/>
-  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.672"/>
+  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
+  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
+  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
+  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.002"/>
+  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.004"/>
+  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.219"/>
   <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.106"/>
+  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.042"/>
   <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
   <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.102"/>
+  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.045"/>
   <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
   <system-out><![CDATA[Extreme per-field cases exercised: 1984
 ]]></system-out>

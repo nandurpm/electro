@@ -221,7 +221,7 @@
         errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/workspace/electro/app/src/main/res/values/strings.xml"
-            line="133"
+            line="130"
             column="10"/>
     </issue>
 

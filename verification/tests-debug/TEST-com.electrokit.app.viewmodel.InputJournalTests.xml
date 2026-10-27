@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.viewmodel.InputJournalTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:11:01" hostname="cd711711733c" time="2.589">
+<testsuite name="com.electrokit.app.viewmodel.InputJournalTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:13" hostname="4156269b6c2a" time="1.081">
   <properties/>
-  <testcase name="corruptJournalIsPreservedAndRetryCanContinue" classname="com.electrokit.app.viewmodel.InputJournalTests" time="2.458"/>
-  <testcase name="corruptJournalIsNotSilentlyReplaced" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.037"/>
-  <testcase name="acknowledgementRetainsNewerEdits" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.064"/>
-  <testcase name="stagedInputsSurviveNewJournalInstance" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.03"/>
+  <testcase name="corruptJournalIsPreservedAndRetryCanContinue" classname="com.electrokit.app.viewmodel.InputJournalTests" time="1.005"/>
+  <testcase name="corruptJournalIsNotSilentlyReplaced" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.02"/>
+  <testcase name="acknowledgementRetainsNewerEdits" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.022"/>
+  <testcase name="stagedInputsSurviveNewJournalInstance" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.034"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

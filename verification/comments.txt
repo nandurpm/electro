@@ -1,6 +1,6 @@
-Calculators.kt: 205 comment lines / 867 nonblank code lines
+Calculators.kt: 205 comment lines / 868 nonblank code lines
 Engineering.kt: 312 comment lines / 495 nonblank code lines
-App.kt: 144 comment lines / 875 nonblank code lines
-CalculatorScreen.kt: 109 comment lines / 603 nonblank code lines
+App.kt: 145 comment lines / 878 nonblank code lines
+CalculatorScreen.kt: 109 comment lines / 604 nonblank code lines
 AppViewModel.kt: 142 comment lines / 142 nonblank code lines
-PASS: 895 Kotlin declarations documented; five density thresholds met.
+PASS: 902 Kotlin declarations documented; five density thresholds met.

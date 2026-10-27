@@ -87,7 +87,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Check original release signing secrets
+      - name: Check release signing secrets
         env:
           ELECTROKIT_KEYSTORE_BASE64: ${{ secrets.ELECTROKIT_KEYSTORE_BASE64 }}
           ELECTROKIT_STORE_PASSWORD: ${{ secrets.ELECTROKIT_STORE_PASSWORD }}
@@ -97,7 +97,7 @@ jobs:
           set -euo pipefail
           missing=0
           for name in ELECTROKIT_KEYSTORE_BASE64 ELECTROKIT_STORE_PASSWORD ELECTROKIT_KEY_ALIAS ELECTROKIT_KEY_PASSWORD; do
-            if [ -z "${!name:-}" ]; then echo "::error::Missing original signing secret: $name"; missing=1; fi
+            if [ -z "${!name:-}" ]; then echo "::error::Missing release signing secret: $name"; missing=1; fi
           done
           test "$missing" = 0
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
@@ -139,10 +139,10 @@ jobs:
           ./gradlew --no-daemon --max-workers=4 testReleaseUnitTest lintRelease assembleRelease | tee "$RUNNER_TEMP/electro-release-build.log"
           test -f app/build/outputs/apk/release/app-release.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk | tee "$RUNNER_TEMP/electro-signature.txt"
-          expected=$(cat signing/original-release-certificate.sha256)
+          expected=$(cat signing/release-certificate.sha256)
           actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/electro-signature.txt")
           test -n "$expected"
-          if [ "$actual" != "$expected" ]; then echo 'Signing certificate does not match the original ELECTRO release identity.' >&2; exit 1; fi
+          if [ "$actual" != "$expected" ]; then echo 'Signing certificate does not match the active ELECTRO release identity.' >&2; exit 1; fi
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk
       - name: Record current signed release evidence
         run: |
@@ -333,13 +333,19 @@ The 1.1.1 personal-use update removes reserved footer space and optional enablem
 ````markdown
 # Changes
 
-## 3.0.1 — audit fixes (source only, not yet built or signed)
+## UI revision — local preview
+
+- Applied the supplied ELECTRO reference through navy/cyan themes, lightning branding, compact bordered panels, illustrated home banner, six quick actions and grouped settings. Existing Compose routes, calculators and persistence remain connected.
+- Regenerated verification for 3.0.1/code 15 and pinned signing checks to the published 3.0.1 certificate. Local release output is unsigned; the debug APK is a preview, not a compatible production update.
+- Validation: 121 debug/UI tests, 80 release tests, 10 Python tests, no lint errors. Physical-device validation remains unrun.
+
+## 3.0.1 — audit fixes
 
 - Engineering code verification now runs off the UI thread; Unlock is disabled while checking.
 - Unknown or damaged `entry/{id}` routes return to the previous screen instead of a blank screen or a crash.
 - DC cable calculator rejects a computed drop that is not below the supply voltage.
 - Removed the published access code from README. Stale 2.0.3 status files corrected.
-- NOT changed: versionCode/versionName, signing, access-code design, status-bar colour, string extraction.
+- Version name 3.0.1, version code 15. Access-code design, status-bar colour and string extraction remain unchanged.
 
 ## 3.0 — release preparation (2026-10-27)
 
@@ -576,7 +582,7 @@ Third-party libraries and the Gradle wrapper retain their own licenses.
 
 **Electrical • Electronics • Engineering**
 
-Offline native Android engineering workbench. Version **3.0**, code **14**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline native Android engineering workbench. Version **3.0.1**, code **15**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 ## Features
 
@@ -672,7 +678,7 @@ All Kotlin paths below are under `app/src/main/java/com/electrokit/app/`.
 
 Images/metadata: `app/src/main/assets/components/` and `components.json`. Original engineering content: `app/src/main/assets/engineering.json` and `engineering_tools.json`. Android strings/icons: `app/src/main/res/`.
 
-The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the original certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
+The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.1 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the published 3.0.1 certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
 
 ## Maintenance guides
 
@@ -685,7 +691,7 @@ The missing nested project files were restored from the existing `FULL_SOURCE.md
 - [Testing](docs/TESTING_GUIDE.md)
 - [Audit and limitations](docs/AUDIT_REPORT.md)
 
-Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the original private key and all values outside the repository. A release is signed only when valid credentials are supplied.
+Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the published 3.0.1 private key and all values outside the repository. A release is signed only when valid credentials are supplied.
 
 ````
 
@@ -31255,6 +31261,7 @@ object Messages {
      */
     const val VOLTAGE_DROP_EXCEEDS_SUPPLY =
         "Calculated drop exceeds the supply voltage; use a larger cross-section or a shorter run."
+    /** Rejects an LED string whose forward voltage exhausts the supply. */
     const val SUPPLY_MUST_EXCEED_THE_LED_STRING_VOLTAGE =
         "Supply must exceed the LED string voltage."
     /**
@@ -34166,6 +34173,78 @@ fun DiagramView(diagram: Diagram, modifier: Modifier = Modifier) {
 
 ````
 
+## app/src/main/java/com/electrokit/app/ui/components/ElectroPanel.kt
+
+````kotlin
+package com.electrokit.app.ui.components
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+
+/** Bordered instrument panel shared by detail pages and catalogues.
+ * @param modifier Caller layout bounds.
+ * @param shape Panel outline.
+ * @param colors Semantic foreground and background colors.
+ * @param content Existing interactive contents.
+ * @return A themed panel without changing state ownership.
+ */
+@Composable
+fun ElectroPanel(modifier: Modifier = Modifier, shape: Shape = MaterialTheme.shapes.medium,
+    colors: CardColors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    content: @Composable ColumnScope.() -> Unit) {
+    Card(modifier, shape = shape, colors = colors,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), content = content)
+}
+
+/** Clickable variant preserves Material pressed and accessibility behavior.
+ * @param onClick Existing destination action.
+ * @param modifier Caller layout bounds.
+ * @param shape Panel outline.
+ * @param content Existing contents.
+ * @return A clickable bordered panel.
+ */
+@Composable
+fun ElectroPanel(onClick: () -> Unit, modifier: Modifier = Modifier,
+    shape: Shape = MaterialTheme.shapes.medium, content: @Composable ColumnScope.() -> Unit) {
+    Card(onClick = onClick, modifier = modifier, shape = shape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), content = content)
+}
+
+/** Reference-inspired vivid category badge with a decorative symbol.
+ * @param title Category used to select a stable accent and symbol.
+ * @param modifier Caller size, normally at least 40 dp.
+ * @return A decorative icon; the adjacent action supplies its accessible label.
+ */
+@Composable
+fun CategoryBadge(title: String, modifier: Modifier = Modifier) {
+    val (symbol, color) = when {
+        title.contains("alc", true) -> "ϟ" to Color(0xFFF66A24)
+        title.contains("omponent", true) -> "⚙" to Color(0xFF1767FF)
+        title.contains("earn", true) || title.contains("Lesson", true) -> "▣" to Color(0xFF7440E8)
+        title.contains("onvert", true) -> "⇄" to Color(0xFF007CAD)
+        title.contains("scalator", true) -> "↗" to Color(0xFF00867F)
+        else -> "⌘" to Color(0xFF008C61)
+    }
+    Surface(modifier, shape = RoundedCornerShape(9.dp), border = BorderStroke(1.dp, color.copy(alpha = .8f))) {
+        Box(Modifier.background(Brush.linearGradient(listOf(color, color.copy(red = color.red * .5f, green = color.green * .5f, blue = color.blue * .5f)))).padding(6.dp), contentAlignment = Alignment.Center) {
+            Text(symbol, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+````
+
 ## app/src/main/java/com/electrokit/app/ui/components/IndustrialDrawings.kt
 
 ````kotlin
@@ -35242,16 +35321,16 @@ fun Bar(
                                 painterResource(R.drawable.ic_launcher),
                                 stringResource(R.string.logo_description),
                                 tint = Color.Unspecified,
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(38.dp),
                             )
                             Spacer(Modifier.width(6.dp))
                         }
-                        Text(
-                            title,
-                            Modifier.weight(1f),
-                            color = TopBarText,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
+                        Column(Modifier.weight(1f)) {
+                            Text(title, color = TopBarText,
+                                style = if (brand) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium)
+                            if (brand) Text("Engineering Toolkit", color = TopBarText,
+                                style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                     if (!split)
                         Row(verticalAlignment = Alignment.CenterVertically, content = actions)
@@ -35303,7 +35382,7 @@ fun Search(
         value,
         onChange,
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(8.dp),
         colors =
             OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -35338,21 +35417,21 @@ fun EntryRow(entry: Entry, openEntry: () -> Unit, star: Boolean? = null, onStar:
     Row(
         Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .border(
                 1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = .52f),
-                RoundedCornerShape(20.dp),
+                MaterialTheme.colorScheme.outlineVariant,
+                RoundedCornerShape(10.dp),
             )
-            .heightIn(min = 76.dp)
+            .heightIn(min = 68.dp)
             .clickable(onClick = openEntry)
             .padding(start = 16.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier.size(48.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
@@ -35423,6 +35502,7 @@ fun Databases(
         item { Text(stringResource(R.string.module_intro), Modifier.padding(16.dp)) }
         items(cards, key = { it.id }) { entry ->
             val id = entry.id
+
             Column(
                 Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     .clip(RoundedCornerShape(22.dp))
@@ -36035,6 +36115,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
 import androidx.compose.ui.*
@@ -36271,7 +36352,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     }
                 }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { calculated = Calculators.calculate(id, scaled, mode) }) { Text("Calculate") }
+                Button(modifier = Modifier.weight(1f), onClick = { calculated = Calculators.calculate(id, scaled, mode) }) { Text("Calculate") }
                 OutlinedButton(onClick = {
                     mode = 0; calculated = null; vm.mode(entry.id, 0)
                     update(spec.fields.associate { it.key to it.initial })
@@ -36279,7 +36360,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
             }
             Card(
                 Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(10.dp),
                 colors =
                     CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
@@ -36295,8 +36376,8 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                         result.text,
                         color =
                             if (result is Calculation.Error) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleLarge,
+                            else MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.padding(top = 8.dp),
                     )
                     ResponsePlot(result.plot)
@@ -36837,6 +36918,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -37624,7 +37706,7 @@ private fun EngineeringNote(title: String, text: String) {
 private fun EngineeringLink(title: String, subtitle: String, iconKey: String = "", open: () -> Unit) {
     OutlinedCard(
         onClick = open, modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
         colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
         Row(
@@ -37763,6 +37845,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -37815,6 +37898,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -37894,6 +37978,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -37901,6 +37986,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -37919,6 +38005,7 @@ import com.electrokit.app.BuildConfig
 import com.electrokit.app.data.*
 import com.electrokit.app.viewmodel.*
 import com.electrokit.app.domain.WorkbenchTools
+import com.electrokit.app.ui.components.CategoryBadge
 import com.electrokit.app.ui.components.MultimeterLesson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37958,9 +38045,9 @@ fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail:
             }.getOrNull()?.also { imageCache.put(key, it) }
         }
     }
-    Box(modifier.background(Color(0xFFEEF2F6)), contentAlignment = Alignment.Center) {
+    Box(modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest), contentAlignment = Alignment.Center) {
         bitmap?.let { Image(it.asImageBitmap(), asset.name, Modifier.fillMaxSize().padding(8.dp), contentScale = ContentScale.Fit) }
-            ?: Text(asset.name, color = Color(0xFF172033), modifier = Modifier.padding(12.dp))
+            ?: Text(asset.name, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(12.dp))
     }
 }
 
@@ -38022,9 +38109,9 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         onClick = { tab = i; query = ""; if (i == 1) category = "Calculators"; if (i == 2) category = "Components" })
                         .padding(horizontal = 2.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center) {
-                        Box(Modifier.clip(RoundedCornerShape(24.dp)).background(if (tab == i) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                        Box(Modifier.clip(RoundedCornerShape(10.dp)).background(if (tab == i) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
                             .padding(horizontal = 16.dp, vertical = 4.dp)) {
-                            Icon(when(i) { 0 -> Icons.Default.Home; 1 -> Icons.Default.Settings; 2 -> Icons.Default.Info; 3 -> Icons.Default.Star; else -> Icons.Default.MoreVert }, null, Modifier.size(24.dp))
+                            Icon(when(i) { 0 -> Icons.Default.Home; 1 -> Icons.Default.Build; 2 -> Icons.Default.Info; 3 -> Icons.Default.Star; else -> Icons.Default.Person }, null, Modifier.size(24.dp))
                         }
                         Text(name, Modifier.fillMaxWidth(), maxLines = 2, minLines = if (LocalDensity.current.fontScale > 1.3f) 2 else 1,
                             fontSize = if (LocalDensity.current.fontScale > 1.3f) 9.sp else 11.sp, lineHeight = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
@@ -38037,24 +38124,34 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
         when (tab) {
             0 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
-                    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFF17366B), Color(0xFF123E52)))).padding(24.dp)) {
-                        Text("YOUR ENGINEERING WORKBENCH", color = Color(0xFFBAE6FD), style = MaterialTheme.typography.labelMedium)
-                        Text("Build understanding.\nSolve with confidence.", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 12.dp))
-                        Text("Electrical • Electronics • Engineering", color = Color(0xFFDAE6FF))
-                        FilledTonalButton({ tab = 1 }, Modifier.padding(top = 16.dp)) { Text("Explore tools") }
+                    Card(Modifier.fillMaxWidth()) {
+                        Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surfaceContainerLowest))).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("ELECTRICAL • ELECTRONICS", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
+                                Text("Engineering tools\nfor real work", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(vertical = 8.dp))
+                                Text("Calculate · Design · Learn", style = MaterialTheme.typography.bodySmall)
+                                TextButton({ tab = 1 }) { Text("Explore tools →") }
+                            }
+                            publicComponents.firstOrNull { it.id == "induction_motor" }?.let {
+                                Box(Modifier.width(112.dp).height(140.dp).clip(RoundedCornerShape(8.dp))) {
+                                    ComponentImage(it, Modifier.fillMaxSize().graphicsLayer { scaleX = 1.7f; scaleY = 1.7f })
+                                }
+                            }
+                        }
                     }
                 }
                 if (query.isBlank()) {
-                    item { SectionTitle("Explore ELECTRO") }
+                    item { SectionTitle("Quick access") }
                     item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         QuickCard("Calculators", Modifier.weight(1f)) { tab = 1; category = "Calculators" }
                         QuickCard("Components", Modifier.weight(1f)) { tab = 2; category = "Components" }
+                        QuickCard("Pin-outs", Modifier.weight(1f)) { tab = 1; category = "Pin-outs" }
                     } }
                     item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuickCard("Pin-outs", Modifier.weight(1f)) { tab = 1; category = "Pin-outs" }
                         QuickCard("Escalator", Modifier.weight(1f)) { openEngineering("home") }
+                        QuickCard("Learning", Modifier.weight(1f)) { tab = 2; category = "Lessons" }
+                        QuickCard("Converters", Modifier.weight(1f)) { detail = "unit-converter" }
                     } }
                     item { SectionTitle("Featured calculators") }
                 }
@@ -38077,7 +38174,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     }
                     item { SectionTitle("Component discovery") }
                     items(publicComponents.filter { it.id in listOf("digital_multimeter", "magnetic_contactor", "axial_resistor") }) { c ->
-                        Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(24.dp)) {
+                        Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 ComponentImage(c, Modifier.size(104.dp))
                                 Column(Modifier.padding(16.dp)) { Text(c.name, style = MaterialTheme.typography.titleMedium); Text(c.category, style = MaterialTheme.typography.bodySmall) }
@@ -38107,6 +38204,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                             .sortedWith(compareByDescending<Entry> { it.id in prefs.favourites }.thenBy { if (prefs.alphabetical) it.title else "" })
                         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(8.dp)) {
                             item { SectionTitle("${entries.size} ${category.lowercase()}") }
+                            if (entries.isEmpty()) item { Text("No matching tools. Try another search.", Modifier.padding(16.dp)) }
                             items(entries, key = { it.id }) { entry -> EntryRow(entry, { openEntry(entry.id) }, entry.id in prefs.favourites) { vm.star(entry.id) } }
                         }
                     }
@@ -38125,7 +38223,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         LazyVerticalGrid(GridCells.Adaptive(150.dp), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             gridItems((if (category == "Escalator images") components.filter { it.category == "Escalator" } else publicComponents)
                                 .filter { it.name.contains(query, true) || it.category.contains(query, true) }, key = { it.id }) { c ->
-                                Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(20.dp)) {
+                                Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
                                     ComponentImage(c, Modifier.fillMaxWidth().aspectRatio(1f))
                                     Text(c.name, Modifier.padding(12.dp), style = MaterialTheme.typography.titleSmall)
                                 }
@@ -38166,7 +38264,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
  * @return Unit; displays a heading without modifying state.
  */
 @Composable
-private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
+private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
 
 /** Native action card; it remains usable with large font sizes instead of using a fixed height.
  * @param title Accessible card caption.
@@ -38176,8 +38274,12 @@ private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical 
  */
 @Composable
 private fun QuickCard(title: String, modifier: Modifier, click: () -> Unit) {
-    Card(onClick = click, modifier = modifier, shape = RoundedCornerShape(20.dp)) {
-        Text(title, Modifier.padding(20.dp), style = MaterialTheme.typography.titleMedium)
+    Card(onClick = click, modifier = modifier, shape = RoundedCornerShape(10.dp)) {
+        Column(Modifier.fillMaxWidth().padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            CategoryBadge(title, Modifier.size(42.dp))
+            Text(title, Modifier.padding(top = 8.dp), style = MaterialTheme.typography.labelLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
     }
 }
 
@@ -38191,7 +38293,12 @@ private fun QuickCard(title: String, modifier: Modifier, click: () -> Unit) {
 fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier = Modifier) {
     var confirm by remember { mutableStateOf(false) }
     Column(modifier.verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionTitle("Make it your workbench")
+        SectionTitle("Profile & settings")
+        Card(Modifier.fillMaxWidth()) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            CategoryBadge("Components", Modifier.size(48.dp)); Spacer(Modifier.width(12.dp))
+            Column { Text("ELECTRO", style = MaterialTheme.typography.titleLarge); Text("Your engineering workspace", style = MaterialTheme.typography.bodySmall) }
+        } }
+        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
         Text("Appearance", style = MaterialTheme.typography.titleMedium)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Light theme", Modifier.weight(1f))
@@ -38201,17 +38308,20 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
             listOf("dark", "light", "system").forEach { mode -> FilterChip((prefs.themeMode.ifBlank { if (prefs.light) "light" else "dark" }) == mode,
                 { vm.appearance(mode) }, label = { Text(mode.replaceFirstChar { it.uppercase() }) }) }
         }
-        HorizontalDivider()
+        } }
+        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Language: English")
         Text("Offline by design", style = MaterialTheme.typography.titleMedium)
         Text("No accounts, analytics, ads or network permission. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share.")
         Text("Engineering access is a basic local restriction. References are bundled, not encrypted.")
         TextButton({ confirm = true }) { Text("Clear saved calculation history") }
         TextButton({ vm.sort() }) { Text(if (prefs.alphabetical) "Use original tool order" else "Sort tools A–Z") }
-        HorizontalDivider()
+        } }
+        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("ELECTRO ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", style = MaterialTheme.typography.titleMedium)
         Text("Electrical • Electronics • Engineering\nAndroid 7.0+ • Native Kotlin & Jetpack Compose")
         Text("Component artwork is illustrative. Confirm exact parts, ratings and wiring against the original manufacturer documentation.")
+        } }
     }
     if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Clear saved results?") }, text = { Text("Your favorites and calculator inputs will be retained.") },
         confirmButton = { TextButton({ vm.clearCalculations(); confirm = false }) { Text("Clear history") } },
@@ -38230,7 +38340,7 @@ private fun ComponentDetail(asset: ComponentAsset, prefs: PreferencesState, vm: 
     val id = "component:${asset.id}"
     Scaffold(topBar = { Bar(asset.name, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite component") } } }) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item { ComponentImage(asset, Modifier.fillMaxWidth().heightIn(max = 420.dp).aspectRatio(1f).clip(RoundedCornerShape(24.dp)), detail = true) }
+            item { ComponentImage(asset, Modifier.fillMaxWidth().heightIn(max = 420.dp).aspectRatio(1f).clip(RoundedCornerShape(10.dp)), detail = true) }
             item { Text(asset.category.uppercase(), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium); SectionTitle(asset.name) }
             val info = componentNotes(asset)
             items(info) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text(title, style = MaterialTheme.typography.titleMedium); Text(body, Modifier.padding(top = 8.dp)) } } }
@@ -38293,9 +38403,14 @@ package com.electrokit.app.ui.theme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 
 /** Deep navy brand surface for app bars and branded loading states. */
-val BrandNavy = Color(0xFF0B1120)
+val BrandNavy = Color(0xFF020D18)
 /** High-contrast toolbar foreground. */
 val TopBarText = Color(0xFFF5F8FC)
 /** Theme-aware emphasis for headings and active controls. */
@@ -38308,9 +38423,9 @@ val Divider: Color
 /** Midnight palette with cool teal emphasis and warm amber highlights. */
 private val Dark =
     darkColorScheme(
-        primary = Color(0xFF93B4FF),
+        primary = Color(0xFF59D8FF),
         onPrimary = Color(0xFF08204B),
-        primaryContainer = Color(0xFF17366B),
+        primaryContainer = Color(0xFF063753),
         onPrimaryContainer = Color(0xFFDAE6FF),
         secondary = Color(0xFFB7D0E3),
         onSecondary = Color(0xFF173046),
@@ -38325,21 +38440,21 @@ private val Dark =
         errorContainer = Color(0xFF742922),
         onErrorContainer = Color(0xFFFFDAD6),
         outline = Color(0xFF90A7BA),
-        outlineVariant = Color(0xFF35475B),
+        outlineVariant = Color(0xFF21516C),
         inverseSurface = Color(0xFFE6EEF6),
         inverseOnSurface = Color(0xFF1C2B3D),
         inversePrimary = Color(0xFF1D4ED8),
-        surfaceTint = Color(0xFF93B4FF),
+        surfaceTint = Color(0xFF59D8FF),
         surfaceDim = Color(0xFF0A111D),
         surfaceBright = Color(0xFF34485F),
         surfaceContainerLowest = Color(0xFF0B1422),
-        surfaceContainerLow = Color(0xFF111D2E),
-        surfaceContainer = Color(0xFF172033),
+        surfaceContainerLow = Color(0xFF082337),
+        surfaceContainer = Color(0xFF071D2E),
         surfaceContainerHigh = Color(0xFF202F43),
         surfaceContainerHighest = Color(0xFF29394E),
-        background = Color(0xFF0B1120),
-        surface = Color(0xFF172033),
-        surfaceVariant = Color(0xFF233449),
+        background = Color(0xFF020D18),
+        surface = Color(0xFF071D2E),
+        surfaceVariant = Color(0xFF12334B),
         onBackground = Color(0xFFEDF3FA),
         onSurface = Color(0xFFEDF3FA),
         onSurfaceVariant = Color(0xFFB7C5D3),
@@ -38368,7 +38483,7 @@ private val Light =
         outlineVariant = Color(0xFFCAD5DF),
         inverseSurface = Color(0xFF26394C),
         inverseOnSurface = Color(0xFFECF3F8),
-        inversePrimary = Color(0xFF93B4FF),
+        inversePrimary = Color(0xFF59D8FF),
         surfaceTint = Color(0xFF1D4ED8),
         surfaceDim = Color(0xFFD8E1E9),
         surfaceBright = Color(0xFFF8FAFC),
@@ -38393,7 +38508,14 @@ private val Light =
  */
 @Composable
 fun ElectroTheme(light: Boolean, content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (light) Light else Dark, content = content)
+    MaterialTheme(colorScheme = if (light) Light else Dark,
+        shapes = Shapes(extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(8.dp),
+            medium = RoundedCornerShape(10.dp), large = RoundedCornerShape(12.dp), extraLarge = RoundedCornerShape(16.dp)),
+        typography = Typography(
+            titleLarge = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp),
+            titleMedium = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp),
+            bodyLarge = TextStyle(fontSize = 15.sp, lineHeight = 22.sp),
+            bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp)), content = content)
 }
 
 /** Neutral metal shared by diagrams; identification wire colours remain separate. */
@@ -38773,7 +38895,10 @@ class EngineeringAccess : ViewModel() {
         return finishAttempt(LocalPin.verify(candidate))
     }
 
-    /** Applies one verification outcome to the grant and the failure counter. */
+    /** Applies one verification outcome to the grant and the failure counter.
+     * @param accepted Whether the entered code passed verification.
+     * @return Null on success, or the user-facing rejection message.
+     */
     private fun finishAttempt(accepted: Boolean): String? {
         if (accepted) {
             unlocked = true
@@ -38788,7 +38913,10 @@ class EngineeringAccess : ViewModel() {
         return "Access code not accepted."
     }
 
-    private companion object { const val COOLDOWN_MESSAGE = "Too many attempts. Wait 30 seconds." }
+    private companion object {
+        /** Message shown while the in-memory retry deadline is active. */
+        const val COOLDOWN_MESSAGE = "Too many attempts. Wait 30 seconds."
+    }
 
     /** Immediately removes protected content from every composable sharing this session.
  * @return Unit; synchronously removes access for all destinations sharing this ViewModel.
@@ -38902,10 +39030,9 @@ class EngineeringViewModel(application: Application) : AndroidViewModel(applicat
 
 ````xml
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-
-<path android:strokeColor="#64DFC9" android:strokeWidth="4" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M25,33h16M25,54h13M25,75h16M68,33h15M71,54h12M68,75h15"/>
-<path android:fillColor="#C9F3DC" android:pathData="M40,26h30v9h-20v14h17v9h-17v15h20v9h-30z"/>
-<path android:fillColor="#F5CE63" android:pathData="M61,35l-12,23h10l-6,17l20,-27h-12z"/>
+<path android:fillColor="#05182B" android:strokeColor="#19C7FF" android:strokeWidth="2" android:pathData="M26,16L82,16Q92,16 92,26L92,82Q92,92 82,92L26,92Q16,92 16,82L16,26Q16,16 26,16"/>
+<path android:fillColor="#159AFF" android:pathData="M64,24L31,59L49,59L41,87L79,46L59,46Z"/>
+<path android:fillColor="#F3FCFF" android:pathData="M62,27L36,56L54,56L46,78L73,49L56,49Z"/>
 </vector>
 ````
 
@@ -41119,9 +41246,12 @@ class DesignPreviewTests {
     fun homePreview() {
         ready()
         theme(false)
+        ui.onNodeWithText("Home").performClick()
         save("home")
         theme(true)
         save("light")
+        ui.onNodeWithText("Settings").performClick()
+        save("settings")
     }
 
     /**
@@ -42159,39 +42289,21 @@ These Git commands also work in PowerShell. Tags trigger release automation and 
 ## docs/RELEASE_3_0.md
 
 ````markdown
-# ELECTRO 3.0 release preparation
+# ELECTRO current build and signing status
 
-Application name: **ELECTRO**. Version name: **3.0**. Version code: **14**. Application ID remains `com.electrokit.app`.
+Current source: ELECTRO 3.0.1, versionCode 15, application ID com.electrokit.app.
 
-The local optimized, non-debuggable release build passed `testReleaseUnitTest lintRelease assembleRelease`: **80 tests, 0 failures/errors/skips**, and no lint errors. R8 code/resource shrinking completed. Android SDK metadata confirms the requested name/version and SDK 24/35 bounds. Current output is `app/build/outputs/apk/release/app-release-unsigned.apk`; it is **unsigned**, not an installable production release.
+The reference-driven UI revision uses the existing Compose architecture and bundled art. Its current local release build is unsigned. The existing GitHub 3.0.1 APK predates this UI revision; do not present that APK as the redesigned app.
 
-The user selected the original signing identity. No replacement key has been generated. The immutable original public certificate record in `signing/original-release-certificate.sha256` has SHA-256:
+The active public certificate in `signing/release-certificate.sha256` is verified against the published `electro-3.0.1` APK:
 
-`68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa`
+`d9823b341c6951b6dc912230fd46f2d61d7b3c315de2ae31fbb112345d1a9070`
 
-No original keystore or signing-password variables are configured in this workspace. GitHub denied access to repository signing-secret metadata. The release workflow can check/use original secrets in GitHub without disclosing the private key locally, and it now rejects any signed APK whose certificate differs from this original record.
+The original certificate remains in `signing/original-release-certificate.sha256` as a historical record. The locally generated replacement key also differs from the published APK. Neither is accepted by the release workflow. Compatible release signing requires the published APK's private key and an increased versionCode before the next publication.
 
-Required repository Actions secrets: `ELECTROKIT_KEYSTORE_BASE64`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS`, `ELECTROKIT_KEY_PASSWORD`. Configure the **original** values securely under repository Settings → Secrets and variables → Actions. Never paste passwords into chat or commit a keystore. A certificate fingerprint or an old APK cannot recreate its private signing key.
+Configure ELECTROKIT_KEYSTORE_BASE64, ELECTROKIT_STORE_PASSWORD, ELECTROKIT_KEY_ALIAS and ELECTROKIT_KEY_PASSWORD in GitHub Actions using that published key. Private credentials must remain outside source archives. The fingerprint cannot recreate a lost key.
 
-The manual signing run [40477419087](https://github.com/nandurpm/electro/actions/runs/40477419087), against application-code commit `a571723`, confirmed that **all four secrets are missing**. Its early signing-prerequisite check failed, and signing/upload/publication steps were skipped. No signed 3.0 APK, final release tag or GitHub Release was created. After the original secrets are configured, rerun Android Release on `release/electro-3.0`; verify the original certificate match before publishing `v3.0`.
-
-The previous hosted release run failed inside the third-party Android setup action before signing. Workflows now pin Ubuntu 24.04 and use its documented preinstalled SDK, with explicit required-package checks. Signing prerequisites are checked early to avoid an expensive build when credentials are absent. Hosted execution is reported separately from successful local compilation.
-
-When signed verification succeeds, the workflow packages `ELECTRO-3.0.apk` and the matching `ELECTRO-3.0-source.zip`. Manual execution uploads artifacts; a matching `v3.0` tag publishes both. Do not create the final release tag until the original signing identity has been verified.
-
-The earlier `docs/BUILD_REPORT.md` records the 2.1.0 baseline's 120 debug/JVM/Robolectric tests; these are historical results, not a new 3.0 debug run. Device installation, production upgrade behavior and TalkBack remain unrun. See the audit report for existing engineering-content limitations.
-
-## Verification/reset review correction
-
-Review confirmed that the old committed verification reports still described 2.0.3. All current verification files are regenerated for 3.0 after the reviewed build; unrun external references and unsigned signing status are explicit. New regression fixtures reject old summary/badging versions and unsigned publication. The original certificate fingerprint is independent of regenerated APK signatures.
-
-Band-calculator Reset now clears the cached `bandResult` synchronously, before the new band effect runs. A UI regression covers both resistor and inductor reset/display/copy paths. Dependency and API-level lint warnings remain documented; dependency pins and application functionality were preserved.
-
-## Reviewed 3.0 results
-
-After the reset/evidence corrections, `testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleRelease` passed: **121 debug/UI tests and 80 release tests**, with no failures/errors/skips and no lint errors. Eight Python tests passed. Every file under `verification/` was regenerated from the actual 3.0/code-14 unsigned release APK and current reports. The original certificate fingerprint was preserved in the separate signing identity file.
-
-The unsigned artifact is explicitly marked `release_publishable: false`. No signed APK or final release is claimed while the original signing secrets remain missing. The version guard rejects the stale 2.0.3/12 evidence described in review, and `--require-signed` rejects the current unsigned state. Original dependency/API warnings remain warnings; no dependency upgrades were needed for these corrections.
+Every file under verification is regenerated from the current local artifact and reports, including explicit unsigned status. Physical-device checks and external reference validation are not claimed. The historical docs/BUILD_REPORT.md describes the earlier baseline.
 
 ````
 
@@ -42242,6 +42354,21 @@ python scripts/package_project.py --archive /workspace/artifacts/ELECTRO-3.0-sou
 ```
 
 Replace paths with actual current logs/APKs. Production uses `app-release.apk` and `--require-signed`; unsigned preparation never passes that gate. The recorder replaces stale XML/HTML/text and explicitly marks unrun external checks instead of carrying forward old success claims. Original certificate identity stays in `signing/original-release-certificate.sha256`.
+
+````
+
+## docs/UI_REFERENCE.md
+
+````markdown
+# Reference-based Compose UI
+
+The supplied ELECTRO nine-screen reference is the design specification: near-black navy backgrounds, cyan panel edges, electric-blue emphasis, compact rounded instrument panels, vivid category badges, lightning branding, component artwork and a five-destination bottom bar.
+
+The implementation retains the existing navigation and data owners. Home uses an illustrated motor banner and six working shortcuts. Shared ElectroPanel and CategoryBadge components establish consistent panel borders and category markers. The theme supplies typography and shapes to calculator inputs, unit conversion, reference tables, engineering details, learning, dialogs and settings. Calculator results emphasize cyan values. Component art uses theme-aware backgrounds; settings are grouped into bordered panels. The existing light/dark/system preference remains effective.
+
+The reference's portrait and invented equipment ratings are not copied into user data. Existing bundled artwork and authored technical content remain connected to actual routes. The reference's many-phone sheet is adapted into individual scrollable Android pages, with growing text containers rather than fixed screenshot dimensions. Large diagrams retain their existing enlargement controls.
+
+Validation includes existing narrow-screen, large-font, navigation, calculator and persistence regression tests, light/dark render previews and source-derived contrast checks. Robolectric previews are rendering evidence, not physical-device validation. The 3.0.1 GitHub release predates this UI revision. Local debug output is for preview; production publication requires the active published signing key and a version increment.
 
 ````
 
@@ -45229,14 +45356,14 @@ def validate(root=ROOT, apk=None, require_signed=False):
     badging = (evidence / 'apk-badging.txt').read_text()
     assert f"versionName='{version}'" in badging and f"versionCode='{code}'" in badging, 'Stale APK badging version'
     assert "name='com.electrokit.app'" in badging, 'Unexpected application identity'
-    signed = summary['signing']['status'] == 'verified_original_release'
-    expected = (root / 'signing/original-release-certificate.sha256').read_text().strip()
+    signed = summary['signing']['status'] == 'verified_release'
+    expected = (root / 'signing/release-certificate.sha256').read_text().strip()
     if signed:
         signature = (evidence / 'apk-signature.txt').read_text()
-        assert f'Signer #1 certificate SHA-256 digest: {expected}' in signature, 'Original release certificate mismatch'
+        assert f'Signer #1 certificate SHA-256 digest: {expected}' in signature, 'Active release certificate mismatch'
         assert summary['signing']['certificate_sha256'] == expected, 'Summary certificate mismatch'
     if require_signed:
-        assert signed, 'Original-key signed APK is required; current evidence is unsigned'
+        assert signed, 'Release-key signed APK is required; current evidence is unsigned'
     if apk:
         assert hashlib.sha256(Path(apk).read_bytes()).hexdigest() == summary['apk_sha256'], 'APK differs from verification evidence'
         assert Path(apk).stat().st_size == summary['apk_bytes'], 'APK size differs from verification evidence'
@@ -45326,7 +45453,7 @@ if args.archive:
 ````python
 """Replace stale verification with actual current APK, tests, lint and validator outputs.
 
-Unsigned builds are explicitly labeled and cannot pass --require-signed. The original
+Unsigned builds are explicitly labeled and cannot pass --require-signed. The active
 certificate identity is stored separately from generated evidence.
 """
 import argparse
@@ -45368,7 +45495,7 @@ def record(apk, build_log, variants, require_signed=False):
     code = int(re.search(r'versionCode\s*=\s*(\d+)', source)[1])
     log = build_log.read_text()
     assert 'BUILD SUCCESSFUL' in log and 'BUILD FAILED' not in log, 'Build log is not a successful run'
-    expected = (ROOT / 'signing/original-release-certificate.sha256').read_text().strip()
+    expected = (ROOT / 'signing/release-certificate.sha256').read_text().strip()
     with tempfile.TemporaryDirectory(prefix='electro-verification-', dir=ROOT.parent) as temp:
         stage = Path(temp)
         badging = run([str(sdk / 'aapt'), 'dump', 'badging', str(apk)]).stdout
@@ -45381,7 +45508,7 @@ def record(apk, build_log, variants, require_signed=False):
         if signed:
             assert digest and digest[1] == expected, 'Refusing an APK signed with a different identity'
         if require_signed:
-            assert signed, 'No original-key signature; do not publish this APK'
+            assert signed, 'No release-key signature; do not publish this APK'
         (stage / 'apk-signature.txt').write_text(('UNSIGNED RELEASE — not production ready\n' if not signed else '') + signature.stdout)
         tests, lint = {}, {}
         for variant in variants:
@@ -45428,9 +45555,10 @@ def record(apk, build_log, variants, require_signed=False):
             'version': version, 'version_code': code, 'application_id': 'com.electrokit.app',
             'generated_at_utc': datetime.now(timezone.utc).isoformat(),
             'source_commit': run(['git', 'rev-parse', 'HEAD']).stdout.strip(),
+            'source_tree_dirty': bool(run(['git', 'status', '--porcelain']).stdout.strip()),
             'tests': tests, 'lint': lint, 'artifact': str(apk.relative_to(ROOT)),
             'apk_sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'apk_bytes': apk.stat().st_size,
-            'signing': {'status': 'verified_original_release' if signed else 'unsigned', 'certificate_sha256': digest[1] if digest else None, 'expected_certificate_sha256': expected},
+            'signing': {'status': 'verified_release' if signed else 'unsigned', 'certificate_sha256': digest[1] if digest else None, 'expected_certificate_sha256': expected},
             'release_publishable': signed, 'physical_device_tested': False, 'emulator_tested': False,
             'remote_ci_executed': os.environ.get('GITHUB_ACTIONS') == 'true',
             'internet_permission': 'android.permission.INTERNET' in badging,
@@ -45443,7 +45571,7 @@ def record(apk, build_log, variants, require_signed=False):
             f'Version code: {code}. Signing status: {summary["signing"]["status"]}. '
             'Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.\n\n'
             'Run python scripts/check_verification.py --apk PATH to verify the snapshot; production also requires --require-signed. '
-            'Original signing identity lives separately in signing/original-release-certificate.sha256. '
+            'Active signing identity lives separately in signing/release-certificate.sha256. '
             'External references and physical-device checks are explicitly unrun when not verified.\n'
         )
         evidence = ROOT / 'verification'
@@ -45512,7 +45640,7 @@ class QualityGateTests(unittest.TestCase):
         # A hard-coded duplicate colour list would incorrectly leave the report unchanged.
         source=(check_contrast.ROOT/'app/src/main/java/com/electrokit/app/ui/theme/Theme.kt').read_text()
         original=check_contrast.report()
-        with patch.object(Path,'read_text',return_value=source.replace('0xFF93B4FF','0xFFFFFFFF')):
+        with patch.object(Path,'read_text',return_value=source.replace('0xFF'+check_contrast.palette(source, 'Dark')['primary'],'0xFFFFFFFF')):
             self.assertNotEqual(original,check_contrast.report())
     def test_committed_contrast_evidence_is_current(self):
         # Stale numbers are rejected even if old and new palettes both pass 4.5:1.
@@ -45543,7 +45671,7 @@ class VerificationTests(unittest.TestCase):
         (self.root / 'verification').mkdir()
         (self.root / 'signing').mkdir()
         (self.root / 'app/build.gradle.kts').write_text('versionName = "3.0"\nversionCode = 14\n')
-        (self.root / 'signing/original-release-certificate.sha256').write_text('a' * 64)
+        (self.root / 'signing/release-certificate.sha256').write_text('a' * 64)
         self.summary = {'version': '3.0', 'version_code': 14, 'signing': {'status': 'unsigned'}}
         self.write_summary()
         (self.root / 'verification/apk-badging.txt').write_text("package: name='com.electrokit.app' versionCode='14' versionName='3.0'\n")
@@ -45568,6 +45696,19 @@ class VerificationTests(unittest.TestCase):
 
     def test_unsigned_evidence_cannot_publish(self):
         with self.assertRaisesRegex(AssertionError, 'signed APK is required'):
+            check_verification.validate(self.root, require_signed=True)
+
+    def test_active_signed_certificate_is_accepted(self):
+        self.summary['signing'] = {'status': 'verified_release', 'certificate_sha256': 'a' * 64}
+        self.write_summary()
+        (self.root / 'verification/apk-signature.txt').write_text('Signer #1 certificate SHA-256 digest: ' + 'a' * 64)
+        check_verification.validate(self.root, require_signed=True)
+
+    def test_different_signed_certificate_is_rejected(self):
+        self.summary['signing'] = {'status': 'verified_release', 'certificate_sha256': 'b' * 64}
+        self.write_summary()
+        (self.root / 'verification/apk-signature.txt').write_text('Signer #1 certificate SHA-256 digest: ' + 'b' * 64)
+        with self.assertRaisesRegex(AssertionError, 'certificate mismatch'):
             check_verification.validate(self.root, require_signed=True)
 
 
@@ -45749,19 +45890,28 @@ include(":app")
 
 ````
 
+## signing/release-certificate.sha256
+
+````text
+d9823b341c6951b6dc912230fd46f2d61d7b3c315de2ae31fbb112345d1a9070
+
+````
+
 ## verification/README.md
 
 ````markdown
-# ELECTRO 3.0 verification snapshot
+# Current ELECTRO 3.0.1 verification
 
-Generated from an UNSIGNED release build; it does not describe the delivered signed APK. Regenerate with scripts/record_verification.py after building with the original keystore (--require-signed).
+Version code: 15. Signing status: unsigned. Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.
+
+Run python scripts/check_verification.py --apk PATH to verify the snapshot; production also requires --require-signed. Active signing identity lives separately in signing/release-certificate.sha256. External references and physical-device checks are explicitly unrun when not verified.
 
 ````
 
 ## verification/apk-badging.txt
 
 ````text
-package: name='com.electrokit.app' versionCode='14' versionName='3.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='com.electrokit.app' versionCode='15' versionName='3.0.1' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 sdkVersion:'24'
 targetSdkVersion:'35'
 uses-permission: name='com.electrokit.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
@@ -45901,26 +46051,29 @@ Daemon will be stopped at the end of the build
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
-> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugBuildConfig UP-TO-DATE
 > Task :app:checkDebugAarMetadata UP-TO-DATE
 > Task :app:generateDebugResValues UP-TO-DATE
-> Task :app:mapDebugSourceSetPaths
-> Task :app:generateDebugResources
-> Task :app:packageDebugResources
-> Task :app:createDebugCompatibleScreenManifests
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
 > Task :app:extractDeepLinksDebug UP-TO-DATE
-> Task :app:parseDebugLocalResources
-> Task :app:mergeDebugResources
-> Task :app:processDebugMainManifest
-> Task :app:processDebugManifest
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
 > Task :app:javaPreCompileDebug UP-TO-DATE
 > Task :app:preDebugUnitTestBuild UP-TO-DATE
 > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
 > Task :app:mergeDebugShaders UP-TO-DATE
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:processDebugManifestForPackage
 > Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:packageDebugUnitTestForUnitTest UP-TO-DATE
+> Task :app:generateDebugUnitTestConfig UP-TO-DATE
 > Task :app:buildKotlinToolingMetadata UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
 > Task :app:generateReleaseBuildConfig UP-TO-DATE
@@ -45937,13 +46090,10 @@ Daemon will be stopped at the end of the build
 > Task :app:processReleaseManifest UP-TO-DATE
 > Task :app:processReleaseManifestForPackage UP-TO-DATE
 > Task :app:processReleaseResources UP-TO-DATE
-> Task :app:processDebugResources
-> Task :app:packageDebugUnitTestForUnitTest
 > Task :app:javaPreCompileRelease UP-TO-DATE
 > Task :app:preReleaseUnitTestBuild UP-TO-DATE
 > Task :app:javaPreCompileReleaseUnitTest UP-TO-DATE
 > Task :app:mergeReleaseShaders UP-TO-DATE
-> Task :app:generateDebugUnitTestConfig
 > Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:generateReleaseAssets UP-TO-DATE
 > Task :app:mergeReleaseAssets UP-TO-DATE
@@ -45952,6 +46102,18 @@ Daemon will be stopped at the end of the build
 > Task :app:preDebugAndroidTestBuild SKIPPED
 > Task :app:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
 > Task :app:mergeReleaseJniLibFolders UP-TO-DATE
 > Task :app:mergeReleaseNativeLibs UP-TO-DATE
 > Task :app:stripReleaseDebugSymbols UP-TO-DATE
@@ -45961,59 +46123,66 @@ Daemon will be stopped at the end of the build
 > Task :app:mergeReleaseArtProfile UP-TO-DATE
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
 > Task :app:compressReleaseAssets UP-TO-DATE
-> Task :app:extractReleaseVersionControlInfo
+> Task :app:extractReleaseVersionControlInfo UP-TO-DATE
 > Task :app:convertLinkedResourcesToProtoRelease UP-TO-DATE
 > Task :app:collectReleaseDependencies UP-TO-DATE
 > Task :app:sdkReleaseDependencyData UP-TO-DATE
 > Task :app:writeReleaseAppMetadata UP-TO-DATE
 > Task :app:writeReleaseSigningConfigVersions UP-TO-DATE
 > Task :app:compileReleaseKotlin
-> Task :app:compileReleaseJavaWithJavac UP-TO-DATE
-> Task :app:processReleaseJavaRes UP-TO-DATE
-> Task :app:bundleReleaseClassesToCompileJar
-> Task :app:bundleReleaseClassesToRuntimeJar
-> Task :app:generateReleaseLintReportModel
-> Task :app:compileReleaseUnitTestKotlin UP-TO-DATE
-> Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
-> Task :app:processReleaseUnitTestJavaRes UP-TO-DATE
 > Task :app:compileDebugKotlin
-
-> Task :app:testReleaseUnitTest
-
-> Task :app:compileDebugJavaWithJavac
+> Task :app:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
 > Task :app:processDebugJavaRes UP-TO-DATE
-> Task :app:bundleDebugClassesToCompileJar
 > Task :app:bundleDebugClassesToRuntimeJar
-> Task :app:generateDebugLintReportModel
-> Task :app:generateDebugAndroidTestLintModel
-> Task :app:generateDebugUnitTestLintModel
-> Task :app:compileDebugUnitTestKotlin
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleReleaseClassesToRuntimeJar
+> Task :app:bundleReleaseClassesToCompileJar
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
 > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
 
 > Task :app:testDebugUnitTest
 
-> Task :app:lintAnalyzeDebugAndroidTest
-> Task :app:lintAnalyzeDebug
-> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:compileReleaseUnitTestKotlin UP-TO-DATE
+> Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processReleaseJavaRes UP-TO-DATE
+> Task :app:processReleaseUnitTestJavaRes UP-TO-DATE
+
+> Task :app:testReleaseUnitTest
+
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:generateDebugLintReportModel
+> Task :app:generateDebugUnitTestLintModel
+> Task :app:generateReleaseLintReportModel
 > Task :app:generateReleaseUnitTestLintModel
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug
 > Task :app:generateReleaseLintVitalReportModel
 > Task :app:expandReleaseArtProfileWildcards
 > Task :app:mergeReleaseGeneratedProguardFiles UP-TO-DATE
 > Task :app:mergeReleaseJavaResource UP-TO-DATE
+> Task :app:lintAnalyzeDebug
+> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:lintAnalyzeRelease
+> Task :app:minifyReleaseWithR8
 > Task :app:lintAnalyzeReleaseUnitTest
 > Task :app:lintVitalAnalyzeRelease
 > Task :app:lintVitalReportRelease SKIPPED
 > Task :app:lintVitalRelease SKIPPED
 
-> Task :app:lintReportDebug
-Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-debug.html
+> Task :app:lintReportRelease
+Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-release.html
 
-> Task :app:lintDebug
-> Task :app:lintAnalyzeRelease
-> Task :app:minifyReleaseWithR8
-> Task :app:lintReportRelease UP-TO-DATE
 > Task :app:lintRelease
+> Task :app:lintReportDebug UP-TO-DATE
+> Task :app:lintDebug
 > Task :app:compileReleaseArtProfile
 > Task :app:shrinkReleaseRes
 > Task :app:convertShrunkResourcesToBinaryRelease UP-TO-DATE
@@ -46022,34 +46191,34 @@ Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-de
 > Task :app:createReleaseApkListingFileRedirect UP-TO-DATE
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 3m 33s
-99 actionable tasks: 44 executed, 55 up-to-date
+BUILD SUCCESSFUL in 2m 31s
+116 actionable tasks: 31 executed, 85 up-to-date
 
 ````
 
 ## verification/comments.txt
 
 ````text
-Calculators.kt: 205 comment lines / 867 nonblank code lines
+Calculators.kt: 205 comment lines / 868 nonblank code lines
 Engineering.kt: 312 comment lines / 495 nonblank code lines
-App.kt: 144 comment lines / 875 nonblank code lines
-CalculatorScreen.kt: 109 comment lines / 603 nonblank code lines
+App.kt: 145 comment lines / 878 nonblank code lines
+CalculatorScreen.kt: 109 comment lines / 604 nonblank code lines
 AppViewModel.kt: 142 comment lines / 142 nonblank code lines
-PASS: 895 Kotlin declarations documented; five density thresholds met.
+PASS: 902 Kotlin declarations documented; five density thresholds met.
 
 ````
 
 ## verification/contrast.txt
 
 ````text
-dark heading: 9.16:1
+dark heading: 11.82:1
 light heading: 6.41:1
-top bar: 17.68:1
-dark body: 16.86:1
+top bar: 18.37:1
+dark body: 17.52:1
 light body: 14.62:1
-dark primary on surfaceVariant: 6.16:1
-dark primary on surfaceContainer: 7.91:1
-dark primaryContainer: 9.43:1
+dark primary on surfaceVariant: 7.93:1
+dark primary on surfaceContainer: 10.37:1
+dark primaryContainer: 9.97:1
 dark secondaryContainer: 9.52:1
 dark tertiaryContainer: 7.77:1
 dark errorContainer: 7.80:1
@@ -46260,7 +46429,7 @@ document.getElementById(id).style.display = 'none';
     <div class="mdl-layout__header-row">
       <span class="mdl-layout-title">Lint Report: 14 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Tue Oct 27 09:11:33 UTC 2026 by AGP (8.7.3)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Tue Oct 27 11:28:28 UTC 2026 by AGP (8.7.3)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -46461,14 +46630,14 @@ Dismiss</button>            </div>
 <span class="lineno">  78 </span> <span class="tag">&lt;plurals</span><span class="attribute"> name</span>=<span class="value">"part_count"</span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>%1$d entry • package choices vary<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>%1$d entries • package choices vary<span class="tag">&lt;/item>&lt;/plurals></span>
 <span class="lineno">  79 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"product_reference"</span>>Product reference: %1$s<span class="tag">&lt;/string></span></pre>
 
-<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:133</span>: <span class="message">The resource <code>R.string.engine_fault_count</code> appears to be unused</span><br /><pre class="errorlines">
-<span class="lineno"> 130 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_preserved"</span>>Original calculator retained in the existing toolkit.<span class="tag">&lt;/string></span>
-<span class="lineno"> 131 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_simulated"</span>>SIMULATED — educational samples only<span class="tag">&lt;/string></span>
-<span class="lineno"> 132 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_not_found"</span>>This engineering route was not found. Return to the engineering dashboard.<span class="tag">&lt;/string></span>
-<span class="caretline"><span class="lineno"> 133 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"engine_fault_count"</span></span>>125 original fault records • search, filters and bookmarks<span class="tag">&lt;/string></span></span>
-<span class="lineno"> 134 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_existing_tool"</span>>Existing toolkit entry<span class="tag">&lt;/string></span>
-<span class="lineno"> 135 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_search_end"</span>>End of local search results. Try a component ID, terminal, code or topic.<span class="tag">&lt;/string></span>
-<span class="lineno"> 136 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_fault_search"</span>>Search fault code or message<span class="tag">&lt;/string></span></pre>
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:130</span>: <span class="message">The resource <code>R.string.engine_fault_count</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno"> 127 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_preserved"</span>>Original calculator retained in the existing toolkit.<span class="tag">&lt;/string></span>
+<span class="lineno"> 128 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_simulated"</span>>SIMULATED — educational samples only<span class="tag">&lt;/string></span>
+<span class="lineno"> 129 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_not_found"</span>>This engineering route was not found. Return to the engineering dashboard.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno"> 130 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"engine_fault_count"</span></span>>125 original fault records • search, filters and bookmarks<span class="tag">&lt;/string></span></span>
+<span class="lineno"> 131 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_existing_tool"</span>>Existing toolkit entry<span class="tag">&lt;/string></span>
+<span class="lineno"> 132 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_search_end"</span>>End of local search results. Try a component ID, terminal, code or topic.<span class="tag">&lt;/string></span>
+<span class="lineno"> 133 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_fault_search"</span>>Search fault code or message<span class="tag">&lt;/string></span></pre>
 
 </div>
 </div>
@@ -48083,7 +48252,7 @@ For more information, see <a href="https://developer.android.com/studio/write/li
 /workspace/electro/app/src/main/res/values/strings.xml:76: Warning: The resource R.plurals.tool_count appears to be unused [UnusedResources]
  <plurals name="tool_count"><item quantity="one">%1$d tool • available offline</item><item quantity="other">%1$d tools • available offline</item></plurals>
           ~~~~~~~~~~~~~~~~~
-/workspace/electro/app/src/main/res/values/strings.xml:133: Warning: The resource R.string.engine_fault_count appears to be unused [UnusedResources]
+/workspace/electro/app/src/main/res/values/strings.xml:130: Warning: The resource R.string.engine_fault_count appears to be unused [UnusedResources]
  <string name="engine_fault_count">125 original fault records • search, filters and bookmarks</string>
          ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -48331,7 +48500,7 @@ For more information, see <a href="https://developer.android.com/studio/write/li
         errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/workspace/electro/app/src/main/res/values/strings.xml"
-            line="133"
+            line="130"
             column="10"/>
     </issue>
 
@@ -48523,7 +48692,7 @@ document.getElementById(id).style.display = 'none';
     <div class="mdl-layout__header-row">
       <span class="mdl-layout-title">Lint Report: 14 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Tue Oct 27 08:34:17 UTC 2026 by AGP (8.7.3)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Tue Oct 27 11:52:35 UTC 2026 by AGP (8.7.3)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -48724,14 +48893,14 @@ Dismiss</button>            </div>
 <span class="lineno">  78 </span> <span class="tag">&lt;plurals</span><span class="attribute"> name</span>=<span class="value">"part_count"</span>><span class="tag">&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"one"</span>>%1$d entry • package choices vary<span class="tag">&lt;/item>&lt;item</span><span class="attribute"> quantity</span>=<span class="value">"other"</span>>%1$d entries • package choices vary<span class="tag">&lt;/item>&lt;/plurals></span>
 <span class="lineno">  79 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"product_reference"</span>>Product reference: %1$s<span class="tag">&lt;/string></span></pre>
 
-<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:133</span>: <span class="message">The resource <code>R.string.engine_fault_count</code> appears to be unused</span><br /><pre class="errorlines">
-<span class="lineno"> 130 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_preserved"</span>>Original calculator retained in the existing toolkit.<span class="tag">&lt;/string></span>
-<span class="lineno"> 131 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_simulated"</span>>SIMULATED — educational samples only<span class="tag">&lt;/string></span>
-<span class="lineno"> 132 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_not_found"</span>>This engineering route was not found. Return to the engineering dashboard.<span class="tag">&lt;/string></span>
-<span class="caretline"><span class="lineno"> 133 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"engine_fault_count"</span></span>>125 original fault records • search, filters and bookmarks<span class="tag">&lt;/string></span></span>
-<span class="lineno"> 134 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_existing_tool"</span>>Existing toolkit entry<span class="tag">&lt;/string></span>
-<span class="lineno"> 135 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_search_end"</span>>End of local search results. Try a component ID, terminal, code or topic.<span class="tag">&lt;/string></span>
-<span class="lineno"> 136 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_fault_search"</span>>Search fault code or message<span class="tag">&lt;/string></span></pre>
+<span class="location"><a href="../../src/main/res/values/strings.xml">../../src/main/res/values/strings.xml</a>:130</span>: <span class="message">The resource <code>R.string.engine_fault_count</code> appears to be unused</span><br /><pre class="errorlines">
+<span class="lineno"> 127 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_preserved"</span>>Original calculator retained in the existing toolkit.<span class="tag">&lt;/string></span>
+<span class="lineno"> 128 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_simulated"</span>>SIMULATED — educational samples only<span class="tag">&lt;/string></span>
+<span class="lineno"> 129 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_not_found"</span>>This engineering route was not found. Return to the engineering dashboard.<span class="tag">&lt;/string></span>
+<span class="caretline"><span class="lineno"> 130 </span> <span class="tag">&lt;string</span><span class="attribute"> </span><span class="warning"><span class="attribute">name</span>=<span class="value">"engine_fault_count"</span></span>>125 original fault records • search, filters and bookmarks<span class="tag">&lt;/string></span></span>
+<span class="lineno"> 131 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_existing_tool"</span>>Existing toolkit entry<span class="tag">&lt;/string></span>
+<span class="lineno"> 132 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_search_end"</span>>End of local search results. Try a component ID, terminal, code or topic.<span class="tag">&lt;/string></span>
+<span class="lineno"> 133 </span> <span class="tag">&lt;string</span><span class="attribute"> name</span>=<span class="value">"engine_fault_search"</span>>Search fault code or message<span class="tag">&lt;/string></span></pre>
 
 </div>
 </div>
@@ -50346,7 +50515,7 @@ For more information, see <a href="https://developer.android.com/studio/write/li
 /workspace/electro/app/src/main/res/values/strings.xml:76: Warning: The resource R.plurals.tool_count appears to be unused [UnusedResources]
  <plurals name="tool_count"><item quantity="one">%1$d tool • available offline</item><item quantity="other">%1$d tools • available offline</item></plurals>
           ~~~~~~~~~~~~~~~~~
-/workspace/electro/app/src/main/res/values/strings.xml:133: Warning: The resource R.string.engine_fault_count appears to be unused [UnusedResources]
+/workspace/electro/app/src/main/res/values/strings.xml:130: Warning: The resource R.string.engine_fault_count appears to be unused [UnusedResources]
  <string name="engine_fault_count">125 original fault records • search, filters and bookmarks</string>
          ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -50594,7 +50763,7 @@ For more information, see <a href="https://developer.android.com/studio/write/li
         errorLine2="         ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/workspace/electro/app/src/main/res/values/strings.xml"
-            line="133"
+            line="130"
             column="10"/>
     </issue>
 
@@ -50605,11 +50774,12 @@ For more information, see <a href="https://developer.android.com/studio/write/li
 ## verification/python-tests.txt
 
 ````text
-........
+..........
 ----------------------------------------------------------------------
-Ran 8 tests in 0.005s
+Ran 10 tests in 0.005s
 
 OK
+PASS: current 3.0/14 evidence; signing=verified_release.
 PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````
@@ -50740,11 +50910,12 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````json
 {
-  "version": "3.0",
-  "version_code": 14,
+  "version": "3.0.1",
+  "version_code": 15,
   "application_id": "com.electrokit.app",
-  "generated_at_utc": "2026-10-27T09:16:13.153190+00:00",
-  "source_commit": "5c4382c531c41cea1530a08f5ba56e69e7532f12",
+  "generated_at_utc": "2026-10-27T11:53:10.681424+00:00",
+  "source_commit": "97a3dae82d72fa99d9f6a6b8a54bd3f160299db4",
+  "source_tree_dirty": true,
   "tests": {
     "debug": {
       "tests": 121,
@@ -50778,12 +50949,12 @@ PASS: current 3.0/14 evidence; signing=unsigned.
     }
   },
   "artifact": "app/build/outputs/apk/release/app-release-unsigned.apk",
-  "apk_sha256": "5da3aa39a9e64320797795464dbee8df930fe264fa16f048ec5259a34c20647a",
-  "apk_bytes": 11216759,
+  "apk_sha256": "43ca94b0c79d6d1781e231d3028ace55e4ef3c4b51f62c2414b88ff1684b0a35",
+  "apk_bytes": 11231863,
   "signing": {
     "status": "unsigned",
     "certificate_sha256": null,
-    "expected_certificate_sha256": "68a284d34b73344e4797a09137c06d330797f33a2c9d288580ae2749aa58bbaa"
+    "expected_certificate_sha256": "d9823b341c6951b6dc912230fd46f2d61d7b3c315de2ae31fbb112345d1a9070"
   },
   "release_publishable": false,
   "physical_device_tested": false,
@@ -50799,14 +50970,14 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:02" hostname="cd711711733c" time="0.486">
+<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:51" hostname="4156269b6c2a" time="0.126">
   <properties/>
-  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.319"/>
-  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.061"/>
-  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.001"/>
-  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.075"/>
-  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.007"/>
-  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.021"/>
+  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.076"/>
+  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.02"/>
+  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.0"/>
+  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.02"/>
+  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.003"/>
+  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.006"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -50817,19 +50988,19 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:03" hostname="cd711711733c" time="1.805">
+<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:52" hostname="4156269b6c2a" time="0.356">
   <properties/>
-  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.032"/>
-  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.05"/>
-  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.012"/>
-  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
-  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.011"/>
-  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="1.003"/>
-  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.006"/>
-  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.47"/>
-  <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
+  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
+  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.009"/>
+  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.004"/>
+  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.002"/>
+  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.004"/>
+  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.238"/>
+  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
+  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.044"/>
+  <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
   <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.208"/>
+  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.045"/>
   <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
   <system-out><![CDATA[Extreme per-field cases exercised: 1984
 ]]></system-out>
@@ -50842,27 +51013,27 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:04" hostname="cd711711733c" time="0.12">
+<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:52" hostname="4156269b6c2a" time="0.03">
   <properties/>
   <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="astableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="colourBothDirections" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ohmAllSixInputPairs" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="ohmAllSixInputPairs" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="dividerAndLoaded" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="parserHandlesEngineeringForms" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="parserHandlesEngineeringForms" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="monostableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="traceWidthScalingAndKnownPoint" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="lm317" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="rangeMapping" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ledResistor" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.111"/>
+  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.025"/>
   <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.004"/>
+  <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="seriesParallel" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="filterCutoff" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
@@ -50877,26 +51048,26 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:04" hostname="cd711711733c" time="0.243">
+<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:52" hostname="4156269b6c2a" time="0.083">
   <properties/>
-  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.039"/>
-  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
-  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
-  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
-  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
-  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
-  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.02"/>
-  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.014"/>
-  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
-  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
-  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
-  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
-  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.028"/>
-  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
-  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.012"/>
+  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
+  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.002"/>
+  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
+  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.002"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -50907,12 +51078,12 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:05" hostname="cd711711733c" time="0.003">
+<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:52" hostname="4156269b6c2a" time="0.002">
   <properties/>
-  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.002"/>
-  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
+  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
+  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
   <testcase name="alreadyScaledUnitsKeepTheirDeclaredLabel" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
-  <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
+  <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -50923,13 +51094,13 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:05" hostname="cd711711733c" time="0.024">
+<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:52" hostname="4156269b6c2a" time="0.014">
   <properties/>
-  <testcase name="megaAliasesAndMicroValuesAreExact" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.001"/>
+  <testcase name="megaAliasesAndMicroValuesAreExact" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
   <testcase name="defaultRtdTemperatureIsExactlyPositiveZero" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
   <testcase name="percentagesAreRoundedWithoutChangingBandTolerances" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.001"/>
   <testcase name="unitlessValuesNeverUseEngineeringPrefixes" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
-  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.021"/>
+  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.013"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -50940,10 +51111,10 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:05" hostname="cd711711733c" time="2.323">
+<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:52" hostname="4156269b6c2a" time="0.496">
   <properties/>
-  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="1.66"/>
-  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.663"/>
+  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.36"/>
+  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.136"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -50954,9 +51125,9 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:07" hostname="cd711711733c" time="0.013">
+<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:53" hostname="4156269b6c2a" time="0.002">
   <properties/>
-  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.007"/>
+  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.002"/>
   <testcase name="independentConversions" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
@@ -50968,14 +51139,14 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:07" hostname="cd711711733c" time="0.009">
+<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:53" hostname="4156269b6c2a" time="0.002">
   <properties/>
-  <testcase name="temperatureBoundary" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.003"/>
-  <testcase name="invalidPowerFactorRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="temperatureBoundary" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="invalidPowerFactorRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="cableSizingIncludesReturnPath" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
-  <testcase name="transformerRatio" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="transformerRatio" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="scientificGrammar" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
-  <testcase name="scientificInvalidInputs" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="scientificInvalidInputs" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="upsAccountsForBothLossFactors" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="invalidPercentagesRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
@@ -50988,20 +51159,20 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.AndroidUiRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:08" hostname="cd711711733c" time="38.698">
+<testsuite name="com.electrokit.app.ui.AndroidUiRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:50:53" hostname="4156269b6c2a" time="13.877">
   <properties/>
-  <testcase name="selectedKiloUnitDoesNotMultiplyASuffixedValueTwice" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="17.807"/>
-  <testcase name="lightThemePersistsAcrossActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.14"/>
-  <testcase name="mainTabsAndReferenceNavigationWork" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.564"/>
-  <testcase name="bundledDatabasesAlwaysOpenAndSearch" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="2.928"/>
-  <testcase name="fractionalToleranceUsesPercentText" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.684"/>
-  <testcase name="extremeRatioIsAnInlineErrorInsteadOfACrash" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.69"/>
-  <testcase name="bandResetRestoresDisplayAndCopiedResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.462"/>
-  <testcase name="calculationModeChangeInvalidatesExplicitResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.76"/>
-  <testcase name="everyCatalogueEntryOpensWithoutCrashing" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="10.6"/>
-  <testcase name="largeTextKeepsMainActionsReachable" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.411"/>
-  <testcase name="calculatorInputSurvivesActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.532"/>
-  <testcase name="catalogueHasNoReservedBottomFooter" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.115"/>
+  <testcase name="selectedKiloUnitDoesNotMultiplyASuffixedValueTwice" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="5.522"/>
+  <testcase name="lightThemePersistsAcrossActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.364"/>
+  <testcase name="mainTabsAndReferenceNavigationWork" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.42"/>
+  <testcase name="bundledDatabasesAlwaysOpenAndSearch" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.792"/>
+  <testcase name="fractionalToleranceUsesPercentText" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.22"/>
+  <testcase name="extremeRatioIsAnInlineErrorInsteadOfACrash" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.179"/>
+  <testcase name="bandResetRestoresDisplayAndCopiedResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.475"/>
+  <testcase name="calculationModeChangeInvalidatesExplicitResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.284"/>
+  <testcase name="everyCatalogueEntryOpensWithoutCrashing" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="5.007"/>
+  <testcase name="largeTextKeepsMainActionsReachable" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.282"/>
+  <testcase name="calculatorInputSurvivesActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.266"/>
+  <testcase name="catalogueHasNoReservedBottomFooter" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.066"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51012,11 +51183,11 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.DesignPreviewTests" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:46" hostname="cd711711733c" time="1.93">
+<testsuite name="com.electrokit.app.ui.DesignPreviewTests" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:06" hostname="4156269b6c2a" time="1.237">
   <properties/>
-  <testcase name="homePreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.614"/>
-  <testcase name="connectorPreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.328"/>
-  <testcase name="illustratedReferencePreviews" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.987"/>
+  <testcase name="homePreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.518"/>
+  <testcase name="connectorPreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.176"/>
+  <testcase name="illustratedReferencePreviews" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.543"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51027,18 +51198,18 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.EngineeringUiTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:48" hostname="cd711711733c" time="8.123">
+<testsuite name="com.electrokit.app.ui.EngineeringUiTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:08" hostname="4156269b6c2a" time="3.22">
   <properties/>
-  <testcase name="lightEngineeringPreview" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.678"/>
-  <testcase name="allHomeTabsVisible" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.106"/>
-  <testcase name="motorCalculatorPersists" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.596"/>
-  <testcase name="catalogueKeepsHeaderAndSearchPinned" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.377"/>
-  <testcase name="cbmSampleLinksToReference" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.581"/>
-  <testcase name="terminalAndCutawaySelection" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.627"/>
-  <testcase name="bottomNavigationSupportsLargeText" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.219"/>
-  <testcase name="explorerSearchAndFilters" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.547"/>
-  <testcase name="faultAndRelatedComponentNavigation" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.459"/>
-  <testcase name="sourceReferencesRemainReachable" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.929"/>
+  <testcase name="lightEngineeringPreview" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.75"/>
+  <testcase name="allHomeTabsVisible" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.103"/>
+  <testcase name="motorCalculatorPersists" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.349"/>
+  <testcase name="catalogueKeepsHeaderAndSearchPinned" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.179"/>
+  <testcase name="cbmSampleLinksToReference" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.321"/>
+  <testcase name="terminalAndCutawaySelection" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.276"/>
+  <testcase name="bottomNavigationSupportsLargeText" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.373"/>
+  <testcase name="explorerSearchAndFilters" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.283"/>
+  <testcase name="faultAndRelatedComponentNavigation" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.363"/>
+  <testcase name="mobileUiHidesSourceReferences" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.22"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51049,15 +51220,15 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.WorkbenchUiTests" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:56" hostname="cd711711733c" time="4.438">
+<testsuite name="com.electrokit.app.ui.WorkbenchUiTests" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:11" hostname="4156269b6c2a" time="1.631">
   <properties/>
-  <testcase name="publicSearchExcludesFaultSnippets" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.153"/>
-  <testcase name="protectedContentRequiresCodeAndRelocks" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.965"/>
-  <testcase name="homeScreenshotAndSystemBarFlags" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.656"/>
-  <testcase name="componentImageAndFavoriteRoundTrip" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.493"/>
-  <testcase name="accessIsNotSavedAndAttemptsAreRateLimited" classname="com.electrokit.app.ui.WorkbenchUiTests" time="1.646"/>
-  <testcase name="utilityCalculationAndAndroidBack" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.284"/>
-  <testcase name="unitConverterNativeWorkflow" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.24"/>
+  <testcase name="publicSearchExcludesFaultSnippets" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.075"/>
+  <testcase name="protectedContentRequiresCodeAndRelocks" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.324"/>
+  <testcase name="homeScreenshotAndSystemBarFlags" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.199"/>
+  <testcase name="componentImageAndFavoriteRoundTrip" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.145"/>
+  <testcase name="accessIsNotSavedAndAttemptsAreRateLimited" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.633"/>
+  <testcase name="utilityCalculationAndAndroidBack" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.133"/>
+  <testcase name="unitConverterNativeWorkflow" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.121"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51068,12 +51239,12 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.viewmodel.InputJournalTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:11:01" hostname="cd711711733c" time="2.589">
+<testsuite name="com.electrokit.app.viewmodel.InputJournalTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:13" hostname="4156269b6c2a" time="1.081">
   <properties/>
-  <testcase name="corruptJournalIsPreservedAndRetryCanContinue" classname="com.electrokit.app.viewmodel.InputJournalTests" time="2.458"/>
-  <testcase name="corruptJournalIsNotSilentlyReplaced" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.037"/>
-  <testcase name="acknowledgementRetainsNewerEdits" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.064"/>
-  <testcase name="stagedInputsSurviveNewJournalInstance" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.03"/>
+  <testcase name="corruptJournalIsPreservedAndRetryCanContinue" classname="com.electrokit.app.viewmodel.InputJournalTests" time="1.005"/>
+  <testcase name="corruptJournalIsNotSilentlyReplaced" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.02"/>
+  <testcase name="acknowledgementRetainsNewerEdits" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.022"/>
+  <testcase name="stagedInputsSurviveNewJournalInstance" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.034"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51084,13 +51255,13 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.viewmodel.RetryRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:11:03" hostname="cd711711733c" time="0.386">
+<testsuite name="com.electrokit.app.viewmodel.RetryRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:14" hostname="4156269b6c2a" time="0.161">
   <properties/>
-  <testcase name="productionJournalRunsOffMainThread" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.166"/>
-  <testcase name="freshViewModelRecoversStagedInputsBeforeDataStoreCommit" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.059"/>
-  <testcase name="inputRetryPersistsPendingSnapshot" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.058"/>
-  <testcase name="settingsRetryRepeatsSettingsMutationRatherThanFlushingInputs" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.041"/>
-  <testcase name="inputSuccessDoesNotDismissLoadFailure" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.062"/>
+  <testcase name="productionJournalRunsOffMainThread" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.073"/>
+  <testcase name="freshViewModelRecoversStagedInputsBeforeDataStoreCommit" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.03"/>
+  <testcase name="inputRetryPersistsPendingSnapshot" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.019"/>
+  <testcase name="settingsRetryRepeatsSettingsMutationRatherThanFlushingInputs" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.021"/>
+  <testcase name="inputSuccessDoesNotDismissLoadFailure" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.018"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51101,14 +51272,14 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:53" hostname="cd711711733c" time="0.293">
+<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:15" hostname="4156269b6c2a" time="0.125">
   <properties/>
-  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.164"/>
-  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.066"/>
+  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.071"/>
+  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.024"/>
   <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.001"/>
-  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.033"/>
-  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.003"/>
-  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.026"/>
+  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.019"/>
+  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.002"/>
+  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.006"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51119,19 +51290,19 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:53" hostname="cd711711733c" time="0.922">
+<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:15" hostname="4156269b6c2a" time="0.336">
   <properties/>
-  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.011"/>
-  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.012"/>
-  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.007"/>
-  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
-  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.005"/>
-  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.672"/>
+  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
+  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
+  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
+  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.002"/>
+  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.004"/>
+  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.219"/>
   <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.106"/>
+  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.042"/>
   <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
   <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.102"/>
+  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.045"/>
   <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
   <system-out><![CDATA[Extreme per-field cases exercised: 1984
 ]]></system-out>
@@ -51144,7 +51315,7 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:54" hostname="cd711711733c" time="0.078">
+<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:15" hostname="4156269b6c2a" time="0.028">
   <properties/>
   <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="astableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
@@ -51153,18 +51324,18 @@ PASS: current 3.0/14 evidence; signing=unsigned.
   <testcase name="dividerAndLoaded" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="parserHandlesEngineeringForms" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="monostableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="traceWidthScalingAndKnownPoint" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="lm317" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="rangeMapping" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ledResistor" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.069"/>
+  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.024"/>
   <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.002"/>
+  <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.003"/>
+  <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.002"/>
   <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="seriesParallel" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="filterCutoff" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
@@ -51179,26 +51350,26 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:54" hostname="cd711711733c" time="0.171">
+<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:15" hostname="4156269b6c2a" time="0.077">
   <properties/>
-  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.031"/>
-  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
-  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
-  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.017"/>
-  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.015"/>
-  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
-  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
-  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
+  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.002"/>
+  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.002"/>
+  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51209,12 +51380,12 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.004">
+<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:15" hostname="4156269b6c2a" time="0.002">
   <properties/>
-  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.003"/>
-  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
+  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
+  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
   <testcase name="alreadyScaledUnitsKeepTheirDeclaredLabel" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
-  <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
+  <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51225,13 +51396,13 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.014">
+<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:15" hostname="4156269b6c2a" time="0.011">
   <properties/>
   <testcase name="megaAliasesAndMicroValuesAreExact" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
   <testcase name="defaultRtdTemperatureIsExactlyPositiveZero" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
   <testcase name="percentagesAreRoundedWithoutChangingBandTolerances" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.001"/>
   <testcase name="unitlessValuesNeverUseEngineeringPrefixes" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
-  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.012"/>
+  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.01"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51242,10 +51413,10 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.573">
+<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:15" hostname="4156269b6c2a" time="0.456">
   <properties/>
-  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.463"/>
-  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.109"/>
+  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.298"/>
+  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.157"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -51256,9 +51427,9 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.002">
+<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:16" hostname="4156269b6c2a" time="0.002">
   <properties/>
-  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.001"/>
+  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.002"/>
   <testcase name="independentConversions" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
@@ -51270,10 +51441,10 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.003">
+<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:16" hostname="4156269b6c2a" time="0.002">
   <properties/>
   <testcase name="temperatureBoundary" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
-  <testcase name="invalidPowerFactorRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="invalidPowerFactorRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="cableSizingIncludesReturnPath" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="transformerRatio" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="scientificGrammar" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>

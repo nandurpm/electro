@@ -1,6 +1,6 @@
 """Replace stale verification with actual current APK, tests, lint and validator outputs.
 
-Unsigned builds are explicitly labeled and cannot pass --require-signed. The original
+Unsigned builds are explicitly labeled and cannot pass --require-signed. The active
 certificate identity is stored separately from generated evidence.
 """
 import argparse
@@ -42,7 +42,7 @@ def record(apk, build_log, variants, require_signed=False):
     code = int(re.search(r'versionCode\s*=\s*(\d+)', source)[1])
     log = build_log.read_text()
     assert 'BUILD SUCCESSFUL' in log and 'BUILD FAILED' not in log, 'Build log is not a successful run'
-    expected = (ROOT / 'signing/original-release-certificate.sha256').read_text().strip()
+    expected = (ROOT / 'signing/release-certificate.sha256').read_text().strip()
     with tempfile.TemporaryDirectory(prefix='electro-verification-', dir=ROOT.parent) as temp:
         stage = Path(temp)
         badging = run([str(sdk / 'aapt'), 'dump', 'badging', str(apk)]).stdout
@@ -55,7 +55,7 @@ def record(apk, build_log, variants, require_signed=False):
         if signed:
             assert digest and digest[1] == expected, 'Refusing an APK signed with a different identity'
         if require_signed:
-            assert signed, 'No original-key signature; do not publish this APK'
+            assert signed, 'No release-key signature; do not publish this APK'
         (stage / 'apk-signature.txt').write_text(('UNSIGNED RELEASE — not production ready\n' if not signed else '') + signature.stdout)
         tests, lint = {}, {}
         for variant in variants:
@@ -102,9 +102,10 @@ def record(apk, build_log, variants, require_signed=False):
             'version': version, 'version_code': code, 'application_id': 'com.electrokit.app',
             'generated_at_utc': datetime.now(timezone.utc).isoformat(),
             'source_commit': run(['git', 'rev-parse', 'HEAD']).stdout.strip(),
+            'source_tree_dirty': bool(run(['git', 'status', '--porcelain']).stdout.strip()),
             'tests': tests, 'lint': lint, 'artifact': str(apk.relative_to(ROOT)),
             'apk_sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'apk_bytes': apk.stat().st_size,
-            'signing': {'status': 'verified_original_release' if signed else 'unsigned', 'certificate_sha256': digest[1] if digest else None, 'expected_certificate_sha256': expected},
+            'signing': {'status': 'verified_release' if signed else 'unsigned', 'certificate_sha256': digest[1] if digest else None, 'expected_certificate_sha256': expected},
             'release_publishable': signed, 'physical_device_tested': False, 'emulator_tested': False,
             'remote_ci_executed': os.environ.get('GITHUB_ACTIONS') == 'true',
             'internet_permission': 'android.permission.INTERNET' in badging,
@@ -117,7 +118,7 @@ def record(apk, build_log, variants, require_signed=False):
             f'Version code: {code}. Signing status: {summary["signing"]["status"]}. '
             'Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.\n\n'
             'Run python scripts/check_verification.py --apk PATH to verify the snapshot; production also requires --require-signed. '
-            'Original signing identity lives separately in signing/original-release-certificate.sha256. '
+            'Active signing identity lives separately in signing/release-certificate.sha256. '
             'External references and physical-device checks are explicitly unrun when not verified.\n'
         )
         evidence = ROOT / 'verification'

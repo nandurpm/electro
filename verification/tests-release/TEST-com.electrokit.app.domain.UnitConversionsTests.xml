@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:09:55" hostname="cd711711733c" time="0.002">
+<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:16" hostname="4156269b6c2a" time="0.002">
   <properties/>
-  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.001"/>
+  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.002"/>
   <testcase name="independentConversions" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
