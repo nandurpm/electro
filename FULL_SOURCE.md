@@ -86,7 +86,7 @@ on:
   push:
     tags: ['v*']
 permissions:
-  contents: read
+  contents: write
   actions: write
 jobs:
   signed-release:
