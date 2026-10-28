@@ -1,0 +1,86 @@
+name: Automatic version release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - app/build.gradle.kts
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: automatic-version-release-main
+  cancel-in-progress: false
+
+jobs:
+  tag-and-dispatch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+
+      - name: Tag changed app version and dispatch signed release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          current_version=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          text = Path('app/build.gradle.kts').read_text()
+          match = re.search(r'versionName\s*=\s*"([^"]+)"', text)
+          if not match:
+              raise SystemExit('versionName was not found')
+          print(match.group(1))
+          PY
+          )
+          current_code=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          text = Path('app/build.gradle.kts').read_text()
+          match = re.search(r'versionCode\s*=\s*(\d+)', text)
+          if not match:
+              raise SystemExit('versionCode was not found')
+          print(match.group(1))
+          PY
+          )
+
+          previous_version=$(git show HEAD^:app/build.gradle.kts | python3 -c 'import re,sys; match=re.search(r"versionName\s*=\s*\"([^\"]+)\"", sys.stdin.read()); print(match.group(1) if match else "")')
+          previous_code=$(git show HEAD^:app/build.gradle.kts | python3 -c 'import re,sys; match=re.search(r"versionCode\s*=\s*(\d+)", sys.stdin.read()); print(match.group(1) if match else "")')
+
+          if [ "$current_version" = "$previous_version" ] && [ "$current_code" = "$previous_code" ]; then
+            echo "No version change detected; nothing to release."
+            exit 0
+          fi
+
+          if ! printf '%s\n' "$current_version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid versionName: $current_version" >&2
+            exit 1
+          fi
+          if [ -z "$previous_code" ] || [ "$current_code" -le "$previous_code" ]; then
+            echo "versionCode must increase: ${previous_code:-missing} -> $current_code" >&2
+            exit 1
+          fi
+
+          tag="v$current_version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "Tag $tag already exists; refusing to create or republish it." >&2
+            exit 1
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "$tag" -m "ELECTRO $current_version" "$GITHUB_SHA"
+          git push origin "$tag"
+
+          gh workflow run android-release.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$tag" \
+            -f release_tag="$tag"
+
+          echo "Created $tag and dispatched Android Release against the tag."

@@ -1,10 +1,16 @@
 name: Android Release
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing version tag to release, for example v3.2.0'
+        required: false
+        type: string
   push:
     tags: ['v*']
 permissions:
   contents: read
+  actions: write
 jobs:
   signed-release:
     runs-on: ubuntu-24.04
@@ -115,12 +121,14 @@ jobs:
       - name: Publish matching version tag
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
           version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
-            RELEASE_TAG="electro-$version"
+            if [ -z "$RELEASE_TAG" ] || [ "$RELEASE_TAG" = "main" ]; then
+              RELEASE_TAG="electro-$version"
+            fi
             if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
               gh release upload "$RELEASE_TAG" app/build/outputs/distribution/* --clobber
             else
