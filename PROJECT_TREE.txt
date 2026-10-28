@@ -167,6 +167,7 @@ Electro/
   app/src/main/java/com/electrokit/app/ui/screens/EngineeringScreens.kt
   app/src/main/java/com/electrokit/app/ui/screens/UnitConverterScreen.kt
   app/src/main/java/com/electrokit/app/ui/screens/UtilityScreen.kt
+  app/src/main/java/com/electrokit/app/ui/screens/WorkbenchDesign.kt
   app/src/main/java/com/electrokit/app/ui/screens/WorkbenchScreen.kt
   app/src/main/java/com/electrokit/app/ui/theme/Theme.kt
   app/src/main/java/com/electrokit/app/viewmodel/AppViewModel.kt

@@ -24,7 +24,7 @@ class EngineeringUiTests {
      */
     @Test fun allHomeTabsVisible() {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
-        listOf("Home", "Tools", "Learn", "Favorites", "Settings").forEach {
+        listOf("Home", "Tools", "Learn", "Favorites", "Profile").forEach {
             ui.onAllNodesWithText(it).onLast().assertIsDisplayed()
         }
     }
@@ -83,10 +83,11 @@ class EngineeringUiTests {
         ui.activityRule.scenario.recreate()
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithText("Tools").performClick()
+        ui.onNodeWithText("Electrical Calculators").performClick()
         ui.onAllNodes(verticalList()).onLast().performScrollToNode(hasText("Resistor Colour Code"))
         ui.onNodeWithText("Resistor Colour Code").assertIsDisplayed()
         save("navigation-large")
-        listOf("Home", "Tools", "Learn", "Favorites", "Settings").forEach { label ->
+        listOf("Home", "Tools", "Learn", "Favorites", "Profile").forEach { label ->
             val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
             ui.onNode(hasText(label) and hasAnyAncestor(hasTestTag("main_navigation")), useUnmergedTree = true)
                 .assertIsDisplayed().performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
@@ -103,7 +104,7 @@ class EngineeringUiTests {
     private fun home() {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithText("Tools").performClick()
-        ui.onNodeWithText("Engineering").performClick()
+        ui.onNodeWithText("Escalator Engineering").performClick()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("789")
         ui.onNodeWithText("Unlock").performClick()
         ui.waitUntil(30000) { ui.onAllNodes(hasSetTextAction() and hasText("Search engineering topics and tools")).fetchSemanticsNodes().isNotEmpty() }
@@ -245,6 +246,7 @@ class EngineeringUiTests {
     @Test fun catalogueKeepsHeaderAndSearchPinned() {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithText("Tools").performClick()
+        ui.onNodeWithText("Electrical Calculators").performClick()
         ui.onAllNodes(verticalList()).onLast().performScrollToNode(hasText("Voltage divider"))
         ui.onAllNodes(verticalList()).onLast().performTouchInput { swipeUp() }
         ui.mainClock.advanceTimeBy(1000)

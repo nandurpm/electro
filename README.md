@@ -7,7 +7,7 @@ Offline native Android engineering workbench. Version **3.0.2**, code **16**, ap
 ## Features
 
 - Material 3 dark-blue, light and system appearance; persistent header/search and visible Android system bars.
-- Home, Tools, Learn, Favorites and Settings, with recent public tools, bookmarks, saved calculation snapshots and retained raw inputs.
+- Home, Tools, Learn, Favorites and Profile, with recent public tools, bookmarks, saved calculation snapshots and retained raw inputs.
 - All original **31 calculators, 55 pinout entries, 21 resources and three Parts/AVR/PIC databases** remain reachable.
 - Seven additional utilities: ideal transformer, battery/UPS runtime, explicit-resistivity DC cable voltage-drop sizing, single-phase power factor, energy/cost, temperature and bounded scientific arithmetic.
 - Eight-dimensional unit converter with explicit source/destination units.

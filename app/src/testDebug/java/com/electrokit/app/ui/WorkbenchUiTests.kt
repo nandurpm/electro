@@ -25,7 +25,7 @@ class WorkbenchUiTests {
     private fun ready() { ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() } }
 
     /** @return Unit; opens the guarded destination using public navigation. */
-    private fun engineering() { ready(); ui.onNodeWithText("Tools").performClick(); ui.onNodeWithText("Engineering").performClick() }
+    private fun engineering() { ready(); ui.onNodeWithText("Tools").performClick(); ui.onNodeWithText("Escalator Engineering").performClick() }
 
     /** @return Unit; incorrect input cannot reveal snippets, and manual locking removes composed data. */
     @Test fun protectedContentRequiresCodeAndRelocks() {
@@ -69,9 +69,7 @@ class WorkbenchUiTests {
     /** @return Unit; a new public model calculates through its native inputs and Android Back returns to Tools. */
     @Test fun utilityCalculationAndAndroidBack() {
         ready(); ui.onNodeWithText("Tools").performClick()
-        ui.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.HorizontalScrollAxisRange))
-            .performScrollToNode(hasText("Utilities"))
-        ui.onNodeWithText("Utilities").performClick()
+        ui.onNodeWithText("Engineering Utilities").performClick()
         ui.onNodeWithText("Ideal transformer").performClick()
         ui.onNode(hasSetTextAction() and hasText("Primary voltage (V)")).performTextReplacement("240")
         ui.onNode(hasSetTextAction() and hasText("Primary turns")).performTextReplacement("1000")
@@ -85,9 +83,7 @@ class WorkbenchUiTests {
     /** @return Unit; selected units govern the actual converter input and output without duplicate prefix scaling. */
     @Test fun unitConverterNativeWorkflow() {
         ready(); ui.onNodeWithText("Tools").performClick()
-        ui.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.HorizontalScrollAxisRange))
-            .performScrollToNode(hasText("Utilities"))
-        ui.onNodeWithText("Utilities").performClick()
+        ui.onNodeWithText("Engineering Utilities").performClick()
         ui.onNodeWithText("Engineering unit converter").performClick()
         ui.onNode(hasSetTextAction() and hasText("Value")).performTextReplacement("3.3")
         ui.onNodeWithText("3300 mV").assertExists()
@@ -114,7 +110,8 @@ class WorkbenchUiTests {
     /** @return Unit; the native home render is exported from the simulated Activity for visual review. */
     @Test fun homeScreenshotAndSystemBarFlags() {
         ready()
-        ui.onNodeWithText("Settings").performClick()
+        ui.onNodeWithText("Profile").performClick()
+        ui.onNodeWithText("Appearance").performClick()
         ui.onNodeWithText("Dark").performClick()
         ui.waitUntil(10000) { !com.electrokit.app.data.StartupTheme.light(ui.activity) }
         ui.onNodeWithText("Home").performClick()

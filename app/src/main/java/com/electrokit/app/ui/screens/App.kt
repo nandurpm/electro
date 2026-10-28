@@ -306,6 +306,7 @@ fun Bar(
  * @param value Input scalar in the operation’s documented units.
  * @param onChange Receives edited text; persistence remains with the caller.
  * @param label Visible field/cell caption used for accessible presentation.
+ * @param shape Field outline; the dashboard uses a fully rounded pill, nested pages keep the compact corner.
  * @return Unit; rendering effects and state changes are delivered through callbacks or observable
  *   state. Rendering/callback failures propagate; recoverable persistence failures belong to the
  *   ViewModel.
@@ -315,12 +316,13 @@ fun Search(
     value: String,
     onChange: (String) -> Unit,
     label: String = stringResource(R.string.search),
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(8.dp),
 ) {
     OutlinedTextField(
         value,
         onChange,
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(8.dp),
+        shape = shape,
         colors =
             OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,

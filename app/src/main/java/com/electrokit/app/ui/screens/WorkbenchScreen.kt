@@ -104,14 +104,16 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     var query by rememberSaveable(tab) { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("Calculators") }
     var detail by rememberSaveable { mutableStateOf<String?>(null) }
+    var hub by rememberSaveable { mutableStateOf(true) }
     var menu by remember { mutableStateOf(false) }
     BackHandler(enabled = detail != null) { detail = null }
     BackHandler(enabled = detail == null && tab != 0) { tab = 0; query = "" }
+    BackHandler(enabled = detail == null && tab == 1 && !hub) { hub = true; category = "Calculators"; query = "" }
     val context = LocalContext.current
     val components by produceState<List<ComponentAsset>>(emptyList()) { value = withContext(Dispatchers.IO) { loadComponents(context) } }
     val access: EngineeringAccess = viewModel(context as ComponentActivity)
     val publicComponents = components.filter { it.category != "Escalator" }
-    val names = listOf("Home", "Tools", "Learn", "Favorites", "Settings")
+    val names = listOf("Home", "Tools", "Learn", "Favorites", "Profile")
     val component = components.firstOrNull { detail == "component:${it.id}" }
     val lesson = learningPages.firstOrNull { detail == "learn:${it.id}" }
     val utility = WorkbenchTools.all.firstOrNull { detail == "utility:${it.id}" }
@@ -129,20 +131,20 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
             Column {
                 Bar("ELECTRO", brand = true) {
                     IconButton(onClick = { info(0) }) { Icon(Icons.Default.Info, "Info") }
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Menu") }
+                    IconButton(onClick = { menu = true }) { Icon(Icons.Default.Settings, "Menu") }
                     DropdownMenu(menu, { menu = false }) {
                         DropdownMenuItem(text = { Text("Settings") }, onClick = { menu = false; settings() })
                         DropdownMenuItem(text = { Text("About ELECTRO") }, onClick = { menu = false; info(0) })
                     }
                 }
-                if (tab != 4 && !(tab == 1 && category in listOf("Data", "Engineering"))) Search(query, { query = it })
+                if (tab != 4 && !(tab == 1 && category in listOf("Data", "Engineering"))) Search(query, { query = it }, shape = RoundedCornerShape(28.dp))
             }
         },
         bottomBar = {
             NavigationBar(Modifier.testTag("main_navigation").height((64f + 64f * (LocalDensity.current.fontScale - 1f).coerceAtLeast(0f)).dp), windowInsets = WindowInsets(0, 0, 0, 0)) {
                 names.forEachIndexed { i, name ->
                     Column(Modifier.weight(1f).fillMaxHeight().selectable(selected = tab == i, role = Role.Tab,
-                        onClick = { tab = i; query = ""; if (i == 1) category = "Calculators"; if (i == 2) category = "Components" })
+                        onClick = { tab = i; query = ""; if (i == 1) { category = "Calculators"; hub = true }; if (i == 2) category = "Components" })
                         .padding(horizontal = 2.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center) {
                         Box(Modifier.clip(RoundedCornerShape(10.dp)).background(if (tab == i) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
@@ -164,10 +166,10 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surfaceContainerLowest))).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text("ELECTRICAL • ELECTRONICS", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
-                                Text("Engineering tools\nfor real work", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
+                                Text("Electrical Engineering\nTools for Real World", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(vertical = 8.dp))
                                 Text("Calculate · Design · Learn", style = MaterialTheme.typography.bodySmall)
-                                TextButton({ tab = 1 }) { Text("Explore tools →") }
+                                TextButton({ tab = 1; hub = true; category = "Calculators" }) { Text("Explore tools →") }
                             }
                             publicComponents.firstOrNull { it.id == "induction_motor" }?.let {
                                 Box(Modifier.width(112.dp).height(140.dp).clip(RoundedCornerShape(8.dp))) {
@@ -178,17 +180,23 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     }
                 }
                 if (query.isBlank()) {
-                    item { SectionTitle("Quick access") }
-                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuickCard("Calculators", Modifier.weight(1f)) { tab = 1; category = "Calculators" }
-                        QuickCard("Components", Modifier.weight(1f)) { tab = 2; category = "Components" }
-                        QuickCard("Pin-outs", Modifier.weight(1f)) { tab = 1; category = "Pin-outs" }
+                    item { SectionTitle("Quick Access") }
+                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        QuickTile("Calculators", Modifier.weight(1f)) { tab = 1; category = "Calculators"; hub = false }
+                        QuickTile("Components", Modifier.weight(1f)) { tab = 2; category = "Components" }
+                        QuickTile("Diagrams", Modifier.weight(1f)) { tab = 1; category = "Pin-outs"; hub = false }
                     } }
-                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuickCard("Escalator", Modifier.weight(1f)) { openEngineering("home") }
-                        QuickCard("Learning", Modifier.weight(1f)) { tab = 2; category = "Lessons" }
-                        QuickCard("Converters", Modifier.weight(1f)) { detail = "unit-converter" }
+                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        QuickTile("Escalator", Modifier.weight(1f)) { openEngineering("home") }
+                        QuickTile("Learning", Modifier.weight(1f)) { tab = 2; category = "Lessons" }
+                        QuickTile("Converters", Modifier.weight(1f)) { detail = "unit-converter" }
                     } }
+                    if (prefs.recent.isNotEmpty()) {
+                        item { SectionTitle("Recently Used") }
+                        items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }.take(4)) {
+                            RecentRow(it) { openEntry(it.id) }
+                        }
+                    }
                     item { SectionTitle("Featured calculators") }
                 }
                 items(vm.repository.registry.filter { it.screenType == "calculator" && it.title.contains(query, true) }.take(if (query.isBlank()) 3 else 100), key = { it.id }) {
@@ -202,12 +210,6 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         QuickCard(page.title, Modifier.fillMaxWidth()) { detail = "learn:${page.id}" }
                     }
                 } else {
-                    if (prefs.recent.isNotEmpty()) {
-                        item { SectionTitle("Recently used") }
-                        items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }) {
-                            EntryRow(it, { openEntry(it.id) }, it.id in prefs.favourites) { vm.star(it.id) }
-                        }
-                    }
                     item { SectionTitle("Component discovery") }
                     items(publicComponents.filter { it.id in listOf("digital_multimeter", "magnetic_contactor", "axial_resistor") }) { c ->
                         Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
@@ -219,7 +221,9 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     }
                 }
             }
-            1 -> Column(body) {
+            1 -> if (hub && query.isBlank()) ToolsHub(publicComponents, body) { target ->
+                if (target == "Converters") detail = "unit-converter" else { category = target; hub = false }
+            } else Column(body) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(listOf("Calculators", "Pin-outs", "Reference", "Data", "Engineering", "Utilities")) { name ->
                         FilterChip(category == name, { category = name }, label = { Text(name) })
@@ -290,7 +294,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     Card { Text(result, Modifier.padding(16.dp)); TextButton({ share(context, result) }) { Text("Share calculation") } }
                 }
             }
-            else -> ElectroSettings(vm, prefs, body)
+            else -> ProfileScreen(vm, prefs, body, { tab = 3 }, { info(0) })
         }
     }
 }
