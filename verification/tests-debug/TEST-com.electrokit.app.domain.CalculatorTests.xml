@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="0.028">
+<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:44" hostname="6e09c42621cb" time="0.153">
   <properties/>
-  <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="astableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="colourBothDirections" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="colourBothDirections" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ohmAllSixInputPairs" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="dividerAndLoaded" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="parserHandlesEngineeringForms" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="monostableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="traceWidthScalingAndKnownPoint" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="lm317" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="rangeMapping" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="ledResistor" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.023"/>
-  <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.126"/>
+  <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.017"/>
+  <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.002"/>
-  <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.003"/>
+  <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="seriesParallel" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="filterCutoff" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ledRejectsInsufficientSupply" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
