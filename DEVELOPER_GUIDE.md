@@ -1,4 +1,4 @@
-# Editing Electro 2.0.3
+# Editing ELECTRO
 
 This guide explains which source owns each behaviour and how to extend it. Read the KDoc above a declaration for its inputs, result and failure contract. Inline comments explain formulas, unit conventions, state ownership and tricky branches. Comments are intentionally attached to meaningful blocks rather than repeating every Kotlin statement. JSON does not support comments; its schema and provenance fields carry explanations instead.
 
@@ -9,7 +9,7 @@ This guide explains which source owns each behaviour and how to extend it. Read 
 3. Let Android Studio create your own `local.properties`. Do not copy another developer's SDK path.
 4. Run `./gradlew assembleDebug testDebugUnitTest testReleaseUnitTest lintDebug lintRelease` (Windows: `gradlew.bat`). Debug installation is for development and uses a different certificate from the personal release.
 5. Use the existing private signing backup and documented environment variables for an upgrade-compatible release. Never put passwords in source, Git, screenshots or this guide.
-6. Run all scripts listed in `.github/workflows/android.yml`, then `python3 scripts/package_project.py` and `python3 scripts/package_project.py --check` after final edits.
+6. Run all scripts listed in `.github/workflows/android-ci.yml`, then `python3 scripts/package_project.py` and `python3 scripts/package_project.py --check` after final edits.
 
 ## Follow an input through the app
 
@@ -48,7 +48,7 @@ Asynchronous saving keeps typing responsive. An abrupt process kill before the f
 | `app/src/test/` | Pure Kotlin tests for both variants | Testing formulas and formatters |
 | `app/src/testDebug/` | Robolectric UI/persistence tests | Testing screens, rotation, search and save failures |
 | `scripts/` | Content, documentation, contrast and packaging checks | Extending developer validation |
-| `.github/workflows/android.yml` | Reproducible SDK setup and automated checks | Changing CI; preserve pinned actions and read-only permissions |
+| `.github/workflows/android-ci.yml` | Reproducible SDK setup and automated checks | Changing CI; preserve pinned actions and read-only permissions |
 
 Paths in the first part of the table are relative to `app/src/main/java/com/electrokit/app/`.
 
@@ -90,4 +90,4 @@ Do not write comments that merely restate an identifier. For example, explain wh
 
 Check dependencies quarterly and before changing target SDK. Upgrade Android/Compose/Kotlin together in a separate branch, run the complete regression suite, then check the shrunk APK on a device. Pinned versions currently provide a reproducible baseline; lint freshness warnings are not suppressed.
 
-Before relying on a new release, test API 24 and a recent Android version: install/update with the same certificate, full-screen gestures, light/dark theme, 200% text, rotation, keyboard, copy/share, process recreation, TalkBack and airplane mode. JVM/Robolectric tests do not certify the R8-shrunk APK on a phone. See AUDIT_RESOLUTION_2_0_3.md for exact executed checks and unresolved evidence gaps.
+Before relying on a new release, test API 24 and a recent Android version: install/update with the same certificate, full-screen gestures, light/dark theme, 200% text, rotation, keyboard, copy/share, process recreation, TalkBack and airplane mode. JVM/Robolectric tests do not certify the R8-shrunk APK on a phone. See docs/TESTING_GUIDE.md for exact executed checks and unresolved evidence gaps.

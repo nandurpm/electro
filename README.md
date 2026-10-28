@@ -114,3 +114,5 @@ The missing nested project files were restored from the existing `FULL_SOURCE.md
 Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the new 3.0.2 private key and all values outside the repository. A release is signed only when valid credentials are supplied.
 
 ELECTRO 3.0.2 uses a newly authorized signing key. It cannot update older-key installations; uninstalling those installations removes their local data. Keep the separate private signing backup for future updates.
+
+Repository maintenance: runtime artwork lives only in `app/src/main/assets/components/`. Duplicate photo packs, unused catalogue previews and obsolete historical reports were removed; Git history retains earlier copies. See [artwork provenance](docs/ARTWORK_PROVENANCE.md).
