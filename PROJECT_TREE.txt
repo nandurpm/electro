@@ -1,6 +1,7 @@
 Electro/
   .github/workflows/android-ci.yml
   .github/workflows/android-release.yml
+  .github/workflows/automatic-version-release.yml
   .gitignore
   CHANGELOG.md
   DEVELOPER_GUIDE.md
