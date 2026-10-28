@@ -156,11 +156,13 @@ jobs:
             RELEASE_TAG="electro-$version"
           fi
           release_url=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
+          apk_url=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[] | select(.name | endswith(".apk")) | .url' | head -n 1)
+          test -n "$apk_url"
           message=$(cat <<EOF
-ELECTRO $version has been published.
+ELECTRO release $RELEASE_TAG has been published.
 
 Release: $release_url
-APK: https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/ELECTRO-$version.apk
+APK: $apk_url
 EOF
           )
           curl --fail --silent --show-error --request POST \
