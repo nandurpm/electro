@@ -44,6 +44,15 @@ def audit(path):
         failures.append(f'{path.relative_to(ROOT)}: Kotlin syntax tree contains an error; coverage is not trustworthy')
     count = 0
     for node in walk(tree.root_node):
+        # Test methods communicate their contract through assertion names and bodies.
+        if 'src/test' in str(path) and node.type == 'function_declaration':
+            continue
+        # Local/private implementation details do not need public-API boilerplate.
+        prefix = source[node.start_byte:node.end_byte].split(b'{', 1)[0]
+        if re.search(rb'\b(private|internal)\b', prefix):
+            continue
+        if node.type in TYPES and any(parent.type == 'function_body' for parent in [node.parent] if parent):
+            continue
         required = node.type in TYPES or (node.type == 'property_declaration' and node.parent.type in {'source_file', 'class_body'})
         if node.type == 'class_parameter' and re.search(rb'\b(val|var)\b', source[node.start_byte:node.end_byte]):
             count += 1

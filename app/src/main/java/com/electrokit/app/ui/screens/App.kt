@@ -13,6 +13,8 @@ import androidx.compose.foundation.pager.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -96,7 +98,8 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
     val loaded by vm.loaded.collectAsStateWithLifecycle()
     val err by vm.error.collectAsStateWithLifecycle()
     // A neutral brand loading surface avoids flashing the wrong persisted theme during migration.
-    Surface(Modifier.fillMaxSize(), color = if (!loaded) BrandNavy else MaterialTheme.colorScheme.background) {
+    var confirmReset by remember { mutableStateOf(false) }
+    Surface(Modifier.fillMaxSize(), contentColor = if (!loaded) TopBarText else MaterialTheme.colorScheme.onBackground, color = if (!loaded) BrandNavy else MaterialTheme.colorScheme.background) {
         if (!loaded) {
             Column(
                 Modifier.fillMaxSize().padding(24.dp),
@@ -107,7 +110,7 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                 else {
                     Text(err!!)
                     Button({ vm.retryLoading() }) { Text(stringResource(R.string.ui_retry)) }
-                    TextButton({ vm.resetPreferences() }) {
+                    TextButton({ confirmReset = true }) {
                         Text(
                             stringResource(
                                 R.string.ui_reset_damaged_preferences_clears_saved_settings
@@ -116,6 +119,13 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                     }
                 }
             }
+            if (confirmReset) AlertDialog(
+                onDismissRequest = { confirmReset = false },
+                title = { Text("Reset damaged preferences?") },
+                text = { Text("This deletes favorites, saved calculations and inputs. This cannot be undone.") },
+                confirmButton = { TextButton({ confirmReset = false; vm.resetPreferences() }) { Text("Reset") } },
+                dismissButton = { TextButton({ confirmReset = false }) { Text("Cancel") } },
+            )
             return@Surface
         }
         Column(
@@ -264,7 +274,7 @@ fun Bar(
                             Spacer(Modifier.width(6.dp))
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(title, color = TopBarText,
+                            Text(title, modifier = Modifier.semantics { heading() }, color = TopBarText,
                                 style = if (brand) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium)
                             if (brand) Text("Engineering Toolkit", color = TopBarText,
                                 style = MaterialTheme.typography.labelSmall)
@@ -331,7 +341,7 @@ fun Search(
             ),
         label = { Text(label) },
         singleLine = true,
-        leadingIcon = { Icon(Icons.Default.Search, stringResource(R.string.search)) },
+        leadingIcon = { Icon(Icons.Default.Search, null) },
         trailingIcon = {
             if (value.isNotEmpty())
                 IconButton({ onChange("") }) {
@@ -658,7 +668,7 @@ fun ReferenceScreen(entry: Entry, page: Page, back: () -> Unit) {
                     val headers = if (usbTable) usbHeaders else s.headers
                     val rows =
                         if (usbTable)
-                            sourceRows.map { listOf(it[0] + " / " + it[1], it[2], it[3], it[4]) }
+                            sourceRows.map { listOf(it.getOrElse(0) { "" } + " / " + it.getOrElse(1) { "" }, it.getOrElse(2) { "" }, it.getOrElse(3) { "" }, it.getOrElse(4) { "" }) }
                         else sourceRows
                     if (rows.isNotEmpty() || query.isBlank()) {
                         item(key = "section$index") {

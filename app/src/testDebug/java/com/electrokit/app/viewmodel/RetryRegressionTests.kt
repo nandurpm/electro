@@ -165,6 +165,8 @@ class RetryRegressionTests {
         val first = AppViewModel(RuntimeEnvironment.getApplication(), repository, kotlinx.coroutines.Dispatchers.Unconfined)
         shadowOf(Looper.getMainLooper()).idle()
         first.values("c4", mapOf("v" to "37"))
+        // Lifecycle stop flushes the debounce before a new process restores the journal.
+        first.flushInputs()
         assertEquals("37", repository.stagedInputs()["c4"]?.get("v"))
         val restored = AppViewModel(RuntimeEnvironment.getApplication(), repository, kotlinx.coroutines.Dispatchers.Unconfined)
         shadowOf(Looper.getMainLooper()).idle()

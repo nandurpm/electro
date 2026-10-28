@@ -23,7 +23,7 @@ Asynchronous saving keeps typing responsive. An abrupt process kill before the f
 
 | File or directory | Responsibility | Change here when… |
 |---|---|---|
-| `MainActivity.kt` | Single Activity, theme startup, immersive system bars | Changing full-screen behaviour; keep edge gestures available |
+| `MainActivity.kt` | Single Activity, theme startup, visible system bars | Changing full-screen behaviour; keep edge gestures available |
 | `ui/screens/App.kt` | NavHost routes, toolbar, catalogue pager, sticky search, bottom navigation, share action | Adding a screen or changing list layout |
 | `ui/screens/CalculatorScreen.kt` | Generic input controls, unit selectors, result cards, colour-code UI | Changing calculator presentation |
 | `ui/screens/EngineeringScreens.kt` | Engineering dashboard, fault explorer, source library, technical details | Changing Engineering navigation and cards |
@@ -54,7 +54,7 @@ Paths in the first part of the table are relative to `app/src/main/java/com/elec
 
 ## Change the home layout
 
-In `MainScreen`, each catalogue is one `LazyColumn`. The introductory heading/banner is an ordinary `item`; search is a `stickyHeader`. Put future promotional or explanatory cards in ordinary items so they scroll away. Do not add a fixed-height footer or a second navigation-bar inset. The root handles display cutouts; immersive system bars appear transiently on an edge swipe. Navigation height adapts to font scale. Test both normal and 200% fonts before reducing it.
+In `MainScreen`, each catalogue is one `LazyColumn`. The introductory heading/banner is an ordinary `item`; search is a `stickyHeader`. Put future promotional or explanatory cards in ordinary items so they scroll away. Do not add a fixed-height footer or a second navigation-bar inset. The root handles display cutouts; Android system bars remain visible on an edge swipe. Navigation height adapts to font scale. Test both normal and 200% fonts before reducing it.
 
 Toolbar visibility observes vertical nested-scroll gestures. It hides when browsing down and returns on an upward gesture. Search remains reachable after the introductory content scrolls away. The Engineering dashboard puts Faults, Calculations and Sources first, then groups the remaining systems; the schematic is optional and expandable.
 

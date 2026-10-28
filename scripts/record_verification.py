@@ -122,6 +122,7 @@ def record(apk, build_log, variants, require_signed=False):
             'External references and physical-device checks are explicitly unrun when not verified.\n'
         )
         evidence = ROOT / 'verification'
+        evidence.mkdir(exist_ok=True)
         backup = Path(temp) / 'previous'
         evidence.rename(backup)
         try:

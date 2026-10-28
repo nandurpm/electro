@@ -30,8 +30,9 @@ object WorkbenchTools {
      * @return Result with units or a readable validation error; no state or I/O is modified.
      */
     fun calculate(id: String, raw: List<String>): String = try {
-        require(raw.size == all.firstOrNull { it.id == id }?.fields?.size) { "Enter every required field." }
-        if (id == "scientific") Engineering.format(Expression(raw.single()).evaluate())
+        val tool = requireNotNull(all.firstOrNull { it.id == id }) { "Unknown utility." }
+        require(raw.size == tool.fields.size) { "Enter every required field." }
+        if (id == "scientific") Engineering.format(Expression(raw.single().lowercase(java.util.Locale.ROOT)).evaluate())
         else {
             val v = raw.map { Engineering.parse(it)?.takeIf(Double::isFinite) ?: error("Enter a valid number in every field.") }
             /** Positive input used for nonzero denominators and physical dimensions.
@@ -53,8 +54,8 @@ object WorkbenchTools {
                 "transformer" -> Engineering.format(positive(0) * positive(2) / positive(1), "V")
                 "ups" -> Engineering.format(positive(0) * positive(1) * percent(2) * percent(3) / positive(4), "h")
                 "cable" -> Engineering.format(2 * positive(0) * positive(1) * positive(2) / positive(3), "mm²")
-                "pf" -> (nonnegative(0) / (positive(1) * positive(2))).also { require(it <= 1) { "Real power cannot exceed apparent power in this model." } }.let { "PF = ${Engineering.format(it)}" }
-                "energy" -> (nonnegative(0) * nonnegative(1) / 1000).let { "Energy: ${Engineering.format(it, "kWh")}\nCost: ${Engineering.format(it * nonnegative(2))} (entered currency)" }
+                "pf" -> (nonnegative(0) / (positive(1) * positive(2))).also { require(it <= 1 + 1e-12) { "Real power cannot exceed apparent power in this model." } }.let { "PF = ${Engineering.format(it.coerceAtMost(1.0))}" }
+                "energy" -> (nonnegative(0) * nonnegative(1) / 1000).let { "Energy: ${Engineering.format(it, "kWh")}\nCost: ${java.math.BigDecimal.valueOf(it * nonnegative(2)).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()} (entered currency)" }
                 "temperature" -> { require(v[0] >= -273.15) { "Temperature is below absolute zero." }; "${Engineering.format(v[0] * 9 / 5 + 32, "°F")}\n${Engineering.format(v[0] + 273.15, "K")}" }
                 else -> error("Unknown utility.")
             }
@@ -117,10 +118,10 @@ private class Expression(private val text: String) {
             val v = sum(); require(eat(')')) { "Missing closing parenthesis." }
             return when(name) { "sqrt" -> sqrt(v); "sin" -> sin(v); "cos" -> cos(v); "tan" -> tan(v); "ln" -> ln(v); "log" -> log10(v); else -> throw IllegalArgumentException("Unknown function.") }
         }
-        while (index < text.length && (text[index].isDigit() || text[index] == '.')) index++
+        while (index < text.length && (text[index] in '0'..'9' || text[index] == '.')) index++
         if (index < text.length && text[index] in "eE") {
             index++; if (index < text.length && text[index] in "+-") index++
-            while (index < text.length && text[index].isDigit()) index++
+            while (index < text.length && text[index] in '0'..'9') index++
         }
         return text.substring(start, index).toDoubleOrNull() ?: throw IllegalArgumentException("Expected a number.")
     }

@@ -1,1 +1,0 @@
-PASS: 125 exact faults, 325 technical records, 14 photographs, 15 tools; all sources and routes resolve.

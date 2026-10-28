@@ -36,13 +36,9 @@ class EngineeringUiTests {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithContentDescription("Menu").performClick()
         ui.onNode(hasText("Settings") and hasClickAction() and !hasAnyAncestor(hasTestTag("main_navigation"))).performClick()
-        val toggle = ui.onNode(isToggleable())
-        // Force a real save even when another test's in-memory DataStore already selected light.
-        if (toggle.fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.ToggleableState] == androidx.compose.ui.state.ToggleableState.On) {
-            toggle.performClick()
-            ui.waitUntil(30000) { toggle.fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.ToggleableState] == androidx.compose.ui.state.ToggleableState.Off }
-        }
-        toggle.performClick()
+        ui.onNodeWithText("Dark").performClick()
+        ui.waitUntil(10000) { ui.onAllNodes(hasText("Dark") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
+        ui.onNodeWithText("Light").performClick()
         ui.waitUntil(30000) { com.electrokit.app.data.StartupTheme.light(ui.activity) }
         ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
         ui.activityRule.scenario.recreate()

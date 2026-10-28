@@ -30,7 +30,7 @@ class WorkbenchUiTests {
     /** @return Unit; incorrect input cannot reveal snippets, and manual locking removes composed data. */
     @Test fun protectedContentRequiresCodeAndRelocks() {
         engineering()
-        ui.onNodeWithText("Engineering access").assertIsDisplayed()
+        ui.onNodeWithText("Advanced references").assertIsDisplayed()
         ui.onNodeWithText("E217", substring = true).assertDoesNotExist()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("000")
         ui.onNodeWithText("Unlock").performClick()
@@ -43,7 +43,7 @@ class WorkbenchUiTests {
         ui.activityRule.scenario.recreate()
         ui.waitForIdle()
         ui.onNodeWithText("Lock engineering").performClick()
-        ui.onNodeWithText("Engineering access").assertIsDisplayed()
+        ui.onNodeWithText("Advanced references").assertIsDisplayed()
         ui.onNodeWithText("Search engineering topics and tools").assertDoesNotExist()
     }
 

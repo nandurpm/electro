@@ -4,13 +4,13 @@ package com.electrokit.app.domain
 object UnitConversions {
     /** Canonical scale to each group's SI base unit, without mixing physical dimensions. */
     val groups = linkedMapOf(
-        "Voltage" to linkedMapOf("V" to 1.0, "mV" to 1e-3, "kV" to 1e3),
-        "Current" to linkedMapOf("A" to 1.0, "mA" to 1e-3, "µA" to 1e-6),
-        "Power" to linkedMapOf("W" to 1.0, "kW" to 1e3, "MW" to 1e6),
-        "Resistance" to linkedMapOf("Ω" to 1.0, "kΩ" to 1e3, "MΩ" to 1e6),
-        "Capacitance" to linkedMapOf("F" to 1.0, "µF" to 1e-6, "nF" to 1e-9, "pF" to 1e-12),
-        "Frequency" to linkedMapOf("Hz" to 1.0, "kHz" to 1e3, "MHz" to 1e6),
-        "Length" to linkedMapOf("m" to 1.0, "mm" to 1e-3, "cm" to 1e-2, "in" to 0.0254, "ft" to 0.3048),
+        "Voltage" to linkedMapOf("V" to 1.0, "mV" to 1e-3, "kV" to 1e3, "µV" to 1e-6),
+        "Current" to linkedMapOf("A" to 1.0, "mA" to 1e-3, "µA" to 1e-6, "kA" to 1e3),
+        "Power" to linkedMapOf("W" to 1.0, "kW" to 1e3, "MW" to 1e6, "mW" to 1e-3),
+        "Resistance" to linkedMapOf("Ω" to 1.0, "kΩ" to 1e3, "MΩ" to 1e6, "mΩ" to 1e-3),
+        "Capacitance" to linkedMapOf("F" to 1.0, "µF" to 1e-6, "nF" to 1e-9, "pF" to 1e-12, "mF" to 1e-3),
+        "Frequency" to linkedMapOf("Hz" to 1.0, "kHz" to 1e3, "MHz" to 1e6, "GHz" to 1e9),
+        "Length" to linkedMapOf("m" to 1.0, "mm" to 1e-3, "cm" to 1e-2, "in" to 0.0254, "ft" to 0.3048, "km" to 1000.0, "mil" to 0.0000254),
         "Temperature" to linkedMapOf("°C" to 1.0, "°F" to 1.0, "K" to 1.0)
     )
 

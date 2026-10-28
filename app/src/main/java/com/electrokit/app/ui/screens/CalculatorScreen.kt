@@ -69,9 +69,10 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
         }
     var bandResult by rememberSaveable(entry.id) { mutableStateOf("") }
     var calculated by remember(entry.id) { mutableStateOf<Calculation?>(null) }
-    val result =
+    val result = remember(id, scaled, mode, bandResult, calculated) {
         calculated ?: if (id in listOf(1, 3)) Calculation.Value(bandResult)
         else Calculators.calculate(id, scaled, mode)
+    }
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     /**
@@ -247,7 +248,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(modifier = Modifier.weight(1f), onClick = { calculated = Calculators.calculate(id, scaled, mode) }) { Text("Calculate") }
                 OutlinedButton(onClick = {
-                    mode = 0; calculated = null; vm.mode(entry.id, 0)
+                    mode = 0; calculated = null; bandResult = ""; resetKey++; vm.mode(entry.id, 0)
                     update(spec.fields.associate { it.key to it.initial })
                 }) { Text("Reset") }
             }

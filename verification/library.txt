@@ -1,1 +1,0 @@
-PASS: 114 component records, 114 unique PNGs, explicit Escalator category, valid local paths and dimensions.

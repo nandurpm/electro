@@ -32,5 +32,5 @@ class QualityGateTests(unittest.TestCase):
             self.assertNotEqual(original,check_contrast.report())
     def test_committed_contrast_evidence_is_current(self):
         # Stale numbers are rejected even if old and new palettes both pass 4.5:1.
-        self.assertEqual((check_contrast.ROOT/'verification/contrast.txt').read_text(),check_contrast.report())
+        self.assertEqual((check_contrast.ROOT/'scripts/contrast-baseline.txt').read_text(),check_contrast.report())
 if __name__=='__main__':unittest.main()

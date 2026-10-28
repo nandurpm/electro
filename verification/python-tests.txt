@@ -1,7 +1,0 @@
-..........
-----------------------------------------------------------------------
-Ran 10 tests in 0.005s
-
-OK
-PASS: current 3.0/14 evidence; signing=verified_release.
-PASS: current 3.0/14 evidence; signing=unsigned.

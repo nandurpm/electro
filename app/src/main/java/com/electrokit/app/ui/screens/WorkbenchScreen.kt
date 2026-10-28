@@ -111,8 +111,8 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     BackHandler(enabled = detail == null && tab == 1 && !hub) { hub = true; category = "Calculators"; query = "" }
     val context = LocalContext.current
     val components by produceState<List<ComponentAsset>>(emptyList()) { value = withContext(Dispatchers.IO) { loadComponents(context) } }
-    val access: EngineeringAccess = viewModel(context as ComponentActivity)
-    val publicComponents = components.filter { it.category != "Escalator" }
+    val access: EngineeringAccess = viewModel(requireNotNull(context.componentActivity()))
+    val publicComponents = components.filter { !it.advanced }
     val names = listOf("Home", "Tools", "Learn", "Favorites", "Profile")
     val component = components.firstOrNull { detail == "component:${it.id}" }
     val lesson = learningPages.firstOrNull { detail == "learn:${it.id}" }
@@ -121,7 +121,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     if (utility != null) { UtilityScreen(utility, vm, prefs) { detail = null }; return }
     if (component != null) {
         val screen: @Composable () -> Unit = { ComponentDetail(component, prefs, vm) { detail = null } }
-        if (component.category == "Escalator") EngineeringGate({ detail = null }, screen) else screen()
+        if (component.advanced) EngineeringGate({ detail = null }, screen) else screen()
         return
     }
     if (lesson != null) { LearningDetail(lesson, prefs, vm) { detail = null }; return }
@@ -261,7 +261,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                 } else {
                     val gallery: @Composable () -> Unit = {
                         LazyVerticalGrid(GridCells.Adaptive(150.dp), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            gridItems((if (category == "Escalator images") components.filter { it.category == "Escalator" } else publicComponents)
+                            gridItems((if (category == "Escalator images") components.filter { it.advanced } else publicComponents)
                                 .filter { it.name.contains(query, true) || it.category.contains(query, true) }, key = { it.id }) { c ->
                                 Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
                                     ComponentImage(c, Modifier.fillMaxWidth().aspectRatio(1f))
@@ -281,7 +281,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                 items(publicComponents.filter { "component:${it.id}" in prefs.favourites && it.name.contains(query, true) }) { c ->
                     QuickCard(c.name, Modifier.fillMaxWidth()) { detail = "component:${c.id}" }
                 }
-                if (access.unlocked) items(components.filter { it.category == "Escalator" && "component:${it.id}" in prefs.favourites && it.name.contains(query, true) }) { c ->
+                if (access.unlocked) items(components.filter { it.advanced && "component:${it.id}" in prefs.favourites && it.name.contains(query, true) }) { c ->
                     QuickCard(c.name, Modifier.fillMaxWidth()) { detail = "component:${c.id}" }
                 }
                 items(learningPages.filter { "learn:${it.id}" in prefs.favourites && it.title.contains(query, true) }) { p ->
@@ -340,10 +340,6 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
         } }
         Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
         Text("Appearance", style = MaterialTheme.typography.titleMedium)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Light theme", Modifier.weight(1f))
-            Switch(prefs.light, { vm.theme(it) })
-        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("dark", "light", "system").forEach { mode -> FilterChip((prefs.themeMode.ifBlank { if (prefs.light) "light" else "dark" }) == mode,
                 { vm.appearance(mode) }, label = { Text(mode.replaceFirstChar { it.uppercase() }) }) }

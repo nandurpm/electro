@@ -40,7 +40,7 @@ object UnitCatalog {
         )
     /** Already-scaled or non-SI units must not acquire another prefix, such as mmm or mmA. */
     val plainDisplayUnits =
-        setOf("mm", "mm²", "mA", "kW", "mAh", "KiB", "bytes", "°C", "°C/W", "oz/ft²")
+        setOf("mm", "mm²", "mA", "kW", "mAh", "KiB", "bytes", "°C", "°C/W", "oz/ft²", "hours", "days", "h", "kWh", "°F", "K")
     /** Non-base field units convert through their canonical physical unit exactly once. */
     private val aliases =
         mapOf("mA" to ("A" to 0.001), "kW" to ("W" to 1000.0), "kVA" to ("VA" to 1000.0))

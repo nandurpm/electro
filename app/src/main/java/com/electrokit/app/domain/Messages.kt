@@ -336,7 +336,7 @@ object Messages {
      * Shared English calculation label/equation or validation text; centralised to prevent
      * inconsistent presentation.
      */
-    const val VALUES_SEPARATED_BY_COMMA = "Values separated by comma"
+    const val VALUES_SEPARATED_BY_COMMA = "Values: separate with commas, semicolons or newlines; use a dot for decimals"
     /**
      * Shared English calculation label/equation or validation text; centralised to prevent
      * inconsistent presentation.

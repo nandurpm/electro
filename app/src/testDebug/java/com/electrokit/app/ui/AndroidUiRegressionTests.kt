@@ -217,17 +217,13 @@ class AndroidUiRegressionTests {
         ready()
         ui.onNodeWithContentDescription("Menu").performClick()
         ui.onNode(hasText("Settings") and hasClickAction() and !hasAnyAncestor(hasTestTag("main_navigation"))).performClick()
-        // Establish a dark baseline: other preview tests deliberately persist a light preference.
-        if (ui.onAllNodes(isOn()).fetchSemanticsNodes().isNotEmpty()) {
-            ui.onNode(isToggleable()).performClick()
-            ui.waitUntil(10_000) { ui.onAllNodes(isOff()).fetchSemanticsNodes().isNotEmpty() }
-        }
-        ui.onNode(isToggleable()).assertIsOff().performClick()
-        ui.waitUntil(10_000) { ui.onAllNodes(isOn()).fetchSemanticsNodes().isNotEmpty() }
-        ui.onNode(isToggleable()).assertIsOn()
+        ui.onNodeWithText("Dark").performClick()
+        ui.waitUntil(10000) { ui.onAllNodes(hasText("Dark") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
+        ui.onNodeWithText("Light").performClick()
+        ui.waitUntil(10000) { ui.onAllNodes(hasText("Light") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
         ui.activityRule.scenario.recreate()
         ui.waitForIdle()
-        ui.onNode(isToggleable()).assertIsOn()
+        ui.onNodeWithText("Light").assertIsSelected()
     }
 
     /**

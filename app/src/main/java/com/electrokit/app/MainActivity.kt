@@ -15,6 +15,16 @@ import com.electrokit.app.viewmodel.AppViewModel
 
 /** Owns the single Compose host while lifecycle-aware state remains in the application ViewModel. */
 class MainActivity : ComponentActivity() {
+    /** Hides advanced references when leaving the app, while preserving rotation sessions.
+     * @return Unit after revoking the activity-local display grant.
+     */
+    override fun onStop() {
+        if (!isChangingConfigurations) {
+            androidx.lifecycle.ViewModelProvider(this)[com.electrokit.app.viewmodel.EngineeringAccess::class.java].lock()
+        }
+        super.onStop()
+    }
+
     /** Installs edge-to-edge Compose content using the saved appearance preference.
      *
      * @param savedInstanceState Framework-restored state, or null on first launch.

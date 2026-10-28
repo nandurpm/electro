@@ -54,6 +54,8 @@ constructor(
     private var loading: Job? = null
     /** Main-record input job; the durable journal already protects its pending values. */
     private var saveJob: Job? = null
+    /** Debounces typing only; never cancels an in-flight journal transaction. */
+    private var debounceJob: Job? = null
     /** Serializes commits so an older disk transaction cannot overwrite newer typing. */
     private val inputMutex = Mutex()
     /** Identifies the visible failure; unrelated successful operations cannot dismiss it. */
@@ -162,6 +164,7 @@ constructor(
         viewModelScope.launch {
             try {
                 // Wait for an in-flight fsync before resetting, or old data could reappear.
+                debounceJob?.cancelAndJoin()
                 saveJob?.cancelAndJoin()
                 pending.clear()
                 inputMutex.withLock { withContext(ioDispatcher) { repository.resetPreferences() } }
@@ -253,9 +256,11 @@ constructor(
     fun values(id: String, values: Map<String, String>) {
         pending[id] = values.toMap()
         state.value = state.value.copy(values = state.value.values + (id to values.toMap()))
-        // One worker drains the latest map; keystrokes never block on flash or cancel an fsync.
-        if (saveJob?.isActive != true) saveJob = viewModelScope.launch {
-            inputMutex.withLock { persistInputs() }
+        // Debounce edits without cancelling a durable write already in progress.
+        debounceJob?.cancel()
+        debounceJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(350)
+            flushInputs()
         }
     }
 
@@ -267,6 +272,8 @@ constructor(
      *   cancellation is rethrown.
      */
     fun flushInputs() {
+        debounceJob?.cancel()
+        debounceJob = null
         if (saveJob?.isActive != true) saveJob = viewModelScope.launch { inputMutex.withLock { persistInputs() } }
     }
 

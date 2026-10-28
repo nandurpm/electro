@@ -79,21 +79,9 @@ class DesignPreviewTests {
     private fun theme(light: Boolean) {
         ui.onNodeWithContentDescription("Menu").performClick()
         ui.onNode(hasText("Settings") and hasClickAction() and !hasAnyAncestor(hasTestTag("main_navigation"))).performClick()
-        val wanted =
-            if (light) androidx.compose.ui.state.ToggleableState.On
-            else androidx.compose.ui.state.ToggleableState.Off
-        val toggle = ui.onNode(isToggleable())
-        if (
-            toggle
-                .fetchSemanticsNode()
-                .config[androidx.compose.ui.semantics.SemanticsProperties.ToggleableState] != wanted
-        )
-            toggle.performClick()
-        ui.waitUntil(10000) {
-            ui.onNode(isToggleable())
-                .fetchSemanticsNode()
-                .config[androidx.compose.ui.semantics.SemanticsProperties.ToggleableState] == wanted
-        }
+        val label = if (light) "Light" else "Dark"
+        ui.onNodeWithText(label).performClick()
+        ui.waitUntil(10000) { ui.onAllNodes(hasText(label) and isSelected()).fetchSemanticsNodes().isNotEmpty() }
         ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
         ui.waitForIdle()
     }
