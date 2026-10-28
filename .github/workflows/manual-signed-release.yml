@@ -1,0 +1,19 @@
+name: Manual signed release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing version tag to release, for example v4.1.0'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  signed-release:
+    uses: ./.github/workflows/android-release.yml
+    with:
+      release_tag: ${{ inputs.release_tag }}
+    secrets: inherit

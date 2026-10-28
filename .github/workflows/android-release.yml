@@ -2,6 +2,24 @@ name: Android Release
 on:
   repository_dispatch:
     types: [electro_release]
+  workflow_call:
+    inputs:
+      release_tag:
+        required: false
+        type: string
+    secrets:
+      ELECTROKIT_KEYSTORE_BASE64:
+        required: true
+      ELECTROKIT_STORE_PASSWORD:
+        required: true
+      ELECTROKIT_KEY_ALIAS:
+        required: true
+      ELECTROKIT_KEY_PASSWORD:
+        required: true
+      TELEGRAM_BOT_TOKEN:
+        required: false
+      TELEGRAM_CHAT_ID:
+        required: false
   workflow_dispatch:
     inputs:
       release_tag:
