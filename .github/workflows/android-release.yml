@@ -179,13 +179,7 @@ jobs:
           release_url=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
           apk_url=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[] | select(.name | endswith(".apk")) | .url' | head -n 1)
           test -n "$apk_url"
-          message=$(cat <<EOF
-ELECTRO release $RELEASE_TAG has been published.
-
-Release: $release_url
-APK: $apk_url
-EOF
-          )
+          message=$(printf 'ELECTRO release %s has been published.\n\nRelease: %s\nAPK: %s\n' "$RELEASE_TAG" "$release_url" "$apk_url")
           curl --fail --silent --show-error --request POST \
             "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
