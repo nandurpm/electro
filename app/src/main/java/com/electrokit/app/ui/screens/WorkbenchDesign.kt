@@ -53,7 +53,10 @@ import com.electrokit.app.viewmodel.AppViewModel
  */
 private fun shade(color: Color): Color = color.copy(red = color.red * .55f, green = color.green * .55f, blue = color.blue * .55f)
 
-/** Gentle repeating emphasis for important electrical controls; avoids a fast strobe. */
+/** Gentle repeating emphasis for important electrical controls; avoids a fast strobe.
+ * @param active Whether the animation should run for this visual element.
+ * @return Current pulse intensity between 0.72 and 1.0, or 1.0 when inactive.
+ */
 @Composable
 fun neonPulseFactor(active: Boolean): Float {
     if (!active) return 1f
