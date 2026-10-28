@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
       - name: Validate Telegram command code
         if: github.event_name == 'push'
-        run: python3 -m unittest scripts/test_telegram_commands.py -v
+        run: python3 -m unittest discover -s scripts -p 'test_telegram_commands.py' -v
       - name: Respond to ELECTRO Telegram commands
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
