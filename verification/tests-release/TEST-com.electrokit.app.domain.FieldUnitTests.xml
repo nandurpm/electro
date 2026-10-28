@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:51" hostname="4156269b6c2a" time="0.002">
+<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:33" hostname="6e09c42621cb" time="0.004">
   <properties/>
-  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
+  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.004"/>
   <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <testcase name="alreadyScaledUnitsKeepTheirDeclaredLabel" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>

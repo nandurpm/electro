@@ -47899,9 +47899,9 @@ a91eebe326f10f654f74afa00a51a38066b79d662ff01406ecf870e1bba8b2b5
 ## verification/README.md
 
 ````markdown
-# Current ELECTRO 3.0.2 verification
+# Current ELECTRO 3.1.0 verification
 
-Version code: 16. Signing status: verified_release. Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.
+Version code: 17. Signing status: verified_release. Generated from the actual APK, executed tests and lint reports by scripts/record_verification.py.
 
 Run python scripts/check_verification.py --apk PATH to verify the snapshot; production also requires --require-signed. Active signing identity lives separately in signing/release-certificate.sha256. External references and physical-device checks are explicitly unrun when not verified.
 
@@ -47910,7 +47910,7 @@ Run python scripts/check_verification.py --apk PATH to verify the snapshot; prod
 ## verification/apk-badging.txt
 
 ````text
-package: name='com.electrokit.app' versionCode='16' versionName='3.0.2' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='com.electrokit.app' versionCode='17' versionName='3.1.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 sdkVersion:'24'
 targetSdkVersion:'35'
 uses-permission: name='com.electrokit.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
@@ -48061,11 +48061,31 @@ PASS: 31 calculators, 55 pin-outs, 21 resources, 3 modules; all routes, tables, 
 ````text
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
-> Task :app:buildKotlinToolingMetadata UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:buildKotlinToolingMetadata UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
-> Task :app:generateReleaseBuildConfig UP-TO-DATE
+> Task :app:generateReleaseBuildConfig
 > Task :app:checkReleaseAarMetadata UP-TO-DATE
 > Task :app:generateReleaseResValues UP-TO-DATE
 > Task :app:mapReleaseSourceSetPaths UP-TO-DATE
@@ -48075,10 +48095,17 @@ Daemon will be stopped at the end of the build
 > Task :app:parseReleaseLocalResources UP-TO-DATE
 > Task :app:createReleaseCompatibleScreenManifests
 > Task :app:extractDeepLinksRelease UP-TO-DATE
-> Task :app:processReleaseMainManifest UP-TO-DATE
+> Task :app:processReleaseMainManifest
 > Task :app:processReleaseManifest
-> Task :app:processReleaseManifestForPackage UP-TO-DATE
 > Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :app:preReleaseUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileReleaseUnitTest UP-TO-DATE
+> Task :app:mergeReleaseShaders UP-TO-DATE
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :app:extractProguardFiles UP-TO-DATE
 > Task :app:mergeReleaseJniLibFolders UP-TO-DATE
 > Task :app:mergeReleaseNativeLibs UP-TO-DATE
@@ -48088,40 +48115,87 @@ Daemon will be stopped at the end of the build
 > Task :app:checkReleaseDuplicateClasses UP-TO-DATE
 > Task :app:mergeReleaseArtProfile UP-TO-DATE
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
-> Task :app:mergeReleaseShaders UP-TO-DATE
-> Task :app:compileReleaseShaders NO-SOURCE
-> Task :app:generateReleaseAssets UP-TO-DATE
-> Task :app:mergeReleaseAssets UP-TO-DATE
 > Task :app:compressReleaseAssets UP-TO-DATE
 > Task :app:extractReleaseVersionControlInfo
 > Task :app:collectReleaseDependencies UP-TO-DATE
 > Task :app:sdkReleaseDependencyData UP-TO-DATE
 > Task :app:validateSigningRelease UP-TO-DATE
 > Task :app:writeReleaseAppMetadata UP-TO-DATE
-> Task :app:writeReleaseSigningConfigVersions
+> Task :app:writeReleaseSigningConfigVersions UP-TO-DATE
+> Task :app:processDebugManifestForPackage
+> Task :app:processReleaseManifestForPackage
 > Task :app:processReleaseResources
-> Task :app:compileReleaseKotlin UP-TO-DATE
-> Task :app:compileReleaseJavaWithJavac UP-TO-DATE
-> Task :app:generateReleaseLintVitalReportModel UP-TO-DATE
-> Task :app:lintVitalAnalyzeRelease UP-TO-DATE
-> Task :app:expandReleaseArtProfileWildcards UP-TO-DATE
-> Task :app:mergeReleaseGeneratedProguardFiles UP-TO-DATE
-> Task :app:processReleaseJavaRes UP-TO-DATE
-> Task :app:mergeReleaseJavaResource UP-TO-DATE
-> Task :app:minifyReleaseWithR8 UP-TO-DATE
-> Task :app:compileReleaseArtProfile UP-TO-DATE
+> Task :app:processDebugResources
+
+> Task :app:compileReleaseKotlin
+e: The daemon has terminated unexpectedly on startup attempt #1 with error code: 0. The daemon process output:
+    1. Picked up JAVA_TOOL_OPTIONS:  -Duser.home=/workspace/toolchains/java-home -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080
+    2. Kotlin compile daemon is ready
+
+> Task :app:packageDebugUnitTestForUnitTest
+> Task :app:generateDebugUnitTestConfig
+> Task :app:packageReleaseUnitTestForUnitTest
+> Task :app:generateReleaseUnitTestConfig
 > Task :app:convertLinkedResourcesToProtoRelease
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:generateDebugLintReportModel
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:generateDebugUnitTestLintModel
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+
+> Task :app:testDebugUnitTest
+
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :app:lintAnalyzeDebug
+> Task :app:compileReleaseJavaWithJavac
+> Task :app:bundleReleaseClassesToCompileJar
+> Task :app:bundleReleaseClassesToRuntimeJar
+> Task :app:processReleaseJavaRes
+> Task :app:generateReleaseLintReportModel
+> Task :app:generateReleaseUnitTestLintModel
+> Task :app:compileReleaseUnitTestKotlin
+> Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processReleaseUnitTestJavaRes UP-TO-DATE
+
+> Task :app:testReleaseUnitTest
+
+> Task :app:generateReleaseLintVitalReportModel
+> Task :app:expandReleaseArtProfileWildcards
+> Task :app:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :app:mergeReleaseJavaResource
+> Task :app:lintAnalyzeDebugUnitTest
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-debug.html
+
+> Task :app:lintDebug
+> Task :app:lintAnalyzeReleaseUnitTest
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease SKIPPED
+> Task :app:lintVitalRelease SKIPPED
+> Task :app:lintAnalyzeRelease
+
+> Task :app:lintReportRelease
+Wrote HTML report to file:///workspace/electro/app/build/reports/lint-results-release.html
+
+> Task :app:lintRelease
+> Task :app:minifyReleaseWithR8
+> Task :app:compileReleaseArtProfile
 > Task :app:shrinkReleaseRes
 > Task :app:convertShrunkResourcesToBinaryRelease
 > Task :app:optimizeReleaseResources
-> Task :app:lintVitalReportRelease
-> Task :app:lintVitalRelease
 > Task :app:packageRelease
 > Task :app:createReleaseApkListingFileRedirect
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 11s
-51 actionable tasks: 13 executed, 38 up-to-date
+BUILD SUCCESSFUL in 3m
+100 actionable tasks: 56 executed, 44 up-to-date
 
 ````
 
@@ -48130,10 +48204,10 @@ BUILD SUCCESSFUL in 11s
 ````text
 Calculators.kt: 205 comment lines / 868 nonblank code lines
 Engineering.kt: 312 comment lines / 495 nonblank code lines
-App.kt: 145 comment lines / 878 nonblank code lines
+App.kt: 146 comment lines / 879 nonblank code lines
 CalculatorScreen.kt: 109 comment lines / 604 nonblank code lines
 AppViewModel.kt: 142 comment lines / 142 nonblank code lines
-PASS: 902 Kotlin declarations documented; five density thresholds met.
+PASS: 916 Kotlin declarations documented; five density thresholds met.
 
 ````
 
@@ -48358,7 +48432,7 @@ document.getElementById(id).style.display = 'none';
     <div class="mdl-layout__header-row">
       <span class="mdl-layout-title">Lint Report: 14 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Tue Oct 27 12:28:03 UTC 2026 by AGP (8.7.3)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Wed Oct 28 03:59:44 UTC 2026 by AGP (8.7.3)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -50621,7 +50695,7 @@ document.getElementById(id).style.display = 'none';
     <div class="mdl-layout__header-row">
       <span class="mdl-layout-title">Lint Report: 14 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Tue Oct 27 12:28:06 UTC 2026 by AGP (8.7.3)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Wed Oct 28 04:00:06 UTC 2026 by AGP (8.7.3)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -52839,12 +52913,12 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````json
 {
-  "version": "3.0.2",
-  "version_code": 16,
+  "version": "3.1.0",
+  "version_code": 17,
   "application_id": "com.electrokit.app",
-  "generated_at_utc": "2026-10-27T16:50:48.343160+00:00",
-  "source_commit": "24bceeade978b3e81ac4b662503ea4256dca3bc0",
-  "source_tree_dirty": true,
+  "generated_at_utc": "2026-10-28T04:01:10.222760+00:00",
+  "source_commit": "a1b52f1a5e82889faffc720376252ddd7d10d0fc",
+  "source_tree_dirty": false,
   "tests": {
     "debug": {
       "tests": 121,
@@ -52878,8 +52952,8 @@ PASS: current 3.0/14 evidence; signing=unsigned.
     }
   },
   "artifact": "app/build/outputs/apk/release/app-release.apk",
-  "apk_sha256": "5519b879b7eb2a22ef971a2fd365b09f81d6f05534e209dc28f32ad0334e5921",
-  "apk_bytes": 11249103,
+  "apk_sha256": "195082aab4916029ba5e6f5b51e3e2e791d38132d9f6ed87c8f44af99c6bf84c",
+  "apk_bytes": 11249107,
   "signing": {
     "status": "verified_release",
     "certificate_sha256": "a91eebe326f10f654f74afa00a51a38066b79d662ff01406ecf870e1bba8b2b5",
@@ -52899,14 +52973,14 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:28" hostname="4156269b6c2a" time="0.122">
+<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:42" hostname="6e09c42621cb" time="0.324">
   <properties/>
-  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.072"/>
-  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.02"/>
-  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.0"/>
-  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.021"/>
-  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.003"/>
-  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.006"/>
+  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.213"/>
+  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.024"/>
+  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.001"/>
+  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.058"/>
+  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.008"/>
+  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.018"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -52917,19 +52991,19 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:28" hostname="4156269b6c2a" time="0.369">
+<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:43" hostname="6e09c42621cb" time="1.51">
   <properties/>
-  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
-  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
-  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.004"/>
-  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.002"/>
-  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.004"/>
-  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.249"/>
-  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.046"/>
-  <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
-  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.044"/>
+  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.031"/>
+  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.056"/>
+  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.013"/>
+  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.004"/>
+  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.012"/>
+  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.852"/>
+  <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.002"/>
+  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.319"/>
+  <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
+  <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
+  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.211"/>
   <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
   <system-out><![CDATA[Extreme per-field cases exercised: 1984
 ]]></system-out>
@@ -52942,28 +53016,28 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="0.028">
+<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:44" hostname="6e09c42621cb" time="0.153">
   <properties/>
-  <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="astableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="colourBothDirections" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="colourBothDirections" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ohmAllSixInputPairs" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="dividerAndLoaded" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="parserHandlesEngineeringForms" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="monostableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="traceWidthScalingAndKnownPoint" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="lm317" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="rangeMapping" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="ledResistor" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.023"/>
-  <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
-  <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.126"/>
+  <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.017"/>
+  <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.002"/>
-  <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.003"/>
+  <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="seriesParallel" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="filterCutoff" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ledRejectsInsufficientSupply" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
@@ -52977,26 +53051,26 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="0.093">
+<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:44" hostname="6e09c42621cb" time="0.302">
   <properties/>
-  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
-  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
-  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
-  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
-  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.024"/>
+  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.014"/>
+  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.011"/>
+  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.041"/>
+  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
+  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.016"/>
+  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.012"/>
+  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
+  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.032"/>
+  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.012"/>
+  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.008"/>
+  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.036"/>
+  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53007,10 +53081,10 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="0.002">
+<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:45" hostname="6e09c42621cb" time="0.01">
   <properties/>
-  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
-  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
+  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.004"/>
+  <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <testcase name="alreadyScaledUnitsKeepTheirDeclaredLabel" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
@@ -53023,13 +53097,13 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="0.012">
+<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:45" hostname="6e09c42621cb" time="0.028">
   <properties/>
   <testcase name="megaAliasesAndMicroValuesAreExact" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
   <testcase name="defaultRtdTemperatureIsExactlyPositiveZero" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
-  <testcase name="percentagesAreRoundedWithoutChangingBandTolerances" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.001"/>
-  <testcase name="unitlessValuesNeverUseEngineeringPrefixes" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
-  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.011"/>
+  <testcase name="percentagesAreRoundedWithoutChangingBandTolerances" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
+  <testcase name="unitlessValuesNeverUseEngineeringPrefixes" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.001"/>
+  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.026"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53040,10 +53114,10 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="0.335">
+<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:45" hostname="6e09c42621cb" time="0.961">
   <properties/>
-  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.281"/>
-  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.054"/>
+  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.89"/>
+  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.071"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53054,10 +53128,10 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="0.001">
+<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:46" hostname="6e09c42621cb" time="0.004">
   <properties/>
-  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.001"/>
-  <testcase name="independentConversions" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.0"/>
+  <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.003"/>
+  <testcase name="independentConversions" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53068,15 +53142,15 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="0.003">
+<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:46" hostname="6e09c42621cb" time="0.006">
   <properties/>
-  <testcase name="temperatureBoundary" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
-  <testcase name="invalidPowerFactorRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
-  <testcase name="cableSizingIncludesReturnPath" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <testcase name="temperatureBoundary" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.002"/>
+  <testcase name="invalidPowerFactorRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="cableSizingIncludesReturnPath" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
   <testcase name="transformerRatio" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
-  <testcase name="scientificGrammar" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
-  <testcase name="scientificInvalidInputs" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
-  <testcase name="upsAccountsForBothLossFactors" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="scientificGrammar" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="scientificInvalidInputs" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="upsAccountsForBothLossFactors" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="invalidPercentagesRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
@@ -53088,20 +53162,20 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.AndroidUiRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="13.468">
+<testsuite name="com.electrokit.app.ui.AndroidUiRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:46" hostname="6e09c42621cb" time="27.697">
   <properties/>
-  <testcase name="selectedKiloUnitDoesNotMultiplyASuffixedValueTwice" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="5.409"/>
-  <testcase name="lightThemePersistsAcrossActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.372"/>
-  <testcase name="mainTabsAndReferenceNavigationWork" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.447"/>
-  <testcase name="bundledDatabasesAlwaysOpenAndSearch" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.819"/>
-  <testcase name="fractionalToleranceUsesPercentText" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.185"/>
-  <testcase name="extremeRatioIsAnInlineErrorInsteadOfACrash" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.207"/>
-  <testcase name="bandResetRestoresDisplayAndCopiedResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.464"/>
-  <testcase name="calculationModeChangeInvalidatesExplicitResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.274"/>
-  <testcase name="everyCatalogueEntryOpensWithoutCrashing" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="4.646"/>
-  <testcase name="largeTextKeepsMainActionsReachable" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.269"/>
-  <testcase name="calculatorInputSurvivesActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.291"/>
-  <testcase name="catalogueHasNoReservedBottomFooter" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.084"/>
+  <testcase name="selectedKiloUnitDoesNotMultiplyASuffixedValueTwice" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="10.684"/>
+  <testcase name="lightThemePersistsAcrossActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.782"/>
+  <testcase name="mainTabsAndReferenceNavigationWork" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.788"/>
+  <testcase name="bundledDatabasesAlwaysOpenAndSearch" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.674"/>
+  <testcase name="fractionalToleranceUsesPercentText" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.463"/>
+  <testcase name="extremeRatioIsAnInlineErrorInsteadOfACrash" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.611"/>
+  <testcase name="bandResetRestoresDisplayAndCopiedResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.968"/>
+  <testcase name="calculationModeChangeInvalidatesExplicitResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.522"/>
+  <testcase name="everyCatalogueEntryOpensWithoutCrashing" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="10.041"/>
+  <testcase name="largeTextKeepsMainActionsReachable" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.418"/>
+  <testcase name="calculatorInputSurvivesActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.595"/>
+  <testcase name="catalogueHasNoReservedBottomFooter" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.151"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53112,11 +53186,11 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.DesignPreviewTests" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:43" hostname="4156269b6c2a" time="1.345">
+<testsuite name="com.electrokit.app.ui.DesignPreviewTests" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:14" hostname="6e09c42621cb" time="2.055">
   <properties/>
-  <testcase name="homePreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.577"/>
-  <testcase name="connectorPreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.178"/>
-  <testcase name="illustratedReferencePreviews" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.589"/>
+  <testcase name="homePreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.794"/>
+  <testcase name="connectorPreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.269"/>
+  <testcase name="illustratedReferencePreviews" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.991"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53127,18 +53201,18 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.EngineeringUiTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:44" hostname="4156269b6c2a" time="3.032">
+<testsuite name="com.electrokit.app.ui.EngineeringUiTests" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:16" hostname="6e09c42621cb" time="7.517">
   <properties/>
-  <testcase name="lightEngineeringPreview" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.66"/>
-  <testcase name="allHomeTabsVisible" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.055"/>
-  <testcase name="motorCalculatorPersists" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.318"/>
-  <testcase name="catalogueKeepsHeaderAndSearchPinned" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.196"/>
-  <testcase name="cbmSampleLinksToReference" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.32"/>
-  <testcase name="terminalAndCutawaySelection" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.349"/>
-  <testcase name="bottomNavigationSupportsLargeText" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.362"/>
-  <testcase name="explorerSearchAndFilters" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.264"/>
-  <testcase name="faultAndRelatedComponentNavigation" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.317"/>
-  <testcase name="mobileUiHidesSourceReferences" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.19"/>
+  <testcase name="lightEngineeringPreview" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.76"/>
+  <testcase name="allHomeTabsVisible" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.26"/>
+  <testcase name="motorCalculatorPersists" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.688"/>
+  <testcase name="catalogueKeepsHeaderAndSearchPinned" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.651"/>
+  <testcase name="cbmSampleLinksToReference" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.696"/>
+  <testcase name="terminalAndCutawaySelection" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.6"/>
+  <testcase name="bottomNavigationSupportsLargeText" classname="com.electrokit.app.ui.EngineeringUiTests" time="1.028"/>
+  <testcase name="explorerSearchAndFilters" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.773"/>
+  <testcase name="faultAndRelatedComponentNavigation" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.655"/>
+  <testcase name="mobileUiHidesSourceReferences" classname="com.electrokit.app.ui.EngineeringUiTests" time="0.398"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53149,15 +53223,15 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.WorkbenchUiTests" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:47" hostname="4156269b6c2a" time="1.691">
+<testsuite name="com.electrokit.app.ui.WorkbenchUiTests" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:23" hostname="6e09c42621cb" time="3.286">
   <properties/>
-  <testcase name="publicSearchExcludesFaultSnippets" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.093"/>
-  <testcase name="protectedContentRequiresCodeAndRelocks" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.361"/>
-  <testcase name="homeScreenshotAndSystemBarFlags" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.179"/>
-  <testcase name="componentImageAndFavoriteRoundTrip" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.175"/>
-  <testcase name="accessIsNotSavedAndAttemptsAreRateLimited" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.651"/>
-  <testcase name="utilityCalculationAndAndroidBack" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.138"/>
-  <testcase name="unitConverterNativeWorkflow" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.094"/>
+  <testcase name="publicSearchExcludesFaultSnippets" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.106"/>
+  <testcase name="protectedContentRequiresCodeAndRelocks" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.774"/>
+  <testcase name="homeScreenshotAndSystemBarFlags" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.495"/>
+  <testcase name="componentImageAndFavoriteRoundTrip" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.398"/>
+  <testcase name="accessIsNotSavedAndAttemptsAreRateLimited" classname="com.electrokit.app.ui.WorkbenchUiTests" time="1.061"/>
+  <testcase name="utilityCalculationAndAndroidBack" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.268"/>
+  <testcase name="unitConverterNativeWorkflow" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.184"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53168,12 +53242,12 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.viewmodel.InputJournalTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:49" hostname="4156269b6c2a" time="1.008">
+<testsuite name="com.electrokit.app.viewmodel.InputJournalTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:27" hostname="6e09c42621cb" time="1.48">
   <properties/>
-  <testcase name="corruptJournalIsPreservedAndRetryCanContinue" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.95"/>
-  <testcase name="corruptJournalIsNotSilentlyReplaced" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.016"/>
-  <testcase name="acknowledgementRetainsNewerEdits" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.015"/>
-  <testcase name="stagedInputsSurviveNewJournalInstance" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.026"/>
+  <testcase name="corruptJournalIsPreservedAndRetryCanContinue" classname="com.electrokit.app.viewmodel.InputJournalTests" time="1.38"/>
+  <testcase name="corruptJournalIsNotSilentlyReplaced" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.022"/>
+  <testcase name="acknowledgementRetainsNewerEdits" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.055"/>
+  <testcase name="stagedInputsSurviveNewJournalInstance" classname="com.electrokit.app.viewmodel.InputJournalTests" time="0.021"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53184,13 +53258,13 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.viewmodel.RetryRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:50" hostname="4156269b6c2a" time="0.124">
+<testsuite name="com.electrokit.app.viewmodel.RetryRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:28" hostname="6e09c42621cb" time="0.371">
   <properties/>
-  <testcase name="productionJournalRunsOffMainThread" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.059"/>
-  <testcase name="freshViewModelRecoversStagedInputsBeforeDataStoreCommit" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.022"/>
-  <testcase name="inputRetryPersistsPendingSnapshot" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.015"/>
-  <testcase name="settingsRetryRepeatsSettingsMutationRatherThanFlushingInputs" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.015"/>
-  <testcase name="inputSuccessDoesNotDismissLoadFailure" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.013"/>
+  <testcase name="productionJournalRunsOffMainThread" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.104"/>
+  <testcase name="freshViewModelRecoversStagedInputsBeforeDataStoreCommit" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.072"/>
+  <testcase name="inputRetryPersistsPendingSnapshot" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.052"/>
+  <testcase name="settingsRetryRepeatsSettingsMutationRatherThanFlushingInputs" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.087"/>
+  <testcase name="inputSuccessDoesNotDismissLoadFailure" classname="com.electrokit.app.viewmodel.RetryRegressionTests" time="0.055"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53201,14 +53275,14 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:51" hostname="4156269b6c2a" time="0.121">
+<testsuite name="com.electrokit.app.data.DataRegressionTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:31" hostname="6e09c42621cb" time="0.392">
   <properties/>
-  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.067"/>
-  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.024"/>
-  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.001"/>
-  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.02"/>
-  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.002"/>
-  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.006"/>
+  <testcase name="referenceProvenanceIsExplicitOnEveryPage" classname="com.electrokit.app.data.DataRegressionTests" time="0.202"/>
+  <testcase name="originalStateRecordsRemainCompatible" classname="com.electrokit.app.data.DataRegressionTests" time="0.082"/>
+  <testcase name="damagedStateIsNotSilentlyReplaced" classname="com.electrokit.app.data.DataRegressionTests" time="0.006"/>
+  <testcase name="bundledAssetsDecodeWithShippingKotlinModels" classname="com.electrokit.app.data.DataRegressionTests" time="0.055"/>
+  <testcase name="numericMemoryFieldsHaveSpecificDatasheetReferences" classname="com.electrokit.app.data.DataRegressionTests" time="0.03"/>
+  <testcase name="savedValuesModesAndPreferencesRoundTrip" classname="com.electrokit.app.data.DataRegressionTests" time="0.015"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53219,20 +53293,20 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:51" hostname="4156269b6c2a" time="0.376">
+<testsuite name="com.electrokit.app.domain.AuditRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:31" hostname="6e09c42621cb" time="1.181">
   <properties/>
-  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
-  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
-  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
-  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
-  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.003"/>
-  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.254"/>
+  <testcase name="fieldErrorsNameTheirInputs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.022"/>
+  <testcase name="extremeRatiosReturnErrorsWithoutThrowing" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.039"/>
+  <testcase name="roundingNormalisesEngineeringPrefixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.032"/>
+  <testcase name="pastedUnitsAndMinusAreAcceptedWithoutJavaSuffixes" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.005"/>
+  <testcase name="inactiveOpAmpInputsCanBeEmpty" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.008"/>
+  <testcase name="extremeInputGridNeverCrashesOrLeaksRequirementText" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.703"/>
   <testcase name="toleranceLabelsUseOrdinaryPercentages" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.045"/>
-  <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
+  <testcase name="supportedRatioBoundariesFindPairs" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.175"/>
+  <testcase name="explicitSuffixOverridesEverySelector" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.009"/>
   <testcase name="negativeModuleValuesFilterCorrectly" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
-  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.048"/>
-  <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.0"/>
+  <testcase name="invalidPersistedModesAreClamped" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.183"/>
+  <testcase name="explicitUnitsAreConvertedToTheFieldUnit" classname="com.electrokit.app.domain.AuditRegressionTests" time="0.001"/>
   <system-out><![CDATA[Extreme per-field cases exercised: 1984
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
@@ -53244,31 +53318,31 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:51" hostname="4156269b6c2a" time="0.04">
+<testsuite name="com.electrokit.app.domain.CalculatorTests" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:32" hostname="6e09c42621cb" time="0.126">
   <properties/>
-  <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="fractionalMultiplier" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="astableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="colourBothDirections" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ohmAllSixInputPairs" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="ohmAllSixInputPairs" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="dividerAndLoaded" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="parserHandlesEngineeringForms" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
+  <testcase name="parserHandlesEngineeringForms" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="monostableTiming" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="smd" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="traceWidthScalingAndKnownPoint" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="lm317" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="rangeMapping" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="rangeMapping" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ledResistor" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.029"/>
+  <testcase name="defaultCalculationsReturnFiniteResults" classname="com.electrokit.app.domain.CalculatorTests" time="0.113"/>
   <testcase name="voltageDropLoopLength" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
   <testcase name="parallelRejectsZero" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="notationDoesNotTruncateIntegerZeros" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="ohmRejectsOverdetermined" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="adcFullScaleSaturates" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="everyCalculatorHandlesEmptyAndBadInputs" classname="com.electrokit.app.domain.CalculatorTests" time="0.009"/>
   <testcase name="rtdInversion" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="seriesParallel" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <testcase name="filterCutoff" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
-  <testcase name="ledRejectsInsufficientSupply" classname="com.electrokit.app.domain.CalculatorTests" time="0.001"/>
+  <testcase name="ledRejectsInsufficientSupply" classname="com.electrokit.app.domain.CalculatorTests" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53279,26 +53353,26 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:51" hostname="4156269b6c2a" time="0.093">
+<testsuite name="com.electrokit.app.domain.EngineeringModuleTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:32" hostname="6e09c42621cb" time="0.287">
   <properties/>
-  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.014"/>
-  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
-  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
-  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
-  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.004"/>
-  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
-  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.009"/>
-  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.003"/>
+  <testcase name="energyAndGeometry" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.026"/>
+  <testcase name="searchAndFilters" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.029"/>
+  <testcase name="unitConversions" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.022"/>
+  <testcase name="singlePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.021"/>
+  <testcase name="balancedThreePhase" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
+  <testcase name="motorCurrent" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
+  <testcase name="theoreticalCapacity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.01"/>
+  <testcase name="exact125RowImport" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.035"/>
+  <testcase name="torque" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.018"/>
+  <testcase name="slip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
+  <testcase name="powerFactor" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.012"/>
+  <testcase name="physicalRanges" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.013"/>
+  <testcase name="frequencySpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.006"/>
+  <testcase name="gearAndStepSpeed" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="graphAndSourceIntegrity" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.005"/>
+  <testcase name="efficiency" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.023"/>
+  <testcase name="everyNewToolExtremeInputGrid" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.023"/>
+  <testcase name="regenerativeSlip" classname="com.electrokit.app.domain.EngineeringModuleTests" time="0.007"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53309,9 +53383,9 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:51" hostname="4156269b6c2a" time="0.002">
+<testsuite name="com.electrokit.app.domain.FieldUnitTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:33" hostname="6e09c42621cb" time="0.004">
   <properties/>
-  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.001"/>
+  <testcase name="everyDeclaredNumericFieldAcceptsItsUnit" classname="com.electrokit.app.domain.FieldUnitTests" time="0.004"/>
   <testcase name="compoundQuantitiesAndConversions" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <testcase name="alreadyScaledUnitsKeepTheirDeclaredLabel" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
   <testcase name="metresDoNotBreakMilliNotation" classname="com.electrokit.app.domain.FieldUnitTests" time="0.0"/>
@@ -53325,13 +53399,13 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:51" hostname="4156269b6c2a" time="0.012">
+<testsuite name="com.electrokit.app.domain.FormattingRegressionTests" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:33" hostname="6e09c42621cb" time="0.014">
   <properties/>
   <testcase name="megaAliasesAndMicroValuesAreExact" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
   <testcase name="defaultRtdTemperatureIsExactlyPositiveZero" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
   <testcase name="percentagesAreRoundedWithoutChangingBandTolerances" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.001"/>
   <testcase name="unitlessValuesNeverUseEngineeringPrefixes" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.0"/>
-  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.011"/>
+  <testcase name="smdRNotationUsesPlainDecimalDigits" classname="com.electrokit.app.domain.FormattingRegressionTests" time="0.013"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53342,10 +53416,10 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:51" hostname="4156269b6c2a" time="0.473">
+<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:33" hostname="6e09c42621cb" time="1.219">
   <properties/>
-  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.34"/>
-  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.133"/>
+  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.906"/>
+  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.313"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
@@ -53356,7 +53430,7 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:52" hostname="4156269b6c2a" time="0.001">
+<testsuite name="com.electrokit.app.domain.UnitConversionsTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:34" hostname="6e09c42621cb" time="0.001">
   <properties/>
   <testcase name="invalidDomainsRejected" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.001"/>
   <testcase name="independentConversions" classname="com.electrokit.app.domain.UnitConversionsTests" time="0.0"/>
@@ -53370,13 +53444,13 @@ PASS: current 3.0/14 evidence; signing=unsigned.
 
 ````xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:52" hostname="4156269b6c2a" time="0.003">
+<testsuite name="com.electrokit.app.domain.WorkbenchToolsTests" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:34" hostname="6e09c42621cb" time="0.009">
   <properties/>
-  <testcase name="temperatureBoundary" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
+  <testcase name="temperatureBoundary" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.002"/>
   <testcase name="invalidPowerFactorRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
   <testcase name="cableSizingIncludesReturnPath" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="transformerRatio" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
-  <testcase name="scientificGrammar" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
+  <testcase name="scientificGrammar" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
   <testcase name="scientificInvalidInputs" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>
   <testcase name="upsAccountsForBothLossFactors" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.001"/>
   <testcase name="invalidPercentagesRejected" classname="com.electrokit.app.domain.WorkbenchToolsTests" time="0.0"/>

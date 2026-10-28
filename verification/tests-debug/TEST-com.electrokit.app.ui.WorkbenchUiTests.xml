@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.WorkbenchUiTests" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:47" hostname="4156269b6c2a" time="1.691">
+<testsuite name="com.electrokit.app.ui.WorkbenchUiTests" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:23" hostname="6e09c42621cb" time="3.286">
   <properties/>
-  <testcase name="publicSearchExcludesFaultSnippets" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.093"/>
-  <testcase name="protectedContentRequiresCodeAndRelocks" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.361"/>
-  <testcase name="homeScreenshotAndSystemBarFlags" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.179"/>
-  <testcase name="componentImageAndFavoriteRoundTrip" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.175"/>
-  <testcase name="accessIsNotSavedAndAttemptsAreRateLimited" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.651"/>
-  <testcase name="utilityCalculationAndAndroidBack" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.138"/>
-  <testcase name="unitConverterNativeWorkflow" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.094"/>
+  <testcase name="publicSearchExcludesFaultSnippets" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.106"/>
+  <testcase name="protectedContentRequiresCodeAndRelocks" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.774"/>
+  <testcase name="homeScreenshotAndSystemBarFlags" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.495"/>
+  <testcase name="componentImageAndFavoriteRoundTrip" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.398"/>
+  <testcase name="accessIsNotSavedAndAttemptsAreRateLimited" classname="com.electrokit.app.ui.WorkbenchUiTests" time="1.061"/>
+  <testcase name="utilityCalculationAndAndroidBack" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.268"/>
+  <testcase name="unitConverterNativeWorkflow" classname="com.electrokit.app.ui.WorkbenchUiTests" time="0.184"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

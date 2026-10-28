@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.AndroidUiRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="13.468">
+<testsuite name="com.electrokit.app.ui.AndroidUiRegressionTests" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:58:46" hostname="6e09c42621cb" time="27.697">
   <properties/>
-  <testcase name="selectedKiloUnitDoesNotMultiplyASuffixedValueTwice" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="5.409"/>
-  <testcase name="lightThemePersistsAcrossActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.372"/>
-  <testcase name="mainTabsAndReferenceNavigationWork" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.447"/>
-  <testcase name="bundledDatabasesAlwaysOpenAndSearch" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.819"/>
-  <testcase name="fractionalToleranceUsesPercentText" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.185"/>
-  <testcase name="extremeRatioIsAnInlineErrorInsteadOfACrash" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.207"/>
-  <testcase name="bandResetRestoresDisplayAndCopiedResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.464"/>
-  <testcase name="calculationModeChangeInvalidatesExplicitResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.274"/>
-  <testcase name="everyCatalogueEntryOpensWithoutCrashing" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="4.646"/>
-  <testcase name="largeTextKeepsMainActionsReachable" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.269"/>
-  <testcase name="calculatorInputSurvivesActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.291"/>
-  <testcase name="catalogueHasNoReservedBottomFooter" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.084"/>
+  <testcase name="selectedKiloUnitDoesNotMultiplyASuffixedValueTwice" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="10.684"/>
+  <testcase name="lightThemePersistsAcrossActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.782"/>
+  <testcase name="mainTabsAndReferenceNavigationWork" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.788"/>
+  <testcase name="bundledDatabasesAlwaysOpenAndSearch" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="1.674"/>
+  <testcase name="fractionalToleranceUsesPercentText" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.463"/>
+  <testcase name="extremeRatioIsAnInlineErrorInsteadOfACrash" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.611"/>
+  <testcase name="bandResetRestoresDisplayAndCopiedResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.968"/>
+  <testcase name="calculationModeChangeInvalidatesExplicitResult" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.522"/>
+  <testcase name="everyCatalogueEntryOpensWithoutCrashing" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="10.041"/>
+  <testcase name="largeTextKeepsMainActionsReachable" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.418"/>
+  <testcase name="calculatorInputSurvivesActivityRecreation" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.595"/>
+  <testcase name="catalogueHasNoReservedBottomFooter" classname="com.electrokit.app.ui.AndroidUiRegressionTests" time="0.151"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
