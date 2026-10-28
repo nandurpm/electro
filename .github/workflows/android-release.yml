@@ -1,0 +1,25 @@
+name: Android Release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish-verified-files:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify prepared release
+        run: |
+          set -euo pipefail
+          sha256sum --check SHA256SUMS.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs ELECTRO-3.0.2-SIGNED.apk > signature.txt
+          grep -Fx 'Signer #1 certificate SHA-256 digest: a91eebe326f10f654f74afa00a51a38066b79d662ff01406ecf870e1bba8b2b5' signature.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging ELECTRO-3.0.2-SIGNED.apk > badging.txt
+          grep "versionCode='16' versionName='3.0.2'" badging.txt
+      - name: Publish verified files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create electro-3.0.2 ELECTRO-3.0.2-SIGNED.apk ELECTRO-3.0.2-source.zip ELECTRO-PRIVATE-SIGNING-BACKUP-ENCRYPTED.zip SHA256SUMS.txt --target 24817cc06b6b2923cb83b55f4ed957489ab76f0c --title 'ELECTRO 3.0.2' --notes-file RELEASE_NOTES.md
