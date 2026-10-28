@@ -57,6 +57,7 @@ jobs:
         run: ./gradlew --no-daemon --max-workers=4 testDebugUnitTest lintDebug assembleDebug
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
+        continue-on-error: true
         with:
           name: ELECTRO-debug-and-reports
           path: |
@@ -194,7 +195,11 @@ jobs:
           version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
             RELEASE_TAG="electro-$version"
-            gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --target "$GITHUB_SHA" --title "ELECTRO $version" --generate-notes
+            if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+              gh release upload "$RELEASE_TAG" app/build/outputs/distribution/* --clobber
+            else
+              gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --target "$GITHUB_SHA" --title "ELECTRO $version" --generate-notes
+            fi
           else
             test "$RELEASE_TAG" = "v$version"
             gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --verify-tag --title "ELECTRO $version" --generate-notes
