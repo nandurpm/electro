@@ -85,6 +85,31 @@ class TestBot(unittest.TestCase):
             self.assertIn("v4.0.0", send.call_args.args[2])
             self.assertTrue(any(k.get("offset") == 201 for m, k in calls if m == "getUpdates"))
 
+
+    def test_batch_of_two_commands_is_not_skipped(self):
+        observed = []
+        calls = []
+        def fake_tg(method, token, **kwargs):
+            calls.append((method, kwargs))
+            if method == "getWebhookInfo":
+                return {"url": ""}
+            if method == "getUpdates":
+                if "offset" not in kwargs:
+                    return [
+                        {"update_id": 210, "message": {"text": "/start", "chat": {"id": 123, "type": "private"}}},
+                        {"update_id": 211, "message": {"text": "/version", "chat": {"id": 123, "type": "private"}}},
+                    ]
+                return []
+            raise AssertionError(f"unexpected API method: {method}")
+        with mock.patch.object(bot, "tg_form", side_effect=fake_tg), mock.patch.object(bot, "latest_release", return_value=RELEASE), mock.patch.object(bot, "send_text") as send:
+            bot.poll("secret", "123")
+            self.assertEqual(send.call_count, 2)
+            self.assertIn("ELECTRO", send.call_args_list[0].args[2])
+            self.assertIn("v4.0.0", send.call_args_list[1].args[2])
+            updates = [opts for method, opts in calls if method == "getUpdates"]
+            self.assertEqual(len(updates), 2)
+            self.assertEqual(updates[1]["offset"], 212)
+
     def test_webhook_does_not_get_deleted(self):
         with mock.patch.object(bot, "tg_form", return_value={"url": "https://example.com/webhook"}) as req:
             with self.assertRaises(bot.TelegramError):
