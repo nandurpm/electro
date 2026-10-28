@@ -1,5 +1,12 @@
 # Changes
 
+## 3.1.0 — workbench UI redesign and verified release
+
+- Refreshed the workbench presentation with a redesigned home/workbench surface, reusable ELECTRO panels, updated navigation labels and Profile presentation, while keeping the existing offline calculators, references, persistence and application identity connected.
+- Added and updated Compose UI regression coverage for the redesigned workbench, navigation and design previews; the release workflow rebuilds and records verification evidence from the signed APK.
+- Hardened release publication and CI diagnostics: reruns update an existing release safely, artifact-quota failures do not hide a successful build, and signing remains pinned to the authorized ELECTRO release certificate.
+- Version 3.1.0, code 17. The signed release workflow completed successfully; physical-device validation remains unrun.
+
 ## 3.0.2 — reference-based UI release
 
 - New signing identity explicitly authorized after loss of the previous credentials. Existing application ID retained; older-key installations cannot be upgraded in place.
