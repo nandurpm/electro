@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          ref: ${{ inputs.release_tag || github.event.client_payload.release_tag || github.ref }}
+          ref: ${{ github.event_name == 'push' && github.ref || github.sha }}
       - name: Check release signing secrets
         env:
           ELECTROKIT_KEYSTORE_BASE64: ${{ secrets.ELECTROKIT_KEYSTORE_BASE64 }}
