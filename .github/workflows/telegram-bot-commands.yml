@@ -1,0 +1,49 @@
+name: ELECTRO Telegram Commands
+
+on:
+  workflow_dispatch:
+    inputs:
+      setup:
+        description: "Register the Telegram bot menu and send an activation message"
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    - cron: '3/5 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/telegram-bot-commands.yml
+      - scripts/telegram_commands.py
+      - scripts/test_telegram_commands.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: electro-telegram-command-poll
+  cancel-in-progress: false
+
+jobs:
+  respond:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Validate Telegram command code
+        if: github.event_name == 'push'
+        run: python3 -m unittest scripts/test_telegram_commands.py -v
+      - name: Respond to ELECTRO Telegram commands
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DO_SETUP: ${{ github.event_name == 'push' || inputs.setup == true }}
+        run: |
+          set -euo pipefail
+          if [ "$DO_SETUP" = "true" ]; then
+            python3 scripts/telegram_commands.py --setup
+          else
+            python3 scripts/telegram_commands.py
+          fi
