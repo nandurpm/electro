@@ -1,5 +1,7 @@
 name: Android Release
 on:
+  repository_dispatch:
+    types: [electro_release]
   workflow_dispatch:
     inputs:
       release_tag:
@@ -19,7 +21,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          ref: ${{ inputs.release_tag || github.ref }}
+          ref: ${{ inputs.release_tag || github.event.client_payload.release_tag || github.ref }}
       - name: Check release signing secrets
         env:
           ELECTROKIT_KEYSTORE_BASE64: ${{ secrets.ELECTROKIT_KEYSTORE_BASE64 }}
@@ -121,11 +123,11 @@ jobs:
       - name: Publish matching version tag
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.client_payload.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
           version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
-          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [ "$GITHUB_EVENT_NAME" = repository_dispatch ]; then
             if [ -z "$RELEASE_TAG" ] || [ "$RELEASE_TAG" = "main" ]; then
               RELEASE_TAG="electro-$version"
             fi
@@ -143,7 +145,7 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.client_payload.release_tag || github.ref_name }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |

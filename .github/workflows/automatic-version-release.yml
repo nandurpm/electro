@@ -86,9 +86,9 @@ jobs:
             git push origin "$tag"
           fi
 
-          gh workflow run android-release.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref main \
-            -f release_tag="$tag"
+          gh api "repos/$GITHUB_REPOSITORY/dispatches" \
+            --method POST \
+            -f event_type=electro_release \
+            -f "client_payload[release_tag]=$tag"
 
           echo "Created $tag and dispatched Android Release against the tag."
