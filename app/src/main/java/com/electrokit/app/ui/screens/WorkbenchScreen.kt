@@ -169,7 +169,13 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                             .padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(painterResource(R.drawable.ic_launcher), null, tint = Color.Unspecified, modifier = Modifier.size(34.dp))
+                                    val heroPulse = neonPulseFactor(true)
+                                    Icon(painterResource(R.drawable.ic_launcher), null, tint = Color.Unspecified,
+                                        modifier = Modifier.size(34.dp).graphicsLayer {
+                                            alpha = .84f + heroPulse * .16f
+                                            scaleX = .96f + heroPulse * .04f
+                                            scaleY = .96f + heroPulse * .04f
+                                        })
                                     Spacer(Modifier.width(8.dp))
                                     Text("ELECTRO", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
                                 }

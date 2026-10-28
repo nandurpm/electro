@@ -11,6 +11,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -22,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -46,6 +53,21 @@ import com.electrokit.app.viewmodel.AppViewModel
  */
 private fun shade(color: Color): Color = color.copy(red = color.red * .55f, green = color.green * .55f, blue = color.blue * .55f)
 
+/** Gentle repeating emphasis for important electrical controls; avoids a fast strobe. */
+@Composable
+fun neonPulseFactor(active: Boolean): Float {
+    if (!active) return 1f
+    return rememberInfiniteTransition(label = "neon pulse").animateFloat(
+        initialValue = .72f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "neon intensity",
+    ).value
+}
+
 /** Colored gradient launcher tile used by the Home quick-access grid.
  * @param title Visible caption; also selects the symbol and accent through [categoryAccent].
  * @param modifier Caller-owned size, normally a weighted cell of a three-column row.
@@ -56,6 +78,7 @@ private fun shade(color: Color): Color = color.copy(red = color.red * .55f, gree
 fun QuickTile(title: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val (symbol, color) = categoryAccent(title)
     val shape = RoundedCornerShape(14.dp)
+    val pulse = neonPulseFactor(title.contains("Calculat", ignoreCase = true))
     Column(
         modifier.heightIn(min = 104.dp).shadow(10.dp, shape, clip = false)
             .clip(shape)
@@ -67,7 +90,8 @@ fun QuickTile(title: String, modifier: Modifier = Modifier, onClick: () -> Unit)
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = .20f)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(48.dp).graphicsLayer { alpha = .82f + pulse * .18f }
+            .clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = .20f)), contentAlignment = Alignment.Center) {
             Text(symbol, Modifier.clearAndSetSemantics { }, color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.Bold)
         }
         Text(title, Modifier.padding(top = 6.dp), color = Color.White, style = MaterialTheme.typography.labelLarge,
@@ -104,9 +128,10 @@ fun RecentRow(entry: Entry, onClick: () -> Unit) {
  */
 @Composable
 fun ToolCategoryCard(title: String, subtitle: String, badge: String, asset: ComponentAsset?, onClick: () -> Unit) {
+    val pulse = neonPulseFactor(title.contains("Calculat", ignoreCase = true))
     ElectroPanel(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
         Row(Modifier.fillMaxWidth().heightIn(min = 88.dp).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            CategoryBadge(badge, Modifier.size(48.dp))
+            CategoryBadge(badge, Modifier.size(48.dp).graphicsLayer { alpha = .82f + pulse * .18f })
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
