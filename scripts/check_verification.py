@@ -19,14 +19,14 @@ def validate(root=ROOT, apk=None, require_signed=False):
     badging = (evidence / 'apk-badging.txt').read_text()
     assert f"versionName='{version}'" in badging and f"versionCode='{code}'" in badging, 'Stale APK badging version'
     assert "name='com.electrokit.app'" in badging, 'Unexpected application identity'
-    signed = summary['signing']['status'] == 'verified_original_release'
-    expected = (root / 'signing/original-release-certificate.sha256').read_text().strip()
+    signed = summary['signing']['status'] == 'verified_release'
+    expected = (root / 'signing/release-certificate.sha256').read_text().strip()
     if signed:
         signature = (evidence / 'apk-signature.txt').read_text()
-        assert f'Signer #1 certificate SHA-256 digest: {expected}' in signature, 'Original release certificate mismatch'
+        assert f'Signer #1 certificate SHA-256 digest: {expected}' in signature, 'Active release certificate mismatch'
         assert summary['signing']['certificate_sha256'] == expected, 'Summary certificate mismatch'
     if require_signed:
-        assert signed, 'Original-key signed APK is required; current evidence is unsigned'
+        assert signed, 'Release-key signed APK is required; current evidence is unsigned'
     if apk:
         assert hashlib.sha256(Path(apk).read_bytes()).hexdigest() == summary['apk_sha256'], 'APK differs from verification evidence'
         assert Path(apk).stat().st_size == summary['apk_bytes'], 'APK size differs from verification evidence'

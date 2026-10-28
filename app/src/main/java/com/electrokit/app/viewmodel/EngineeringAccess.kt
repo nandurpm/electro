@@ -58,7 +58,10 @@ class EngineeringAccess : ViewModel() {
         return finishAttempt(LocalPin.verify(candidate))
     }
 
-    /** Applies one verification outcome to the grant and the failure counter. */
+    /** Applies one verification outcome to the grant and the failure counter.
+     * @param accepted Whether the entered code passed verification.
+     * @return Null on success, or the user-facing rejection message.
+     */
     private fun finishAttempt(accepted: Boolean): String? {
         if (accepted) {
             unlocked = true
@@ -73,7 +76,10 @@ class EngineeringAccess : ViewModel() {
         return "Access code not accepted."
     }
 
-    private companion object { const val COOLDOWN_MESSAGE = "Too many attempts. Wait 30 seconds." }
+    private companion object {
+        /** Message shown while the in-memory retry deadline is active. */
+        const val COOLDOWN_MESSAGE = "Too many attempts. Wait 30 seconds."
+    }
 
     /** Immediately removes protected content from every composable sharing this session.
  * @return Unit; synchronously removes access for all destinations sharing this ViewModel.

@@ -1,5 +1,13 @@
 # Changes
 
+## 3.0.2 — reference-based UI release
+
+- New signing identity explicitly authorized after loss of the previous credentials. Existing application ID retained; older-key installations cannot be upgraded in place.
+
+- Applied the supplied ELECTRO reference through navy/cyan themes, lightning branding, compact bordered panels, illustrated home banner, six quick actions and grouped settings. Existing Compose routes, calculators and persistence remain connected.
+- Release version 3.0.2/code 16 and pinned signing checks to the published 3.0.1 certificate. GitHub Actions signs with the published release identity and regenerates evidence before packaging.
+- Validation: 121 debug/UI tests, 80 release tests, 10 Python tests, no lint errors. Physical-device validation remains unrun.
+
 ## 3.0.2 — drawing code dictionary alignment (source only, not yet built or signed)
 
 - Aligned the engineering component dictionary with the supplied DMRC drawing code dictionary (146 rows). Technical records go from 245 to 325: 6 re-coded and 80 added.
@@ -10,13 +18,13 @@
 - Switches `S11–S58`, `K03`, `OP`, `BIT0–BIT3`, `BM`, `RS485` and `INS` come from the photograph transcriptions and are retained; they are not part of the supplied dictionary.
 - NOT changed: versionCode/versionName, signing, access-code design, Kotlin sources and the 125 exact fault rows.
 
-## 3.0.1 — audit fixes (source only, not yet built or signed)
+## 3.0.1 — audit fixes
 
 - Engineering code verification now runs off the UI thread; Unlock is disabled while checking.
 - Unknown or damaged `entry/{id}` routes return to the previous screen instead of a blank screen or a crash.
 - DC cable calculator rejects a computed drop that is not below the supply voltage.
 - Removed the published access code from README. Stale 2.0.3 status files corrected.
-- NOT changed: versionCode/versionName, signing, access-code design, status-bar colour, string extraction.
+- Version name 3.0.1, version code 15. Access-code design, status-bar colour and string extraction remain unchanged.
 
 ## 3.0 — release preparation (2026-10-27)
 

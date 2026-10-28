@@ -14,6 +14,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +41,7 @@ import com.electrokit.app.BuildConfig
 import com.electrokit.app.data.*
 import com.electrokit.app.viewmodel.*
 import com.electrokit.app.domain.WorkbenchTools
+import com.electrokit.app.ui.components.CategoryBadge
 import com.electrokit.app.ui.components.MultimeterLesson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -78,9 +81,9 @@ fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail:
             }.getOrNull()?.also { imageCache.put(key, it) }
         }
     }
-    Box(modifier.background(Color(0xFFEEF2F6)), contentAlignment = Alignment.Center) {
+    Box(modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest), contentAlignment = Alignment.Center) {
         bitmap?.let { Image(it.asImageBitmap(), asset.name, Modifier.fillMaxSize().padding(8.dp), contentScale = ContentScale.Fit) }
-            ?: Text(asset.name, color = Color(0xFF172033), modifier = Modifier.padding(12.dp))
+            ?: Text(asset.name, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(12.dp))
     }
 }
 
@@ -142,9 +145,9 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         onClick = { tab = i; query = ""; if (i == 1) category = "Calculators"; if (i == 2) category = "Components" })
                         .padding(horizontal = 2.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center) {
-                        Box(Modifier.clip(RoundedCornerShape(24.dp)).background(if (tab == i) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                        Box(Modifier.clip(RoundedCornerShape(10.dp)).background(if (tab == i) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
                             .padding(horizontal = 16.dp, vertical = 4.dp)) {
-                            Icon(when(i) { 0 -> Icons.Default.Home; 1 -> Icons.Default.Settings; 2 -> Icons.Default.Info; 3 -> Icons.Default.Star; else -> Icons.Default.MoreVert }, null, Modifier.size(24.dp))
+                            Icon(when(i) { 0 -> Icons.Default.Home; 1 -> Icons.Default.Build; 2 -> Icons.Default.Info; 3 -> Icons.Default.Star; else -> Icons.Default.Person }, null, Modifier.size(24.dp))
                         }
                         Text(name, Modifier.fillMaxWidth(), maxLines = 2, minLines = if (LocalDensity.current.fontScale > 1.3f) 2 else 1,
                             fontSize = if (LocalDensity.current.fontScale > 1.3f) 9.sp else 11.sp, lineHeight = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
@@ -157,24 +160,34 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
         when (tab) {
             0 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
-                    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFF17366B), Color(0xFF123E52)))).padding(24.dp)) {
-                        Text("YOUR ENGINEERING WORKBENCH", color = Color(0xFFBAE6FD), style = MaterialTheme.typography.labelMedium)
-                        Text("Build understanding.\nSolve with confidence.", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 12.dp))
-                        Text("Electrical • Electronics • Engineering", color = Color(0xFFDAE6FF))
-                        FilledTonalButton({ tab = 1 }, Modifier.padding(top = 16.dp)) { Text("Explore tools") }
+                    Card(Modifier.fillMaxWidth()) {
+                        Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surfaceContainerLowest))).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("ELECTRICAL • ELECTRONICS", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
+                                Text("Engineering tools\nfor real work", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(vertical = 8.dp))
+                                Text("Calculate · Design · Learn", style = MaterialTheme.typography.bodySmall)
+                                TextButton({ tab = 1 }) { Text("Explore tools →") }
+                            }
+                            publicComponents.firstOrNull { it.id == "induction_motor" }?.let {
+                                Box(Modifier.width(112.dp).height(140.dp).clip(RoundedCornerShape(8.dp))) {
+                                    ComponentImage(it, Modifier.fillMaxSize().graphicsLayer { scaleX = 1.7f; scaleY = 1.7f })
+                                }
+                            }
+                        }
                     }
                 }
                 if (query.isBlank()) {
-                    item { SectionTitle("Explore ELECTRO") }
+                    item { SectionTitle("Quick access") }
                     item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         QuickCard("Calculators", Modifier.weight(1f)) { tab = 1; category = "Calculators" }
                         QuickCard("Components", Modifier.weight(1f)) { tab = 2; category = "Components" }
+                        QuickCard("Pin-outs", Modifier.weight(1f)) { tab = 1; category = "Pin-outs" }
                     } }
                     item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuickCard("Pin-outs", Modifier.weight(1f)) { tab = 1; category = "Pin-outs" }
                         QuickCard("Escalator", Modifier.weight(1f)) { openEngineering("home") }
+                        QuickCard("Learning", Modifier.weight(1f)) { tab = 2; category = "Lessons" }
+                        QuickCard("Converters", Modifier.weight(1f)) { detail = "unit-converter" }
                     } }
                     item { SectionTitle("Featured calculators") }
                 }
@@ -197,7 +210,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     }
                     item { SectionTitle("Component discovery") }
                     items(publicComponents.filter { it.id in listOf("digital_multimeter", "magnetic_contactor", "axial_resistor") }) { c ->
-                        Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(24.dp)) {
+                        Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 ComponentImage(c, Modifier.size(104.dp))
                                 Column(Modifier.padding(16.dp)) { Text(c.name, style = MaterialTheme.typography.titleMedium); Text(c.category, style = MaterialTheme.typography.bodySmall) }
@@ -227,6 +240,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                             .sortedWith(compareByDescending<Entry> { it.id in prefs.favourites }.thenBy { if (prefs.alphabetical) it.title else "" })
                         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(8.dp)) {
                             item { SectionTitle("${entries.size} ${category.lowercase()}") }
+                            if (entries.isEmpty()) item { Text("No matching tools. Try another search.", Modifier.padding(16.dp)) }
                             items(entries, key = { it.id }) { entry -> EntryRow(entry, { openEntry(entry.id) }, entry.id in prefs.favourites) { vm.star(entry.id) } }
                         }
                     }
@@ -245,7 +259,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         LazyVerticalGrid(GridCells.Adaptive(150.dp), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             gridItems((if (category == "Escalator images") components.filter { it.category == "Escalator" } else publicComponents)
                                 .filter { it.name.contains(query, true) || it.category.contains(query, true) }, key = { it.id }) { c ->
-                                Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(20.dp)) {
+                                Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
                                     ComponentImage(c, Modifier.fillMaxWidth().aspectRatio(1f))
                                     Text(c.name, Modifier.padding(12.dp), style = MaterialTheme.typography.titleSmall)
                                 }
@@ -286,7 +300,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
  * @return Unit; displays a heading without modifying state.
  */
 @Composable
-private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
+private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
 
 /** Native action card; it remains usable with large font sizes instead of using a fixed height.
  * @param title Accessible card caption.
@@ -296,8 +310,12 @@ private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical 
  */
 @Composable
 private fun QuickCard(title: String, modifier: Modifier, click: () -> Unit) {
-    Card(onClick = click, modifier = modifier, shape = RoundedCornerShape(20.dp)) {
-        Text(title, Modifier.padding(20.dp), style = MaterialTheme.typography.titleMedium)
+    Card(onClick = click, modifier = modifier, shape = RoundedCornerShape(10.dp)) {
+        Column(Modifier.fillMaxWidth().padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            CategoryBadge(title, Modifier.size(42.dp))
+            Text(title, Modifier.padding(top = 8.dp), style = MaterialTheme.typography.labelLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
     }
 }
 
@@ -311,7 +329,12 @@ private fun QuickCard(title: String, modifier: Modifier, click: () -> Unit) {
 fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier = Modifier) {
     var confirm by remember { mutableStateOf(false) }
     Column(modifier.verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionTitle("Make it your workbench")
+        SectionTitle("Profile & settings")
+        Card(Modifier.fillMaxWidth()) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            CategoryBadge("Components", Modifier.size(48.dp)); Spacer(Modifier.width(12.dp))
+            Column { Text("ELECTRO", style = MaterialTheme.typography.titleLarge); Text("Your engineering workspace", style = MaterialTheme.typography.bodySmall) }
+        } }
+        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
         Text("Appearance", style = MaterialTheme.typography.titleMedium)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Light theme", Modifier.weight(1f))
@@ -321,17 +344,20 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
             listOf("dark", "light", "system").forEach { mode -> FilterChip((prefs.themeMode.ifBlank { if (prefs.light) "light" else "dark" }) == mode,
                 { vm.appearance(mode) }, label = { Text(mode.replaceFirstChar { it.uppercase() }) }) }
         }
-        HorizontalDivider()
+        } }
+        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Language: English")
         Text("Offline by design", style = MaterialTheme.typography.titleMedium)
         Text("No accounts, analytics, ads or network permission. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share.")
         Text("Engineering access is a basic local restriction. References are bundled, not encrypted.")
         TextButton({ confirm = true }) { Text("Clear saved calculation history") }
         TextButton({ vm.sort() }) { Text(if (prefs.alphabetical) "Use original tool order" else "Sort tools A–Z") }
-        HorizontalDivider()
+        } }
+        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("ELECTRO ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", style = MaterialTheme.typography.titleMedium)
         Text("Electrical • Electronics • Engineering\nAndroid 7.0+ • Native Kotlin & Jetpack Compose")
         Text("Component artwork is illustrative. Confirm exact parts, ratings and wiring against the original manufacturer documentation.")
+        } }
     }
     if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Clear saved results?") }, text = { Text("Your favorites and calculator inputs will be retained.") },
         confirmButton = { TextButton({ vm.clearCalculations(); confirm = false }) { Text("Clear history") } },
@@ -350,7 +376,7 @@ private fun ComponentDetail(asset: ComponentAsset, prefs: PreferencesState, vm: 
     val id = "component:${asset.id}"
     Scaffold(topBar = { Bar(asset.name, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite component") } } }) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item { ComponentImage(asset, Modifier.fillMaxWidth().heightIn(max = 420.dp).aspectRatio(1f).clip(RoundedCornerShape(24.dp)), detail = true) }
+            item { ComponentImage(asset, Modifier.fillMaxWidth().heightIn(max = 420.dp).aspectRatio(1f).clip(RoundedCornerShape(10.dp)), detail = true) }
             item { Text(asset.category.uppercase(), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium); SectionTitle(asset.name) }
             val info = componentNotes(asset)
             items(info) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text(title, style = MaterialTheme.typography.titleMedium); Text(body, Modifier.padding(top = 8.dp)) } } }

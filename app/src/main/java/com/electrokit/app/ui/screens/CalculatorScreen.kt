@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
 import androidx.compose.ui.*
@@ -244,7 +245,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     }
                 }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { calculated = Calculators.calculate(id, scaled, mode) }) { Text("Calculate") }
+                Button(modifier = Modifier.weight(1f), onClick = { calculated = Calculators.calculate(id, scaled, mode) }) { Text("Calculate") }
                 OutlinedButton(onClick = {
                     mode = 0; calculated = null; vm.mode(entry.id, 0)
                     update(spec.fields.associate { it.key to it.initial })
@@ -252,7 +253,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
             }
             Card(
                 Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(10.dp),
                 colors =
                     CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primary.copy(alpha = .10f)
@@ -268,8 +269,8 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                         result.text,
                         color =
                             if (result is Calculation.Error) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleLarge,
+                            else MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.padding(top = 8.dp),
                     )
                     ResponsePlot(result.plot)

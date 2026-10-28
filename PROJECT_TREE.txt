@@ -157,6 +157,7 @@ Electro/
   app/src/main/java/com/electrokit/app/domain/WorkbenchTools.kt
   app/src/main/java/com/electrokit/app/ui/components/ConnectorIllustrations.kt
   app/src/main/java/com/electrokit/app/ui/components/Drawings.kt
+  app/src/main/java/com/electrokit/app/ui/components/ElectroPanel.kt
   app/src/main/java/com/electrokit/app/ui/components/IndustrialDrawings.kt
   app/src/main/java/com/electrokit/app/ui/components/MultimeterLesson.kt
   app/src/main/java/com/electrokit/app/ui/components/ToolIcon.kt
@@ -209,6 +210,7 @@ Electro/
   docs/GITHUB_RELEASE_GUIDE.md
   docs/RELEASE_3_0.md
   docs/TESTING_GUIDE.md
+  docs/UI_REFERENCE.md
   docs/UPDATE_GUIDE.md
   documentation/ENGINEERING_REQUIREMENTS.md
   documentation/PHOTO_TRANSCRIPTIONS.md
@@ -364,6 +366,8 @@ Electro/
   scripts/validate_library.py
   settings.gradle.kts
   signing/original-release-certificate.sha256
+  signing/published-3.0.1-certificate.sha256
+  signing/release-certificate.sha256
   verification/README.md
   verification/apk-badging.txt
   verification/apk-permissions.txt

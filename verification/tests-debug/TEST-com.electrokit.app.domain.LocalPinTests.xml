@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T09:10:05" hostname="cd711711733c" time="2.323">
+<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-27T12:26:29" hostname="4156269b6c2a" time="0.335">
   <properties/>
-  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="1.66"/>
-  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.663"/>
+  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.281"/>
+  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.054"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

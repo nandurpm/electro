@@ -17,7 +17,7 @@ class VerificationTests(unittest.TestCase):
         (self.root / 'verification').mkdir()
         (self.root / 'signing').mkdir()
         (self.root / 'app/build.gradle.kts').write_text('versionName = "3.0"\nversionCode = 14\n')
-        (self.root / 'signing/original-release-certificate.sha256').write_text('a' * 64)
+        (self.root / 'signing/release-certificate.sha256').write_text('a' * 64)
         self.summary = {'version': '3.0', 'version_code': 14, 'signing': {'status': 'unsigned'}}
         self.write_summary()
         (self.root / 'verification/apk-badging.txt').write_text("package: name='com.electrokit.app' versionCode='14' versionName='3.0'\n")
@@ -42,6 +42,19 @@ class VerificationTests(unittest.TestCase):
 
     def test_unsigned_evidence_cannot_publish(self):
         with self.assertRaisesRegex(AssertionError, 'signed APK is required'):
+            check_verification.validate(self.root, require_signed=True)
+
+    def test_active_signed_certificate_is_accepted(self):
+        self.summary['signing'] = {'status': 'verified_release', 'certificate_sha256': 'a' * 64}
+        self.write_summary()
+        (self.root / 'verification/apk-signature.txt').write_text('Signer #1 certificate SHA-256 digest: ' + 'a' * 64)
+        check_verification.validate(self.root, require_signed=True)
+
+    def test_different_signed_certificate_is_rejected(self):
+        self.summary['signing'] = {'status': 'verified_release', 'certificate_sha256': 'b' * 64}
+        self.write_summary()
+        (self.root / 'verification/apk-signature.txt').write_text('Signer #1 certificate SHA-256 digest: ' + 'b' * 64)
+        with self.assertRaisesRegex(AssertionError, 'certificate mismatch'):
             check_verification.validate(self.root, require_signed=True)
 
 
