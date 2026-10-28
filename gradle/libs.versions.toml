@@ -13,7 +13,7 @@ compose-tooling = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }
 material3 = { module = "androidx.compose.material3:material3" }
 icons = { module = "androidx.compose.material:material-icons-core" }
-navigation = { module = "androidx.navigation:navigation-compose", version = "2.8.5" }
+navigation = { module = "androidx.navigation:navigation-compose", version = "2.10.2" }
 lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.7" }
 viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.8.7" }
 datastore = { module = "androidx.datastore:datastore-preferences", version = "1.3.0" }
