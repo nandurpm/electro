@@ -88,7 +88,7 @@ jobs:
 
           gh workflow run android-release.yml \
             --repo "$GITHUB_REPOSITORY" \
-            --ref "$tag" \
+            --ref main \
             -f release_tag="$tag"
 
           echo "Created $tag and dispatched Android Release against the tag."
