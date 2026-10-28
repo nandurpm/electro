@@ -194,7 +194,7 @@ def help_message() -> str:
         "/releases — Show recent versions\n"
         "/status — Check GitHub build/release status\n"
         "/help — Show this menu\n\n"
-        "Responses are checked about every 5 minutes, so replies may be delayed."
+        "Replies require scheduled GitHub Actions runs, which can be delayed. This is not an instant-response bot."
     )
 
 
@@ -228,45 +228,71 @@ def handle_command(token: str, chat_id: str, user_text: str, *, downloads_left: 
 
 
 def poll(token: str, chat_id: str) -> None:
+    """Safely process queued Telegram updates and acknowledge only handled IDs.
+
+    Telegram confirms updates when the next getUpdates call includes an offset.
+    Never consume the next message using a second read inside an existing batch.
+    """
     webhook = tg_form("getWebhookInfo", token)
     if webhook.get("url"):
         raise TelegramError("A Telegram webhook is active. Polling cannot run while webhook is configured")
     handled = 0
+    replies = 0
+    ignored = 0
     docs_sent = 0
+    offset: int | None = None
+
     while handled < MAX_UPDATES_PER_RUN:
-        updates = tg_form(
-            "getUpdates", token, limit=min(40, MAX_UPDATES_PER_RUN - handled),
-            timeout=0, allowed_updates=["message"]
-        )
+        options: dict[str, Any] = {
+            "limit": min(40, MAX_UPDATES_PER_RUN - handled),
+            "timeout": 0,
+            "allowed_updates": ["message"],
+        }
+        if offset is not None:
+            options["offset"] = offset
+        updates = tg_form("getUpdates", token, **options)
+        if not isinstance(updates, list):
+            raise TelegramError("Telegram returned an invalid update list")
         if not updates:
             break
+
         for update in updates:
-            if handled >= MAX_UPDATES_PER_RUN:
-                break
+            update_id = update.get("update_id")
+            if not isinstance(update_id, int):
+                raise TelegramError("Telegram update has no numeric ID")
+            if offset is not None and update_id < offset:
+                continue
+
             message = update.get("message") or {}
             chat = message.get("chat") or {}
-            if str(chat.get("id", "")) == chat_id and chat.get("type") == "private":
-                user_text = message.get("text", "")
-                if isinstance(user_text, str) and user_text:
-                    try:
-                        was_file = handle_command(
-                            token, chat_id, user_text,
-                            downloads_left=MAX_FILE_SENDS_PER_RUN - docs_sent
-                        )
-                        docs_sent += int(was_file)
-                    except PublicDataError:
-                        send_text(
-                            token, chat_id,
-                            "GitHub data or file is unavailable right now. Try again or use "
-                            "https://github.com/nandurpm/electro/releases"
-                        )
-            # Acknowledge only after sending; failures remain pending to retry.
-            tg_form(
-                "getUpdates", token, offset=int(update["update_id"]) + 1,
-                limit=1, timeout=0, allowed_updates=["message"]
-            )
+            user_text = message.get("text")
+            if str(chat.get("id", "")) == chat_id and chat.get("type") == "private" and isinstance(user_text, str) and user_text.strip():
+                try:
+                    was_file = handle_command(
+                        token, chat_id, user_text,
+                        downloads_left=MAX_FILE_SENDS_PER_RUN - docs_sent,
+                    )
+                    docs_sent += int(was_file)
+                    replies += 1
+                except PublicDataError:
+                    send_text(
+                        token, chat_id,
+                        "GitHub data or file is unavailable right now. Try again or use "
+                        "https://github.com/nandurpm/electro/releases"
+                    )
+                    replies += 1
+            else:
+                ignored += 1
+            # If send failed, the exception prevents acknowledging this update.
+            offset = update_id + 1
             handled += 1
-    print(f"Telegram poll completed; processed {handled} updates (authorized chat only).")
+
+    if offset is not None and handled >= MAX_UPDATES_PER_RUN:
+        # Confirm the last completed update even when the per-run quota was hit.
+        # The returned next message stays unacknowledged until the next poll.
+        tg_form("getUpdates", token, offset=offset, limit=1, timeout=0, allowed_updates=["message"])
+
+    print(f"Telegram polling: updates={handled}, command_replies={replies}, ignored={ignored}, documents={docs_sent}.")
 
 
 def main() -> int:
@@ -284,7 +310,7 @@ def main() -> int:
             send_text(
                 token, chat_id,
                 "ELECTRO bot commands are enabled. Send /help or use the buttons below.\n\n"
-                "Commands are checked approximately every 5 minutes.",
+                "Commands run on GitHub Actions schedules, which may be delayed.",
                 with_menu=True
             )
             print("Telegram command menu registered and setup message sent.")
