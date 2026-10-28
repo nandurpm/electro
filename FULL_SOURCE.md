@@ -629,7 +629,7 @@ Offline native Android engineering workbench. Version **3.0.2**, code **16**, ap
 ## Features
 
 - Material 3 dark-blue, light and system appearance; persistent header/search and visible Android system bars.
-- Home, Tools, Learn, Favorites and Settings, with recent public tools, bookmarks, saved calculation snapshots and retained raw inputs.
+- Home, Tools, Learn, Favorites and Profile, with recent public tools, bookmarks, saved calculation snapshots and retained raw inputs.
 - All original **31 calculators, 55 pinout entries, 21 resources and three Parts/AVR/PIC databases** remain reachable.
 - Seven additional utilities: ideal transformer, battery/UPS runtime, explicit-resistivity DC cable voltage-drop sizing, single-phase power factor, energy/cost, temperature and bounded scientific arithmetic.
 - Eight-dimensional unit converter with explicit source/destination units.
@@ -35918,6 +35918,22 @@ fun ElectroPanel(onClick: () -> Unit, modifier: Modifier = Modifier,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), content = content)
 }
 
+/** Selects the decorative symbol and brand accent shared by badges, tiles and category cards.
+ * @param title Category caption used to select a stable accent and symbol.
+ * @return Pair of a one-character symbol and its saturated accent colour; unknown titles use the neutral green.
+ */
+fun categoryAccent(title: String): Pair<String, Color> = when {
+    title.contains("alc", true) -> "ϟ" to Color(0xFFF66A24)
+    title.contains("omponent", true) -> "⚙" to Color(0xFF1767FF)
+    title.contains("earn", true) || title.contains("Lesson", true) -> "▣" to Color(0xFF7440E8)
+    title.contains("onvert", true) -> "⇄" to Color(0xFF007CAD)
+    title.contains("scalator", true) -> "↗" to Color(0xFF00867F)
+    title == "Pin-outs" -> "◈" to Color(0xFFB0307A)
+    title == "Reference" -> "≡" to Color(0xFF4C5FD5)
+    title == "Utilities" -> "∑" to Color(0xFFB36B00)
+    else -> "⌘" to Color(0xFF008C61)
+}
+
 /** Reference-inspired vivid category badge with a decorative symbol.
  * @param title Category used to select a stable accent and symbol.
  * @param modifier Caller size, normally at least 40 dp.
@@ -35925,14 +35941,7 @@ fun ElectroPanel(onClick: () -> Unit, modifier: Modifier = Modifier,
  */
 @Composable
 fun CategoryBadge(title: String, modifier: Modifier = Modifier) {
-    val (symbol, color) = when {
-        title.contains("alc", true) -> "ϟ" to Color(0xFFF66A24)
-        title.contains("omponent", true) -> "⚙" to Color(0xFF1767FF)
-        title.contains("earn", true) || title.contains("Lesson", true) -> "▣" to Color(0xFF7440E8)
-        title.contains("onvert", true) -> "⇄" to Color(0xFF007CAD)
-        title.contains("scalator", true) -> "↗" to Color(0xFF00867F)
-        else -> "⌘" to Color(0xFF008C61)
-    }
+    val (symbol, color) = categoryAccent(title)
     Surface(modifier, shape = RoundedCornerShape(9.dp), border = BorderStroke(1.dp, color.copy(alpha = .8f))) {
         Box(Modifier.background(Brush.linearGradient(listOf(color, color.copy(red = color.red * .5f, green = color.green * .5f, blue = color.blue * .5f)))).padding(6.dp), contentAlignment = Alignment.Center) {
             Text(symbol, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
@@ -37065,6 +37074,7 @@ fun Bar(
  * @param value Input scalar in the operation’s documented units.
  * @param onChange Receives edited text; persistence remains with the caller.
  * @param label Visible field/cell caption used for accessible presentation.
+ * @param shape Field outline; the dashboard uses a fully rounded pill, nested pages keep the compact corner.
  * @return Unit; rendering effects and state changes are delivered through callbacks or observable
  *   state. Rendering/callback failures propagate; recoverable persistence failures belong to the
  *   ViewModel.
@@ -37074,12 +37084,13 @@ fun Search(
     value: String,
     onChange: (String) -> Unit,
     label: String = stringResource(R.string.search),
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(8.dp),
 ) {
     OutlinedTextField(
         value,
         onChange,
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(8.dp),
+        shape = shape,
         colors =
             OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -39656,6 +39667,261 @@ fun UtilityScreen(tool: WorkbenchTool, vm: AppViewModel, prefs: PreferencesState
 
 ````
 
+## app/src/main/java/com/electrokit/app/ui/screens/WorkbenchDesign.kt
+
+````kotlin
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
+package com.electrokit.app.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.electrokit.app.BuildConfig
+import com.electrokit.app.data.ComponentAsset
+import com.electrokit.app.data.Entry
+import com.electrokit.app.data.PreferencesState
+import com.electrokit.app.ui.components.CategoryBadge
+import com.electrokit.app.ui.components.ElectroPanel
+import com.electrokit.app.ui.components.ToolIcon
+import com.electrokit.app.ui.components.categoryAccent
+import com.electrokit.app.viewmodel.AppViewModel
+
+/** Darkens an accent so a vertical gradient keeps white captions readable.
+ * @param color Saturated brand accent.
+ * @return The same hue at roughly half brightness.
+ */
+private fun shade(color: Color): Color = color.copy(red = color.red * .55f, green = color.green * .55f, blue = color.blue * .55f)
+
+/** Colored gradient launcher tile used by the Home quick-access grid.
+ * @param title Visible caption; also selects the symbol and accent through [categoryAccent].
+ * @param modifier Caller-owned size, normally a weighted cell of a three-column row.
+ * @param onClick Existing navigation callback; the tile performs no work itself.
+ * @return Unit; the tile exposes its caption as a button and hides the decorative symbol from accessibility.
+ */
+@Composable
+fun QuickTile(title: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val (symbol, color) = categoryAccent(title)
+    Column(
+        modifier.heightIn(min = 92.dp).clip(RoundedCornerShape(14.dp))
+            .background(Brush.verticalGradient(listOf(color, shade(color))))
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(symbol, Modifier.clearAndSetSemantics { }, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+        Text(title, Modifier.padding(top = 6.dp), color = Color.White, style = MaterialTheme.typography.labelLarge,
+            textAlign = TextAlign.Center, maxLines = 2)
+    }
+}
+
+/** Compact "Recently used" row: tool motif, title and a chevron, without the favourite action.
+ * @param entry Registry entry that was recently opened.
+ * @param onClick Opens the same stable registry route as the catalogue row.
+ * @return Unit; selection is delivered only through the callback.
+ */
+@Composable
+fun RecentRow(entry: Entry, onClick: () -> Unit) {
+    ElectroPanel(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center) { ToolIcon(entry.icon) }
+            Spacer(Modifier.width(12.dp))
+            Text(entry.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, maxLines = 2)
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** Large category card used by the Tools hub: accent badge, title, one-line scope and optional artwork.
+ * @param title Visible category heading.
+ * @param subtitle One-line description of what the category contains.
+ * @param badge Key understood by [categoryAccent] for the badge symbol and colour.
+ * @param asset Optional bundled public component image; protected escalator art must never be passed.
+ * @param onClick Opens the category through the caller's existing navigation state.
+ * @return Unit; the whole card is one accessible button.
+ */
+@Composable
+fun ToolCategoryCard(title: String, subtitle: String, badge: String, asset: ComponentAsset?, onClick: () -> Unit) {
+    ElectroPanel(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 88.dp).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            CategoryBadge(badge, Modifier.size(48.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+            }
+            if (asset != null) {
+                Spacer(Modifier.width(8.dp))
+                ComponentImage(asset, Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)))
+            }
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, Modifier.padding(start = 8.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** Static description of one Tools hub card; targets reuse the existing category keys of the Tools tab. */
+private data class HubCard(
+    /** Visible card heading. */
+    val title: String,
+    /** One-line scope description. */
+    val subtitle: String,
+    /** Badge key accepted by [categoryAccent]. */
+    val badge: String,
+    /** Existing Tools category key, or "Converters" for the unit-converter route. */
+    val target: String,
+    /** Optional bundled public component image id; protected escalator art is never used here. */
+    val imageId: String? = null,
+)
+
+/** Mockup-style Tools landing page: one large card per category instead of a row of filter chips.
+ * @param components Bundled component metadata used only for the optional public card artwork.
+ * @param modifier Host-provided insets and layout bounds.
+ * @param onSelect Receives the selected category key (Calculators, Data, Pin-outs, Reference, Converters, Engineering or Utilities).
+ * @return Unit; engineering access remains guarded by the existing gate when that category opens.
+ */
+@Composable
+fun ToolsHub(components: List<ComponentAsset>, modifier: Modifier = Modifier, onSelect: (String) -> Unit) {
+    val cards = remember {
+        listOf(
+            HubCard("Electrical Calculators", "Power, voltage, current and circuits", "Calculators", "Calculators", "digital_multimeter"),
+            HubCard("Electronics", "Parts, AVR and PIC databases", "Electronics", "Data", "axial_resistor"),
+            HubCard("Pin-outs", "Connectors, ports and interfaces", "Pin-outs", "Pin-outs"),
+            HubCard("Reference", "Tables, charts and resources", "Reference", "Reference"),
+            HubCard("Converters", "Unit conversions", "Converters", "Converters"),
+            HubCard("Escalator Engineering", "Fault codes, drives and diagrams", "Escalator", "Engineering"),
+            HubCard("Engineering Utilities", "Transformer, cable sizing, scientific tools", "Utilities", "Utilities"),
+        )
+    }
+    LazyColumn(modifier, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        items(cards, key = { it.title }) { card ->
+            ToolCategoryCard(card.title, card.subtitle, card.badge, components.firstOrNull { it.id == card.imageId }) { onSelect(card.target) }
+        }
+    }
+}
+
+/** One Profile row: accent badge, title, subtitle and either a navigation chevron or an expandable detail section.
+ * @param title Row heading.
+ * @param subtitle Current value or one-line summary.
+ * @param symbol Decorative single-character symbol drawn in the badge.
+ * @param accent Badge colour.
+ * @param onClick Optional navigation callback; ignored when [details] is supplied.
+ * @param details Optional content revealed beneath the row when it is tapped.
+ * @return Unit; the expanded state survives rotation and is keyed by the title.
+ */
+@Composable
+private fun ProfileRow(title: String, subtitle: String, symbol: String, accent: Color, onClick: (() -> Unit)? = null,
+    details: (@Composable ColumnScope.() -> Unit)? = null) {
+    var expanded by rememberSaveable(title) { mutableStateOf(false) }
+    val interactive = onClick != null || details != null
+    ElectroPanel(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 60.dp)
+                .then(if (interactive) Modifier.clickable(role = Role.Button) { if (details != null) expanded = !expanded else onClick?.invoke() } else Modifier)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(9.dp)).background(Brush.linearGradient(listOf(accent, shade(accent)))),
+                contentAlignment = Alignment.Center) {
+                Text(symbol, Modifier.clearAndSetSemantics { }, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (interactive) Icon(
+                when {
+                    details != null && expanded -> Icons.Default.KeyboardArrowUp
+                    details != null -> Icons.Default.KeyboardArrowDown
+                    else -> Icons.AutoMirrored.Filled.ArrowForward
+                },
+                null, tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (expanded && details != null) Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp), content = details)
+    }
+}
+
+/** Mockup-style Profile and settings page built from tappable rows; all data stays in the existing DataStore.
+ * @param vm Existing preference mutation owner (appearance, sort order and history clearing).
+ * @param prefs Latest committed preference snapshot.
+ * @param modifier Host-provided insets and layout bounds.
+ * @param openFavorites Switches to the Favorites tab, which also lists saved calculations.
+ * @param openAbout Opens the existing About/Info pages.
+ * @return Unit; destructive history clearing still requires the confirmation dialog.
+ */
+@Composable
+fun ProfileScreen(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier = Modifier, openFavorites: () -> Unit, openAbout: () -> Unit) {
+    var confirm by remember { mutableStateOf(false) }
+    Column(modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Profile & Settings", Modifier.padding(vertical = 4.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        ElectroPanel(Modifier.fillMaxWidth()) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                CategoryBadge("Components", Modifier.size(56.dp))
+                Spacer(Modifier.width(14.dp))
+                Column {
+                    Text("ELECTRO", style = MaterialTheme.typography.titleLarge)
+                    Text("Your engineering workspace", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        ProfileRow("Appearance", "Light / Dark / System", "◐", Color(0xFFF66A24), details = {
+            val mode = prefs.themeMode.ifBlank { if (prefs.light) "light" else "dark" }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("dark", "light", "system").forEach { choice ->
+                    FilterChip(mode == choice, { vm.appearance(choice) }, label = { Text(choice.replaceFirstChar { it.uppercase() }) })
+                }
+            }
+        })
+        ProfileRow("Language", "English", "Aa", Color(0xFF1767FF))
+        ProfileRow("Favorites", "Saved tools and components", "★", Color(0xFFB36B00), onClick = openFavorites)
+        ProfileRow("Calculation History", "Saved calculation results", "↺", Color(0xFF008C61), onClick = openFavorites)
+        ProfileRow("Data Management", "Tool order and saved results", "☰", Color(0xFF1767FF), details = {
+            TextButton({ confirm = true }) { Text("Clear saved calculation history") }
+            TextButton({ vm.sort() }) { Text(if (prefs.alphabetical) "Use original tool order" else "Sort tools A–Z") }
+        })
+        ProfileRow("About ELECTRO", "Version ${BuildConfig.VERSION_NAME}", "i", Color(0xFF007CAD), onClick = openAbout)
+        ProfileRow("Privacy & Help", "Offline by design", "✓", Color(0xFF4C5FD5), details = {
+            Text("No accounts, analytics, ads or network permission. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share.",
+                style = MaterialTheme.typography.bodyMedium)
+            Text("Engineering access is a basic local restriction. References are bundled, not encrypted.",
+                Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodyMedium)
+        })
+    }
+    if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Clear saved results?") },
+        text = { Text("Your favorites and calculator inputs will be retained.") },
+        confirmButton = { TextButton({ vm.clearCalculations(); confirm = false }) { Text("Clear history") } },
+        dismissButton = { TextButton({ confirm = false }) { Text("Cancel") } })
+}
+
+````
+
 ## app/src/main/java/com/electrokit/app/ui/screens/WorkbenchScreen.kt
 
 ````kotlin
@@ -39765,14 +40031,16 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     var query by rememberSaveable(tab) { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("Calculators") }
     var detail by rememberSaveable { mutableStateOf<String?>(null) }
+    var hub by rememberSaveable { mutableStateOf(true) }
     var menu by remember { mutableStateOf(false) }
     BackHandler(enabled = detail != null) { detail = null }
     BackHandler(enabled = detail == null && tab != 0) { tab = 0; query = "" }
+    BackHandler(enabled = detail == null && tab == 1 && !hub) { hub = true; category = "Calculators"; query = "" }
     val context = LocalContext.current
     val components by produceState<List<ComponentAsset>>(emptyList()) { value = withContext(Dispatchers.IO) { loadComponents(context) } }
     val access: EngineeringAccess = viewModel(context as ComponentActivity)
     val publicComponents = components.filter { it.category != "Escalator" }
-    val names = listOf("Home", "Tools", "Learn", "Favorites", "Settings")
+    val names = listOf("Home", "Tools", "Learn", "Favorites", "Profile")
     val component = components.firstOrNull { detail == "component:${it.id}" }
     val lesson = learningPages.firstOrNull { detail == "learn:${it.id}" }
     val utility = WorkbenchTools.all.firstOrNull { detail == "utility:${it.id}" }
@@ -39790,20 +40058,20 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
             Column {
                 Bar("ELECTRO", brand = true) {
                     IconButton(onClick = { info(0) }) { Icon(Icons.Default.Info, "Info") }
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Menu") }
+                    IconButton(onClick = { menu = true }) { Icon(Icons.Default.Settings, "Menu") }
                     DropdownMenu(menu, { menu = false }) {
                         DropdownMenuItem(text = { Text("Settings") }, onClick = { menu = false; settings() })
                         DropdownMenuItem(text = { Text("About ELECTRO") }, onClick = { menu = false; info(0) })
                     }
                 }
-                if (tab != 4 && !(tab == 1 && category in listOf("Data", "Engineering"))) Search(query, { query = it })
+                if (tab != 4 && !(tab == 1 && category in listOf("Data", "Engineering"))) Search(query, { query = it }, shape = RoundedCornerShape(28.dp))
             }
         },
         bottomBar = {
             NavigationBar(Modifier.testTag("main_navigation").height((64f + 64f * (LocalDensity.current.fontScale - 1f).coerceAtLeast(0f)).dp), windowInsets = WindowInsets(0, 0, 0, 0)) {
                 names.forEachIndexed { i, name ->
                     Column(Modifier.weight(1f).fillMaxHeight().selectable(selected = tab == i, role = Role.Tab,
-                        onClick = { tab = i; query = ""; if (i == 1) category = "Calculators"; if (i == 2) category = "Components" })
+                        onClick = { tab = i; query = ""; if (i == 1) { category = "Calculators"; hub = true }; if (i == 2) category = "Components" })
                         .padding(horizontal = 2.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center) {
                         Box(Modifier.clip(RoundedCornerShape(10.dp)).background(if (tab == i) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
@@ -39825,10 +40093,10 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surfaceContainerLowest))).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text("ELECTRICAL • ELECTRONICS", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
-                                Text("Engineering tools\nfor real work", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
+                                Text("Electrical Engineering\nTools for Real World", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(vertical = 8.dp))
                                 Text("Calculate · Design · Learn", style = MaterialTheme.typography.bodySmall)
-                                TextButton({ tab = 1 }) { Text("Explore tools →") }
+                                TextButton({ tab = 1; hub = true; category = "Calculators" }) { Text("Explore tools →") }
                             }
                             publicComponents.firstOrNull { it.id == "induction_motor" }?.let {
                                 Box(Modifier.width(112.dp).height(140.dp).clip(RoundedCornerShape(8.dp))) {
@@ -39839,17 +40107,23 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     }
                 }
                 if (query.isBlank()) {
-                    item { SectionTitle("Quick access") }
-                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuickCard("Calculators", Modifier.weight(1f)) { tab = 1; category = "Calculators" }
-                        QuickCard("Components", Modifier.weight(1f)) { tab = 2; category = "Components" }
-                        QuickCard("Pin-outs", Modifier.weight(1f)) { tab = 1; category = "Pin-outs" }
+                    item { SectionTitle("Quick Access") }
+                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        QuickTile("Calculators", Modifier.weight(1f)) { tab = 1; category = "Calculators"; hub = false }
+                        QuickTile("Components", Modifier.weight(1f)) { tab = 2; category = "Components" }
+                        QuickTile("Diagrams", Modifier.weight(1f)) { tab = 1; category = "Pin-outs"; hub = false }
                     } }
-                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuickCard("Escalator", Modifier.weight(1f)) { openEngineering("home") }
-                        QuickCard("Learning", Modifier.weight(1f)) { tab = 2; category = "Lessons" }
-                        QuickCard("Converters", Modifier.weight(1f)) { detail = "unit-converter" }
+                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        QuickTile("Escalator", Modifier.weight(1f)) { openEngineering("home") }
+                        QuickTile("Learning", Modifier.weight(1f)) { tab = 2; category = "Lessons" }
+                        QuickTile("Converters", Modifier.weight(1f)) { detail = "unit-converter" }
                     } }
+                    if (prefs.recent.isNotEmpty()) {
+                        item { SectionTitle("Recently Used") }
+                        items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }.take(4)) {
+                            RecentRow(it) { openEntry(it.id) }
+                        }
+                    }
                     item { SectionTitle("Featured calculators") }
                 }
                 items(vm.repository.registry.filter { it.screenType == "calculator" && it.title.contains(query, true) }.take(if (query.isBlank()) 3 else 100), key = { it.id }) {
@@ -39863,12 +40137,6 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         QuickCard(page.title, Modifier.fillMaxWidth()) { detail = "learn:${page.id}" }
                     }
                 } else {
-                    if (prefs.recent.isNotEmpty()) {
-                        item { SectionTitle("Recently used") }
-                        items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }) {
-                            EntryRow(it, { openEntry(it.id) }, it.id in prefs.favourites) { vm.star(it.id) }
-                        }
-                    }
                     item { SectionTitle("Component discovery") }
                     items(publicComponents.filter { it.id in listOf("digital_multimeter", "magnetic_contactor", "axial_resistor") }) { c ->
                         Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
@@ -39880,7 +40148,9 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     }
                 }
             }
-            1 -> Column(body) {
+            1 -> if (hub && query.isBlank()) ToolsHub(publicComponents, body) { target ->
+                if (target == "Converters") detail = "unit-converter" else { category = target; hub = false }
+            } else Column(body) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(listOf("Calculators", "Pin-outs", "Reference", "Data", "Engineering", "Utilities")) { name ->
                         FilterChip(category == name, { category = name }, label = { Text(name) })
@@ -39951,7 +40221,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     Card { Text(result, Modifier.padding(16.dp)); TextButton({ share(context, result) }) { Text("Share calculation") } }
                 }
             }
-            else -> ElectroSettings(vm, prefs, body)
+            else -> ProfileScreen(vm, prefs, body, { tab = 3 }, { info(0) })
         }
     }
 }
@@ -42753,6 +43023,7 @@ class AndroidUiRegressionTests {
             repository.loadAssets()
             repository.update { it.copy(modules = emptySet()) }
         }
+        ui.onNodeWithText("Electrical Calculators").performClick()
         ui.onNodeWithText("34 calculators", substring = true).assertExists()
         ui.onAllNodesWithText("Data").onLast().performClick()
         for (entry in repository.registry.filter { it.tab == "PLUGINS" }) {
@@ -42947,7 +43218,7 @@ class DesignPreviewTests {
         save("home")
         theme(true)
         save("light")
-        ui.onNodeWithText("Settings").performClick()
+        ui.onNodeWithText("Profile").performClick()
         save("settings")
     }
 
@@ -43035,7 +43306,7 @@ class EngineeringUiTests {
      */
     @Test fun allHomeTabsVisible() {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
-        listOf("Home", "Tools", "Learn", "Favorites", "Settings").forEach {
+        listOf("Home", "Tools", "Learn", "Favorites", "Profile").forEach {
             ui.onAllNodesWithText(it).onLast().assertIsDisplayed()
         }
     }
@@ -43094,10 +43365,11 @@ class EngineeringUiTests {
         ui.activityRule.scenario.recreate()
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithText("Tools").performClick()
+        ui.onNodeWithText("Electrical Calculators").performClick()
         ui.onAllNodes(verticalList()).onLast().performScrollToNode(hasText("Resistor Colour Code"))
         ui.onNodeWithText("Resistor Colour Code").assertIsDisplayed()
         save("navigation-large")
-        listOf("Home", "Tools", "Learn", "Favorites", "Settings").forEach { label ->
+        listOf("Home", "Tools", "Learn", "Favorites", "Profile").forEach { label ->
             val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
             ui.onNode(hasText(label) and hasAnyAncestor(hasTestTag("main_navigation")), useUnmergedTree = true)
                 .assertIsDisplayed().performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
@@ -43114,7 +43386,7 @@ class EngineeringUiTests {
     private fun home() {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithText("Tools").performClick()
-        ui.onNodeWithText("Engineering").performClick()
+        ui.onNodeWithText("Escalator Engineering").performClick()
         ui.onNode(hasSetTextAction() and hasText("Access code")).performTextReplacement("789")
         ui.onNodeWithText("Unlock").performClick()
         ui.waitUntil(30000) { ui.onAllNodes(hasSetTextAction() and hasText("Search engineering topics and tools")).fetchSemanticsNodes().isNotEmpty() }
@@ -43256,6 +43528,7 @@ class EngineeringUiTests {
     @Test fun catalogueKeepsHeaderAndSearchPinned() {
         ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithText("Tools").performClick()
+        ui.onNodeWithText("Electrical Calculators").performClick()
         ui.onAllNodes(verticalList()).onLast().performScrollToNode(hasText("Voltage divider"))
         ui.onAllNodes(verticalList()).onLast().performTouchInput { swipeUp() }
         ui.mainClock.advanceTimeBy(1000)
@@ -43315,7 +43588,7 @@ class WorkbenchUiTests {
     private fun ready() { ui.waitUntil(30000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() } }
 
     /** @return Unit; opens the guarded destination using public navigation. */
-    private fun engineering() { ready(); ui.onNodeWithText("Tools").performClick(); ui.onNodeWithText("Engineering").performClick() }
+    private fun engineering() { ready(); ui.onNodeWithText("Tools").performClick(); ui.onNodeWithText("Escalator Engineering").performClick() }
 
     /** @return Unit; incorrect input cannot reveal snippets, and manual locking removes composed data. */
     @Test fun protectedContentRequiresCodeAndRelocks() {
@@ -43359,9 +43632,7 @@ class WorkbenchUiTests {
     /** @return Unit; a new public model calculates through its native inputs and Android Back returns to Tools. */
     @Test fun utilityCalculationAndAndroidBack() {
         ready(); ui.onNodeWithText("Tools").performClick()
-        ui.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.HorizontalScrollAxisRange))
-            .performScrollToNode(hasText("Utilities"))
-        ui.onNodeWithText("Utilities").performClick()
+        ui.onNodeWithText("Engineering Utilities").performClick()
         ui.onNodeWithText("Ideal transformer").performClick()
         ui.onNode(hasSetTextAction() and hasText("Primary voltage (V)")).performTextReplacement("240")
         ui.onNode(hasSetTextAction() and hasText("Primary turns")).performTextReplacement("1000")
@@ -43375,9 +43646,7 @@ class WorkbenchUiTests {
     /** @return Unit; selected units govern the actual converter input and output without duplicate prefix scaling. */
     @Test fun unitConverterNativeWorkflow() {
         ready(); ui.onNodeWithText("Tools").performClick()
-        ui.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.HorizontalScrollAxisRange))
-            .performScrollToNode(hasText("Utilities"))
-        ui.onNodeWithText("Utilities").performClick()
+        ui.onNodeWithText("Engineering Utilities").performClick()
         ui.onNodeWithText("Engineering unit converter").performClick()
         ui.onNode(hasSetTextAction() and hasText("Value")).performTextReplacement("3.3")
         ui.onNodeWithText("3300 mV").assertExists()
@@ -43404,7 +43673,8 @@ class WorkbenchUiTests {
     /** @return Unit; the native home render is exported from the simulated Activity for visual review. */
     @Test fun homeScreenshotAndSystemBarFlags() {
         ready()
-        ui.onNodeWithText("Settings").performClick()
+        ui.onNodeWithText("Profile").performClick()
+        ui.onNodeWithText("Appearance").performClick()
         ui.onNodeWithText("Dark").performClick()
         ui.waitUntil(10000) { !com.electrokit.app.data.StartupTheme.light(ui.activity) }
         ui.onNodeWithText("Home").performClick()

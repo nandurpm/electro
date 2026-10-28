@@ -279,6 +279,7 @@ class AndroidUiRegressionTests {
             repository.loadAssets()
             repository.update { it.copy(modules = emptySet()) }
         }
+        ui.onNodeWithText("Electrical Calculators").performClick()
         ui.onNodeWithText("34 calculators", substring = true).assertExists()
         ui.onAllNodesWithText("Data").onLast().performClick()
         for (entry in repository.registry.filter { it.tab == "PLUGINS" }) {

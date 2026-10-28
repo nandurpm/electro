@@ -113,7 +113,7 @@ class DesignPreviewTests {
         save("home")
         theme(true)
         save("light")
-        ui.onNodeWithText("Settings").performClick()
+        ui.onNodeWithText("Profile").performClick()
         save("settings")
     }
 
