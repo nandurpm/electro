@@ -21,11 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Tag changed app version and dispatch signed release
         env:
           GH_TOKEN: ${{ github.token }}
+          BEFORE_SHA: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
 
@@ -50,10 +52,12 @@ jobs:
           PY
           )
 
-          previous_version=$(git show HEAD^:app/build.gradle.kts | python3 -c 'import re,sys; match=re.search(r"versionName\s*=\s*\"([^\"]+)\"", sys.stdin.read()); print(match.group(1) if match else "")')
-          previous_code=$(git show HEAD^:app/build.gradle.kts | python3 -c 'import re,sys; match=re.search(r"versionCode\s*=\s*(\d+)", sys.stdin.read()); print(match.group(1) if match else "")')
+          previous_ref="${BEFORE_SHA:-}"
+          if [ -z "$previous_ref" ] || [ "$previous_ref" = 0000000000000000000000000000000000000000 ]; then previous_ref=HEAD^; fi
+          previous_version=$(git show "$previous_ref":app/build.gradle.kts | python3 -c 'import re,sys; match=re.search(r"versionName\s*=\s*\"([^\"]+)\"", sys.stdin.read()); print(match.group(1) if match else "")')
+          previous_code=$(git show "$previous_ref":app/build.gradle.kts | python3 -c 'import re,sys; match=re.search(r"versionCode\s*=\s*(\d+)", sys.stdin.read()); print(match.group(1) if match else "")')
 
-          if [ "$current_version" = "$previous_version" ] && [ "$current_code" = "$previous_code" ]; then
+          if [ "$EVENT_NAME" != workflow_dispatch ] && [ "$current_version" = "$previous_version" ] && [ "$current_code" = "$previous_code" ]; then
             echo "No version change detected; nothing to release."
             exit 0
           fi
@@ -69,14 +73,18 @@ jobs:
 
           tag="v$current_version"
           if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
-            echo "Tag $tag already exists; refusing to create or republish it." >&2
-            exit 1
+            git fetch origin "refs/tags/$tag:refs/tags/$tag"
+            tagged=$(git rev-parse "$tag^{commit}")
+            if [ "$tagged" != "$GITHUB_SHA" ]; then
+              echo "Tag $tag points to another commit; refusing to overwrite it." >&2
+              exit 1
+            fi
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git tag -a "$tag" -m "ELECTRO $current_version" "$GITHUB_SHA"
+            git push origin "$tag"
           fi
-
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -a "$tag" -m "ELECTRO $current_version" "$GITHUB_SHA"
-          git push origin "$tag"
 
           gh workflow run android-release.yml \
             --repo "$GITHUB_REPOSITORY" \

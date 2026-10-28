@@ -289,7 +289,7 @@ object Calculators {
                     listOf(Messages.V_I, Messages.I_R, Messages.V_R),
                     Messages.P_VI_I_R_OR_V_R_TJ,
                 )
-            // c17 Battery hours=capacity_mAh×usable_fraction/(load_mA×duty_fraction).
+            // c17 Battery hours=capacity_mAh×usable_fraction/(active_mA×duty+idle_mA×(1−duty)).
             17 ->
                 Calculator(
                     listOf(
@@ -622,12 +622,15 @@ object Calculators {
                     val c = pos("c")
                     val l = pos("l")
                     val f = pos("freq")
-                    out(
+                    val resistance = optional("r")
+                    require(resistance == null || resistance >= 0) { "Resistance cannot be negative." }
+                    val results = mutableListOf(
                         Messages.XC to 1 / (2 * PI * f * c),
                         Messages.XL to 2 * PI * f * l,
                         Messages.RESONANT_FREQUENCY_HZ to 1 / (2 * PI * sqrt(l * c)),
-                        Messages.SERIES_Q to sqrt(l / c) / pos("r"),
                     )
+                    if (resistance != null && resistance > 0) results.add(Messages.SERIES_Q to sqrt(l / c) / resistance)
+                    out(*results.toTypedArray())
                 }
                 // c6 Filters: fc=1/(2πRC) or R/(2πL) Hz; magnitude is unitless.
                 6 -> {
@@ -694,7 +697,7 @@ object Calculators {
                 9,
                 10 -> {
                     val list =
-                        values["values"].orEmpty().split(',', ';', '\n').map {
+                        values["values"].orEmpty().split(',', ';', '\n').map(String::trim).filter(String::isNotEmpty).map {
                             Engineering.parse(it)
                                 ?: throw IllegalArgumentException(Messages.EVERY_LIST_ENTRY_MUST_BE_A_VALID_POSITIVE)
                         }
@@ -801,7 +804,7 @@ object Calculators {
                         Messages.ESTIMATED_JUNCTION_C to n("ta") + p * pos("theta"),
                     )
                 }
-                // c17 Battery hours=capacity_mAh×usable_fraction/(load_mA×duty_fraction).
+                // c17 Battery hours=capacity_mAh×usable_fraction/(active_mA×duty+idle_mA×(1−duty)).
                 17 -> {
                     val d = n("duty") / 100
                     val e = n("eff") / 100
@@ -834,9 +837,11 @@ object Calculators {
                         if (mode >= 2)
                             PI / 4 * (0.127 * 92.0.pow((36 - integer("awg", -3..40)) / 39.0)).pow(2)
                         else pos("area")
+                    require(n("temp") >= -273.15) { "Temperature is below absolute zero." }
                     val rho =
                         (if (mode % 2 == 0) 0.017241 else 0.028264) *
                             (1 + (if (mode % 2 == 0) 0.00393 else 0.00403) * (n("temp") - 20))
+                    require(rho > 0) { "Temperature is outside the positive-resistivity range of this linear model." }
                     val drop = Circuits.voltageDrop(pos("length"), area, pos("i"), rho)
                     val v = pos("v")
                     require(drop < v) { Messages.VOLTAGE_DROP_EXCEEDS_SUPPLY }

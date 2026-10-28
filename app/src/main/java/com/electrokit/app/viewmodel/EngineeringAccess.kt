@@ -20,6 +20,8 @@ class EngineeringAccess : ViewModel() {
     private var retryAt = 0L
     /** Overlapping navigation animations may compose multiple gates against the same Activity. */
     private var protectedSurfaces = 0
+    /** Invalidates an in-flight verification when the app is locked or backgrounded. */
+    private var generation = 0L
 
     /** Marks a protected surface without retaining its Window in the ViewModel.
      * @param window Current Activity window, used only for this call.
@@ -45,7 +47,9 @@ class EngineeringAccess : ViewModel() {
  */
     suspend fun unlockAsync(candidate: String): String? {
         if (SystemClock.elapsedRealtime() < retryAt) return COOLDOWN_MESSAGE
+        val requestGeneration = generation
         val accepted = withContext(Dispatchers.Default) { LocalPin.verify(candidate) }
+        if (generation != requestGeneration) return "Access request expired. Try again."
         return finishAttempt(accepted)
     }
 
@@ -84,5 +88,5 @@ class EngineeringAccess : ViewModel() {
     /** Immediately removes protected content from every composable sharing this session.
  * @return Unit; synchronously removes access for all destinations sharing this ViewModel.
  */
-    fun lock() { unlocked = false }
+    fun lock() { generation++; unlocked = false }
 }

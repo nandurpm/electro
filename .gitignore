@@ -14,3 +14,9 @@ keystore.properties
 venv/
 __pycache__/
 *.pyc
+
+# Generated for release archives; never require a commit after every source edit.
+/FULL_SOURCE.md
+/PROJECT_TREE.txt
+/SHA256SUMS.txt
+/verification/

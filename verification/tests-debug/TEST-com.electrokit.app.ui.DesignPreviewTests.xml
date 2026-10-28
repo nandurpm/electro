@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.ui.DesignPreviewTests" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:14" hostname="6e09c42621cb" time="2.055">
-  <properties/>
-  <testcase name="homePreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.794"/>
-  <testcase name="connectorPreview" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.269"/>
-  <testcase name="illustratedReferencePreviews" classname="com.electrokit.app.ui.DesignPreviewTests" time="0.991"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

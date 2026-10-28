@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.electrokit.app.R
 import com.electrokit.app.data.Diagram
 import kotlin.math.*
@@ -294,7 +295,7 @@ fun DiagramView(diagram: Diagram, modifier: Modifier = Modifier) {
                     y,
                     android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                         this.color = color.toArgb()
-                        textSize = sz * density
+                        textSize = sz.sp.toPx()
                         textAlign = android.graphics.Paint.Align.CENTER
                     },
                 )

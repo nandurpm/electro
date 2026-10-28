@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.electrokit.app.domain.LocalPinTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:59:33" hostname="6e09c42621cb" time="1.219">
-  <properties/>
-  <testcase name="invalidCandidatesFail" classname="com.electrokit.app.domain.LocalPinTests" time="0.906"/>
-  <testcase name="initialCodeVerifies" classname="com.electrokit.app.domain.LocalPinTests" time="0.313"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

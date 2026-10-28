@@ -3,6 +3,11 @@ package com.electrokit.app.ui.screens
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,7 +26,7 @@ import com.electrokit.app.viewmodel.EngineeringAccess
  */
 @Composable
 fun EngineeringGate(back: (() -> Unit)? = null, content: @Composable () -> Unit) {
-    val activity = LocalContext.current as ComponentActivity
+    val activity = requireNotNull(LocalContext.current.componentActivity())
     val access: EngineeringAccess = viewModel(activity)
     DisposableEffect(activity) {
         access.enterProtected(activity.window)
@@ -39,25 +44,27 @@ fun EngineeringGate(back: (() -> Unit)? = null, content: @Composable () -> Unit)
         var error by remember { mutableStateOf<String?>(null) }
         var busy by remember { mutableStateOf(false) }
         val scope = rememberCoroutineScope()
+        val submit: () -> Unit = {
+            if (!busy) {
+                val attempt = pin
+                pin = ""
+                busy = true
+                scope.launch { try { error = access.unlockAsync(attempt) } finally { busy = false } }
+            }
+        }
         Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
             if (back != null) TextButton(back) { Text("Back") }
-            Text("Engineering access", style = MaterialTheme.typography.headlineMedium)
-            Text("Enter your local access code to open escalator references.", Modifier.padding(vertical = 12.dp))
-            OutlinedTextField(pin, { if (it.length <= 3 && it.all(Char::isDigit)) pin = it },
+            Text("Advanced references", style = MaterialTheme.typography.headlineMedium)
+            Text("Enter the local display code to show escalator references. This is not data encryption.", Modifier.padding(vertical = 12.dp))
+            OutlinedTextField(pin, { if (it.length <= 3 && it.all { c -> c in '0'..'9' }) pin = it },
                 label = { Text("Access code") }, singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
                 isError = error != null, modifier = Modifier.fillMaxWidth())
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
             Button(
-                onClick = {
-                    val attempt = pin
-                    pin = ""
-                    busy = true
-                    scope.launch {
-                        try { error = access.unlockAsync(attempt) } finally { busy = false }
-                    }
-                },
+                onClick = submit,
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
             ) { Text("Unlock") }

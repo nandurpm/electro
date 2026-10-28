@@ -1,5 +1,12 @@
 # Changes
 
+## Unreleased audit fixes (3.3.0/code 19 source)
+
+- Corrected formatter, resistor-code, list-input and numeric-boundary behavior; added regression coverage.
+- Improved reference-gate lifecycle, error/reset accessibility and input-write scheduling.
+- Build both variants in CI and generate verification/source evidence as artifacts.
+- See [the audit follow-up](docs/AUDIT_2026_10_28.md) for remaining migrations and limitations.
+
 ## 3.1.0 — workbench UI redesign and verified release
 
 - Refreshed the workbench presentation with a redesigned home/workbench surface, reusable ELECTRO panels, updated navigation labels and Profile presentation, while keeping the existing offline calculators, references, persistence and application identity connected.

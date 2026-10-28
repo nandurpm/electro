@@ -44,13 +44,16 @@ jobs:
           python scripts/validate_engineering.py
           python scripts/validate_library.py
           python scripts/check_contrast.py
-          python scripts/package_project.py --check
-          # A version bump is tested by the release workflow after it builds a new APK.
-          # Ordinary CI may validate committed evidence identity and signing without
-          # rejecting the source while it temporarily describes the next version.
-          python scripts/check_verification.py --allow-version-mismatch
-      - name: Test, lint and build debug APK
-        run: ./gradlew --no-daemon --max-workers=4 testDebugUnitTest lintDebug assembleDebug
+      - name: Test debug and release variants
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --max-workers=4 testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleDebug assembleRelease | tee "$RUNNER_TEMP/electro-ci-build.log"
+      - name: Generate current build evidence and source archive
+        run: |
+          "$RUNNER_TEMP/electro-python/bin/python" scripts/record_verification.py --apk app/build/outputs/apk/release/app-release-unsigned.apk --build-log "$RUNNER_TEMP/electro-ci-build.log" --variants debug release
+          python3 scripts/package_project.py --archive "$RUNNER_TEMP/ELECTRO-source.zip"
+          python3 scripts/package_project.py --check
+          python3 scripts/check_verification.py --apk app/build/outputs/apk/release/app-release-unsigned.apk
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         continue-on-error: true
@@ -61,4 +64,6 @@ jobs:
             app/build/reports/
             app/build/test-results/
             app/build/design-previews/
+            verification/
+            ${{ runner.temp }}/ELECTRO-source.zip
           retention-days: 14

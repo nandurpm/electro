@@ -22,6 +22,9 @@ object StartupTheme {
      * @return Unit; this best-effort hint never replaces or mutates the authoritative DataStore record.
      */
     fun remember(context: Context, light: Boolean) {
-        context.getSharedPreferences("startup_appearance", Context.MODE_PRIVATE).edit().putBoolean("light", light).apply()
+        val preferences = context.getSharedPreferences("startup_appearance", Context.MODE_PRIVATE)
+        if (!preferences.contains("light") || preferences.getBoolean("light", false) != light) {
+            preferences.edit().putBoolean("light", light).apply()
+        }
     }
 }

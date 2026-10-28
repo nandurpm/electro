@@ -2,7 +2,7 @@
 
 **Electrical • Electronics • Engineering**
 
-Offline native Android engineering workbench. Version **3.0.2**, code **16**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline native Android engineering workbench. Version **3.3.0**, code **19**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 ## Features
 
@@ -98,7 +98,7 @@ All Kotlin paths below are under `app/src/main/java/com/electrokit/app/`.
 
 Images/metadata: `app/src/main/assets/components/` and `components.json`. Original engineering content: `app/src/main/assets/engineering.json` and `engineering_tools.json`. Android strings/icons: `app/src/main/res/`.
 
-The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Current `verification/` files are regenerated from the actual 3.0.2 APK, tests and lint reports. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the active, user-authorized release certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
+The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Verification files are generated from each current APK, tests and lint reports and published as build artifacts; they are not committed. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the active, user-authorized release certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
 
 ## Maintenance guides
 
@@ -116,3 +116,5 @@ Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELE
 ELECTRO 3.0.2 uses a newly authorized signing key. It cannot update older-key installations; uninstalling those installations removes their local data. Keep the separate private signing backup for future updates.
 
 Repository maintenance: runtime artwork lives only in `app/src/main/assets/components/`. Duplicate photo packs, unused catalogue previews and obsolete historical reports were removed; Git history retains earlier copies. See [artwork provenance](docs/ARTWORK_PROVENANCE.md).
+
+Build evidence, the combined source listing and SHA-256 manifest are generated for CI/release archives and are no longer committed. CI builds and tests both debug and release before generating fresh verification. Run `python scripts/package_project.py` locally to regenerate the source listing, or use `--archive PATH.zip` to package it.

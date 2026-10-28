@@ -57,8 +57,8 @@ class FormattingRegressionTests {
      */
     @Test
     fun unitlessValuesNeverUseEngineeringPrefixes() {
-        assertEquals("1E+7", Engineering.format(1e7))
-        assertEquals("1E-7", Engineering.format(1e-7))
+        assertEquals("10000000", Engineering.format(1e7))
+        assertEquals("0.0000001", Engineering.format(1e-7))
         assertEquals("12.3457 V/V", Engineering.format(12.3456789, "V/V"))
         assertEquals("0", Engineering.format(-0.0))
     }

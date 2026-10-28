@@ -203,7 +203,7 @@ class EngineeringModuleTests {
     @Test
     fun unitConversions() {
         check("unit-converter", mapOf("conversion" to "mA → A", "x" to "20mA"), "0.02 A")
-        check("unit-converter", mapOf("conversion" to "kWh → J", "x" to "1kWh"), "3.6E+6 J")
+        check("unit-converter", mapOf("conversion" to "kWh → J", "x" to "1kWh"), "3600000 J")
         assertTrue(
             EngineeringTools.calculate(
                 "unit-converter",

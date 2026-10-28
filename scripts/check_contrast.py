@@ -53,7 +53,7 @@ def main():
     # Evidence drift fails even if both old and new palettes happen to meet the threshold.
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--write',action='store_true')
-    args=parser.parse_args();result=report();evidence=ROOT/'verification/contrast.txt'
+    args=parser.parse_args();result=report();evidence=ROOT/'scripts/contrast-baseline.txt'
     if args.write:evidence.write_text(result)
     else:assert evidence.read_text()==result,'Stale contrast evidence; run scripts/check_contrast.py --write'
     print(result,end='')

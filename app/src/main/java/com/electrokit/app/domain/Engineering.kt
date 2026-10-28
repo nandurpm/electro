@@ -91,7 +91,7 @@ object Engineering {
             return number.toDoubleOrNull()?.takeIf(Double::isFinite)?.let { Parsed(it, true, tail) }
         val power = powers[tail[0]] ?: return null
         val rest = tail.drop(1)
-        val digits = rest.takeWhile(Char::isDigit)
+        val digits = rest.takeWhile { it in '0'..'9' }
         val unit = rest.drop(digits.length)
         if (
             unit !in units ||
@@ -202,13 +202,9 @@ object Engineering {
         // Keep an already scaled label intact instead of emitting invalid compound prefixes.
         if (unit in UnitCatalog.plainDisplayUnits) return format(value) + " " + unit
         if (unit.isBlank() || unit == "V/V") {
-            val rounded =
-                BigDecimal.valueOf(if (value == 0.0) 0.0 else value)
-                    .round(MathContext(6, RoundingMode.HALF_UP))
-                    .stripTrailingZeros()
-            val plain =
-                if (value == 0.0 || abs(value) in 1e-4..1e6) rounded.toPlainString()
-                else rounded.toString()
+            val decimal = BigDecimal.valueOf(if (value == 0.0) 0.0 else value)
+            val plain = (if (abs(value) < 1e6) decimal.round(MathContext(6, RoundingMode.HALF_UP)) else decimal)
+                .stripTrailingZeros().toPlainString()
             return plain + if (unit.isBlank()) "" else " $unit"
         }
         if (value == 0.0) return "0 $unit".trim()
@@ -251,7 +247,7 @@ object Circuits {
     /**
      * Rejects non-positive and non-finite quantities before physical divisions and square roots.
      *
-     * @param x Coordinate in this renderer’s documented canvas space.
+     * @param x Quantities required to be finite and strictly greater than zero.
      * @return Unit after all constraints pass. Invalid physical constraints throw
      *   IllegalArgumentException for the calculator boundary to report; no persistence occurs here.
      */
@@ -734,7 +730,7 @@ object Resistors {
         val e = floor(log10(value)).toInt()
         return ((e - 1)..(e + 1))
             .flatMap { power -> standard(n).map { it * 10.0.pow(power) } }
-            .filter { !up || it >= value }
+            .filter { !up || it >= value || abs(it - value) <= value * 1e-12 }
             .minBy { abs(it - value) }
     }
 
@@ -747,9 +743,9 @@ object Resistors {
      */
     fun smd(code: String): Double {
         val s = code.uppercase().trim()
-        if (s.contains('R') && !(s.length == 3 && s.last() == 'R' && s.take(2).all(Char::isDigit)))
+        if (s.contains('R'))
             return Engineering.parse(s) ?: throw IllegalArgumentException(Messages.INVALID_R_NOTATION)
-        if (s.length == 3 && s.take(2).all(Char::isDigit) && s.last().isLetter()) {
+        if (s.length == 3 && s.take(2).all { it in '0'..'9' } && s.last().isLetter()) {
             val idx = s.take(2).toInt()
             require(idx in 1..96) { Messages.EIA_96_CODE_MUST_START_WITH_A_NUMBER }
             val m =
@@ -769,7 +765,7 @@ object Resistors {
                 )[s.last()] ?: throw IllegalArgumentException(Messages.INVALID_EIA_96_MULTIPLIER)
             return e96[idx - 1] * m
         }
-        require(s.length in 3..4 && s.all(Char::isDigit)) {
+        require(s.length in 3..4 && s.all { it in '0'..'9' }) {
             Messages.USE_3_4_DIGITS_R_NOTATION_OR_EIA
         }
         return s.dropLast(1).toDouble() * 10.0.pow(s.last().digitToInt())
@@ -812,7 +808,7 @@ object Resistors {
                 e96.mapIndexed { ix, x ->
                     Triple(
                         abs(x * 10.0.pow(e) - v),
-                        "%02d".format(ix + 1) +
+                        "%02d".format(Locale.US, ix + 1) +
                             mapOf(
                                 -3 to "Z",
                                 -2 to "Y",
