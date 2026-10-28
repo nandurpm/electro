@@ -1,11 +1,9 @@
 [versions]
 agp = "8.7.3"
-kotlin = "2.4.21"
-agp = "9.4.1"
 kotlin = "2.0.21"
 compose = "2024.12.01"
 [libraries]
-androidx-core = { module = "androidx.core:core-ktx", version = "1.19.1" }
+androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
 activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
 compose-ui = { module = "androidx.compose.ui:ui" }
@@ -13,15 +11,13 @@ compose-tooling = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }
 material3 = { module = "androidx.compose.material3:material3" }
 icons = { module = "androidx.compose.material:material-icons-core" }
-navigation = { module = "androidx.navigation:navigation-compose", version = "2.10.2" }
+navigation = { module = "androidx.navigation:navigation-compose", version = "2.8.5" }
 lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.7" }
 viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.8.7" }
 datastore = { module = "androidx.datastore:datastore-preferences", version = "1.1.1" }
-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.12.0" }
-datastore = { module = "androidx.datastore:datastore-preferences", version = "1.3.0" }
 serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.7.3" }
 junit = { module = "junit:junit", version = "4.13.2" }
-robolectric = { module = "org.robolectric:robolectric", version = "4.17" }
+robolectric = { module = "org.robolectric:robolectric", version = "4.14.1" }
 compose-test = { module = "androidx.compose.ui:ui-test-junit4" }
 test-core = { module = "androidx.test:core-ktx", version = "1.6.1" }
 [plugins]
