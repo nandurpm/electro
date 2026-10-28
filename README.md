@@ -2,7 +2,7 @@
 
 **Electrical • Electronics • Engineering**
 
-Offline native Android engineering workbench. Version **3.3.0**, code **19**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline native Android engineering workbench. Version **4.0.0**, code **20**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 ## Features
 
@@ -25,7 +25,7 @@ The salted PBKDF2 record, constant-time comparison and session-local attempt del
 
 ## Installation
 
-Build/download `app/build/outputs/apk/debug/app-debug.apk`, extract it from the GitHub Actions artifact if necessary, and open it on Android. Allow installation from the browser/Files app when prompted.
+For the production release, download `ELECTRO-4.0.0.apk` from [GitHub Releases](https://github.com/nandurpm/electro/releases) after the signed Android Release workflow succeeds. For development, build `app/build/outputs/apk/debug/app-debug.apk` or extract the debug artifact from GitHub Actions. Android may ask you to allow installation from your browser or Files app.
 
 A debug certificate generally cannot update a release-signed installation. Preserve the same application ID, original release key and increasing versionCode for data-preserving updates. Do not uninstall a valued installation merely to bypass a certificate mismatch.
 

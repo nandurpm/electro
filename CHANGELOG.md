@@ -1,6 +1,15 @@
 # Changes
 
-## Unreleased audit fixes (3.3.0/code 19 source)
+## 4.0.0 — engineering correctness and reliability (code 20)
+
+- Promoted the audited source changes after 3.3.0 into the 4.0.0 release candidate; no new engineering specifications or manufacturer claims are introduced.
+- Fixed numeric formatting, E-series tolerance, SMD codes, list parsing, reactance/resistance and calculation boundary cases, with regression tests.
+- Strengthened engineering access lifecycle locking, reset/error feedback, text scaling and saved-input handling.
+- Restored the validated dependency catalog after merged updates introduced duplicate TOML keys and broke Android CI.
+- The signed-release workflow must pass unit tests, lint, APK signature/certificate verification and source packaging before publication; physical-device validation remains outstanding.
+- See [the audit follow-up](docs/AUDIT_2026_10_28.md) for unresolved items.
+
+## Audit changes originally prepared in 3.3.0 source
 
 - Corrected formatter, resistor-code, list-input and numeric-boundary behavior; added regression coverage.
 - Improved reference-gate lifecycle, error/reset accessibility and input-write scheduling.
