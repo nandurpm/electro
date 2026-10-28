@@ -7,5 +7,8 @@
         <item name="android:navigationBarColor">#0C1422</item>
         <item name="android:windowActionModeOverlay">true</item>
     </style>
+    <style name="AppTheme.Splash" parent="AppTheme">
+        <item name="android:windowBackground">#020D18</item>
+    </style>
     <color name="icon_background">#12243A</color>
 </resources>

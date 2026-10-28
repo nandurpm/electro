@@ -162,17 +162,24 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
         when (tab) {
             0 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
-                    Card(Modifier.fillMaxWidth()) {
-                        Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surfaceContainerLowest))).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                        Row(Modifier.fillMaxWidth()
+                            .background(Brush.linearGradient(listOf(Color(0xFF063A63), Color(0xFF071827), Color(0xFF020D18))))
+                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .78f), RoundedCornerShape(18.dp))
+                            .padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text("ELECTRICAL • ELECTRONICS", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
-                                Text("Electrical Engineering\nTools for Real World", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(painterResource(R.drawable.ic_launcher), null, tint = Color.Unspecified, modifier = Modifier.size(34.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("ELECTRO", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                                }
+                                Text("Electrical Engineering\nTools for Real World", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(vertical = 8.dp))
-                                Text("Calculate · Design · Learn", style = MaterialTheme.typography.bodySmall)
-                                TextButton({ tab = 1; hub = true; category = "Calculators" }) { Text("Explore tools →") }
+                                Text("CALCULATE  •  DESIGN  •  LEARN", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                TextButton({ tab = 1; hub = true; category = "Calculators" }) { Text("Explore tools  →", color = Color.White) }
                             }
                             publicComponents.firstOrNull { it.id == "induction_motor" }?.let {
-                                Box(Modifier.width(112.dp).height(140.dp).clip(RoundedCornerShape(8.dp))) {
+                                Box(Modifier.width(126.dp).height(156.dp).clip(RoundedCornerShape(12.dp)).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .55f), RoundedCornerShape(12.dp))) {
                                     ComponentImage(it, Modifier.fillMaxSize().graphicsLayer { scaleX = 1.7f; scaleY = 1.7f })
                                 }
                             }

@@ -3,6 +3,7 @@
 package com.electrokit.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -53,15 +55,21 @@ private fun shade(color: Color): Color = color.copy(red = color.red * .55f, gree
 @Composable
 fun QuickTile(title: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val (symbol, color) = categoryAccent(title)
+    val shape = RoundedCornerShape(14.dp)
     Column(
-        modifier.heightIn(min = 92.dp).clip(RoundedCornerShape(14.dp))
-            .background(Brush.verticalGradient(listOf(color, shade(color))))
+        modifier.heightIn(min = 104.dp).shadow(10.dp, shape, clip = false)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(Brush.verticalGradient(listOf(color.copy(alpha = .96f), shade(color))))
+            .then(Modifier.border(1.dp, color.copy(alpha = .9f), shape))
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(symbol, Modifier.clearAndSetSemantics { }, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+        Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = .20f)), contentAlignment = Alignment.Center) {
+            Text(symbol, Modifier.clearAndSetSemantics { }, color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.Bold)
+        }
         Text(title, Modifier.padding(top = 6.dp), color = Color.White, style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.Center, maxLines = 2)
     }

@@ -1,0 +1,13 @@
+<resources>
+    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowSplashScreenBackground">#020D18</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#063753</item>
+        <item name="android:windowBackground">#020D18</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#020D18</item>
+        <item name="android:navigationBarColor">#0C1422</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>
