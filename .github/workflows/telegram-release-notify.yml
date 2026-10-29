@@ -18,46 +18,17 @@ permissions:
 
 jobs:
   notify:
-    name: Notify Telegram of the published APK
+    name: Send a styled Telegram release card
     runs-on: ubuntu-24.04
     steps:
-      - name: Send published release links to Telegram
+      - name: Check out notification template
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Announce the published APK with Telegram buttons
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag || 'v4.0.0' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          set -euo pipefail
-          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
-            echo "::error::Configure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID repository secrets."
-            exit 1
-          fi
-          release_url=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json url --jq '.url')
-          apk_url=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '[.assets[] | select(.name | endswith(".apk")) | .url] | first')
-          if [ -z "$release_url" ] || [ -z "$apk_url" ] || [ "$apk_url" = "null" ]; then
-            echo "::error::Published release or APK asset not found for $RELEASE_TAG"
-            exit 1
-          fi
-          export RELEASE_URL="$release_url" APK_URL="$apk_url"
-          python3 - <<'PY'
-          import json, os, sys, urllib.parse, urllib.request
-          tag = os.environ["RELEASE_TAG"]
-          message = f"ELECTRO {tag} has been released!\n\nRelease: {os.environ['RELEASE_URL']}\nAPK: {os.environ['APK_URL']}"
-          payload = urllib.parse.urlencode({
-              "chat_id": os.environ["TELEGRAM_CHAT_ID"],
-              "text": message,
-              "disable_web_page_preview": "true",
-          }).encode()
-          url = f"https://api.telegram.org/bot{os.environ['TELEGRAM_BOT_TOKEN']}/sendMessage"
-          try:
-              with urllib.request.urlopen(urllib.request.Request(url, data=payload, method="POST"), timeout=25) as response:
-                  result = json.load(response)
-          except Exception:
-              print("::error::Telegram send failed. Check bot token, chat ID, and bot permissions.")
-              sys.exit(1)
-          if not result.get("ok"):
-              print("::error::Telegram API did not confirm success.")
-              sys.exit(1)
-          print("Telegram API confirmed the ELECTRO release notification was sent.")
-          PY
+        run: python3 scripts/telegram_release_notify.py
