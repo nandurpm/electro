@@ -212,5 +212,16 @@ class TestBot(unittest.TestCase):
             self.assertIn("Android Release: success", out)
 
 
+class QuickToolTests(unittest.TestCase):
+    def test_calculations_and_validation(self):
+        self.assertIn("5 A", bot.quick_tools("/ohm 230 46"))
+        self.assertIn("W", bot.quick_tools("/power 230 5"))
+        self.assertIn("Check the values", bot.quick_tools("/threephase 415 10 1.2"))
+        self.assertIn("Check the values", bot.quick_tools("/ohm 230 0"))
+
+    def test_fault_search(self):
+        self.assertIn("Safety Line Broken", bot.fault_search("/fault E001"))
+        self.assertIn("No matching", bot.fault_search("/fault nonexistent"))
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,7 @@ import argparse
 from pathlib import Path
 import html
 import json
+import math
 import os
 import re
 import sys
@@ -24,6 +25,8 @@ MAX_FILE_SIZE = 45 * 1024 * 1024
 MAX_UPDATES_PER_RUN = 40
 MAX_FILE_SENDS_PER_RUN = 3
 COMMANDS = [
+    {"command": "tools", "description": "Quick electrical formulas and calculations"},
+    {"command": "fault", "description": "Search escalator error codes: /fault E001"},
     {"command": "start", "description": "Open the ELECTRO bot menu"},
     {"command": "menu", "description": "Return to the main menu"},
     {"command": "changelog", "description": "Read what changed in the latest release"},
@@ -37,6 +40,7 @@ COMMANDS = [
 ]
 MENU = {
     "keyboard": [
+        [{"text": "🧮 Quick Tools"}, {"text": "🔎 Error Codes"}],
         [{"text": "📲 Download APK"}, {"text": "🆕 Latest Version"}],
         [{"text": "📦 Source Code"}, {"text": "📚 Releases"}],
         [{"text": "🟢 Build Status"}, {"text": "📝 What’s New"}],
@@ -48,6 +52,8 @@ MENU = {
     "input_field_placeholder": "⚡ Choose an ELECTRO option",
 }
 BUTTON_COMMANDS = {
+    "🧮 Quick Tools": "/tools",
+    "🔎 Error Codes": "/fault",
     "📲 Download APK": "/apk",
     "🆕 Latest Version": "/version",
     "📦 Source Code": "/source",
@@ -259,6 +265,8 @@ def help_message() -> str:
         "⚡ <b>WELCOME TO ELECTRO</b>\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "🔌 <i>Your electrical &amp; electronics toolkit.</i>\n\n"
+        "🧮 <b>/tools</b> — Quick electrical calculations\n"
+        "🔎 <b>/fault E001</b> — Search error codes\n"
         "📲 <b>/apk</b> — Get the latest Android APK\n"
         "🆕 <b>/version</b> — Check the latest release\n"
         "📦 <b>/source</b> — Download the source ZIP\n"
@@ -272,10 +280,60 @@ def help_message() -> str:
         "⏱ <i>Replies are checked periodically by GitHub Actions, so there may be a delay.</i>"
     )
 
+def quick_tools(text: str) -> str:
+    parts = text.split()
+    guide = ("🧮 <b>QUICK ELECTRICAL TOOLS</b>\n\n"
+             "/ohm 230 46 — V and Ω → A\n"
+             "/power 230 5 — V and A → W (DC/resistive)\n"
+             "/threephase 415 10 0.85 — line V, A, PF → input kW\n\n"
+             "Use consistent SI units. Motor output also requires efficiency. "
+             "These estimates do not select cable sizes or protection devices.")
+    if not parts or parts[0].split("@", 1)[0].lower() not in ("/ohm", "/power", "/threephase"):
+        return guide
+    command = parts[0].split("@", 1)[0].lower()
+    try:
+        values = [float(v) for v in parts[1:]]
+        if len(values) != (3 if command == "/threephase" else 2) or any(not math.isfinite(v) or v <= 0 for v in values):
+            raise ValueError
+        if command == "/threephase":
+            if values[2] > 1:
+                raise ValueError
+            result, unit = math.sqrt(3)*values[0]*values[1]*values[2]/1000, "kW input"
+        elif command == "/ohm":
+            result, unit = values[0]/values[1], "A"
+        else:
+            result, unit = values[0]*values[1], "W"
+        if not math.isfinite(result):
+            raise ValueError
+        return f"🧮 <b>{result:,.4g} {unit}</b>\n\n" + guide
+    except (ValueError, OverflowError):
+        return "⚠️ Check the values; all must be positive and PF must be ≤ 1.\n\n" + guide
+
+
+def fault_search(text: str) -> str:
+    query = text.partition(" ")[2].strip().casefold()
+    if len(query) < 2:
+        return "🔎 <b>ESCALATOR ERROR CODES</b>\nUse /fault E001 or /fault motor.\nReference only: verify the controller model and manufacturer manual before troubleshooting."
+    source = Path(__file__).resolve().parent.parent / "app/src/test/resources/faults-original.tsv"
+    rows = [line.split("|") for line in source.read_text(encoding="utf-8").splitlines()]
+    matches = [r for r in rows if len(r) >= 5 and query in " ".join(r[1:3]).casefold()]
+    lines = ["🔎 <b>ERROR CODE RESULTS</b>"]
+    for row in matches[:12]:
+        lines.append(html.escape(f"{row[1]} · {row[2]} · Reset: {row[3]}"))
+    if not matches:
+        lines.append("No matching code found.")
+    lines.append("\nReference data from ELECTRO. Verify the exact controller manual; never bypass safety circuits.")
+    return "\n".join(lines)
+
+
 def handle_command(token: str, chat_id: str, user_text: str, *, downloads_left: int) -> bool:
     """Return True only when a file transfer consumes the run quota."""
     command = BUTTON_COMMANDS.get(user_text.strip()) or (user_text.strip().split(maxsplit=1)[0].split("@", 1)[0].lower() if user_text.strip() else "")
-    if command in ("/start", "/help", "/menu"):
+    if command in ("/tools", "/ohm", "/power", "/threephase"):
+        send_text(token, chat_id, quick_tools(user_text), with_menu=True)
+    elif command == "/fault":
+        send_text(token, chat_id, fault_search(user_text), with_menu=True)
+    elif command in ("/start", "/help", "/menu"):
         send_text(token, chat_id, help_message(), with_menu=True)
     elif command == "/about":
         send_text(token, chat_id,
