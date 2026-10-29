@@ -6,6 +6,7 @@ Never print secrets or API URLs containing a Telegram bot token.
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import os
 import re
@@ -32,15 +33,22 @@ COMMANDS = [
 ]
 MENU = {
     "keyboard": [
-        [{"text": "/apk"}, {"text": "/version"}],
-        [{"text": "/source"}, {"text": "/releases"}],
-        [{"text": "/status"}, {"text": "/help"}],
+        [{"text": "📲 Download APK"}, {"text": "🆕 Latest Version"}],
+        [{"text": "📦 Source Code"}, {"text": "📚 Releases"}],
+        [{"text": "🟢 Build Status"}, {"text": "❓ Help"}],
     ],
     "resize_keyboard": True,
     "is_persistent": True,
-    "input_field_placeholder": "Choose an ELECTRO command",
+    "input_field_placeholder": "⚡ Choose an ELECTRO option",
 }
-
+BUTTON_COMMANDS = {
+    "📲 Download APK": "/apk",
+    "🆕 Latest Version": "/version",
+    "📦 Source Code": "/source",
+    "📚 Releases": "/releases",
+    "🟢 Build Status": "/status",
+    "❓ Help": "/help",
+}
 
 class PublicDataError(RuntimeError):
     pass
@@ -110,12 +118,21 @@ def tg_form(method: str, token: str, **fields: Any) -> Any:
     return telegram(method, token, body, content_type="application/x-www-form-urlencoded")
 
 
-def send_text(token: str, chat_id: str, text: str, *, with_menu: bool = False) -> Any:
-    args: dict[str, Any] = {"chat_id": chat_id, "text": text, "disable_web_page_preview": "true"}
+def send_text(
+    token: str, chat_id: str, text: str, *, with_menu: bool = False,
+    inline_keyboard: list[list[dict[str, str]]] | None = None,
+) -> Any:
+    args: dict[str, Any] = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "HTML",
+        "link_preview_options": {"is_disabled": True},
+    }
     if with_menu:
         args["reply_markup"] = MENU
+    elif inline_keyboard:
+        args["reply_markup"] = {"inline_keyboard": inline_keyboard}
     return tg_form("sendMessage", token, **args)
-
 
 def send_document(token: str, chat_id: str, release: dict[str, Any], suffix: str) -> None:
     asset = release_asset(release, suffix)
@@ -134,7 +151,7 @@ def send_document(token: str, chat_id: str, release: dict[str, Any], suffix: str
     boundary = "electro-" + uuid.uuid4().hex
     filename = str(asset["name"]).replace('"', "").replace("\r", "").replace("\n", "")
     file_type = "application/vnd.android.package-archive" if suffix == ".apk" else "application/zip"
-    caption = f"ELECTRO {release['tag_name']} — {'Android APK' if suffix == '.apk' else 'Source ZIP'}"
+    caption = f"⚡ ELECTRO {release['tag_name']}\n📦 {'Android APK' if suffix == '.apk' else 'Source ZIP'}\n✅ From the official GitHub release"
     parts = []
     for key, value in (("chat_id", chat_id), ("caption", caption)):
         parts.append(
@@ -159,11 +176,14 @@ def format_releases() -> str:
     releases.sort(key=lambda x: x.get("published_at") or "", reverse=True)
     releases = releases[:5]
     if not releases:
-        return "No published ELECTRO releases found."
-    return "Recent ELECTRO releases:\n\n" + "\n".join(
-        f"{x['tag_name']}: {x['html_url']}" for x in releases
-    )
-
+        return "📭 No published ELECTRO releases found."
+    result = ["⚡ <b>ELECTRO · RELEASE HISTORY</b>", "━━━━━━━━━━━━━━━━━━", ""]
+    for item in releases:
+        label = html.escape(item["tag_name"])
+        url = html.escape(item["html_url"], quote=True)
+        result.append(f"📦 <b>{label}</b>  ·  <a href=\"{url}\">Open release</a>")
+    result.append("\n👇 <i>Use /apk to receive the latest APK.</i>")
+    return "\n".join(result)
 
 def format_status() -> str:
     data = api_get(f"{GITHUB_API}/actions/runs?per_page=40")
@@ -175,37 +195,53 @@ def format_status() -> str:
     latest_release = next(
         (x for x in runs if x.get("path", "").endswith("android-release.yml")), None
     )
-    text = "ELECTRO GitHub Actions status:\n"
+    text = "🔧 <b>ELECTRO · BUILD STATUS</b>\n━━━━━━━━━━━━━━━━━━\n"
     for label, entry in (("Android CI (main)", latest_ci), ("Android Release", latest_release)):
         if entry:
-            state = entry.get("conclusion") or entry.get("status") or "unknown"
-            text += f"\n{label}: {state}\n{entry.get('html_url', '')}\n"
+            state = html.escape(str(entry.get("conclusion") or entry.get("status") or "unknown"))
+            icon = "✅" if state == "success" else "⏳" if state in ("queued", "in_progress", "pending") else "⚠️"
+            url = html.escape(str(entry.get("html_url", "")), quote=True)
+            text += f"\n{icon} {label}: {state}\n"
+            if url.startswith("https://github.com/"):
+                text += f"🔗 <a href=\"{url}\">View workflow</a>\n"
         else:
-            text += f"\n{label}: not found among recent runs\n"
+            text += f"\n⚪ {label}: not found among recent runs\n"
     return text
-
 
 def help_message() -> str:
     return (
-        "ELECTRO — Engineering App Bot\n\n"
-        "/apk — Download latest signed Android APK\n"
-        "/version — View latest version and release\n"
-        "/source — Download matching source ZIP\n"
-        "/releases — Show recent versions\n"
-        "/status — Check GitHub build/release status\n"
-        "/help — Show this menu\n\n"
-        "Replies require scheduled GitHub Actions runs, which can be delayed. This is not an instant-response bot."
+        "⚡ <b>WELCOME TO ELECTRO</b>\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "🔌 <i>Your electrical &amp; electronics toolkit.</i>\n\n"
+        "📲 <b>/apk</b> — Get the latest Android APK\n"
+        "🆕 <b>/version</b> — Check the latest release\n"
+        "📦 <b>/source</b> — Download the source ZIP\n"
+        "📚 <b>/releases</b> — View release history\n"
+        "🟢 <b>/status</b> — Check build status\n"
+        "❓ <b>/help</b> — Open this guide\n\n"
+        "👇 <b>Choose an option from the menu below.</b>\n"
+        "⏱ <i>Replies are checked periodically by GitHub Actions, so there may be a delay.</i>"
     )
-
 
 def handle_command(token: str, chat_id: str, user_text: str, *, downloads_left: int) -> bool:
     """Return True only when a file transfer consumes the run quota."""
-    command = user_text.strip().split(maxsplit=1)[0].split("@", 1)[0].lower() if user_text.strip() else ""
+    command = BUTTON_COMMANDS.get(user_text.strip()) or (user_text.strip().split(maxsplit=1)[0].split("@", 1)[0].lower() if user_text.strip() else "")
     if command in ("/start", "/help"):
         send_text(token, chat_id, help_message(), with_menu=True)
     elif command == "/version":
         release = latest_release()
-        send_text(token, chat_id, f"Latest ELECTRO version: {release['tag_name']}\n{release['html_url']}")
+        send_text(
+            token, chat_id,
+            "⚡ <b>ELECTRO · LATEST VERSION</b>\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            f"🚀 <b>{html.escape(release['tag_name'])}</b> is available!\n"
+            "📱 Android engineering workbench\n\n"
+            "👇 <i>Tap below to view the release.</i>",
+            inline_keyboard=[[{
+                "text": "📝 Release details",
+                "url": release["html_url"],
+            }]],
+        )
     elif command in ("/apk", "/source"):
         release = latest_release()
         suffix = ".apk" if command == "/apk" else "-source.zip"
@@ -223,7 +259,7 @@ def handle_command(token: str, chat_id: str, user_text: str, *, downloads_left: 
     elif command == "/status":
         send_text(token, chat_id, format_status())
     else:
-        send_text(token, chat_id, "Unknown command. Use /help to see ELECTRO bot commands.", with_menu=True)
+        send_text(token, chat_id, "❓ <b>Unknown command</b>\nTap a menu option below or send /help.", with_menu=True)
     return False
 
 
@@ -307,10 +343,17 @@ def main() -> int:
     try:
         if args.setup:
             tg_form("setMyCommands", token, commands=COMMANDS)
+            try:
+                tg_form("setMyShortDescription", token, short_description="⚡ ELECTRO: Android APKs, releases and engineering app updates.")
+                tg_form("setMyDescription", token, description="⚡ Your ELECTRO engineering app companion.\n\n📲 Get the latest APK\n📦 Browse source code and releases\n🟢 Check build status\n\nUse /start to open your menu.")
+            except TelegramError:
+                print("Telegram profile description update was unavailable; command menu is still supported.")
             send_text(
                 token, chat_id,
-                "ELECTRO bot commands are enabled. Send /help or use the buttons below.\n\n"
-                "Commands run on GitHub Actions schedules, which may be delayed.",
+                "⚡ <b>ELECTRO BOT IS READY!</b>\n\n"
+                "✨ Your updated command menu is now active.\n"
+                "👇 Tap any menu option below.\n\n"
+                "⏱ <i>Replies run through scheduled GitHub Actions checks.</i>",
                 with_menu=True
             )
             print("Telegram command menu registered and setup message sent.")
