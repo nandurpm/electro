@@ -43,6 +43,7 @@ jobs:
           DO_SETUP: ${{ github.event_name == 'push' || inputs.setup == true }}
         run: |
           set -euo pipefail
+          python3 scripts/telegram_commands.py --webhook-fingerprint
           if [ "$DO_SETUP" = "true" ]; then
             python3 scripts/telegram_commands.py --setup
           else
