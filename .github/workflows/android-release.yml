@@ -169,18 +169,12 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
-            echo '::warning::Telegram notification skipped; configure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID repository secrets.'
+            echo "::warning::Telegram skipped: configure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID."
             exit 0
           fi
-          version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
           if [ -z "$RELEASE_TAG" ] || [ "$RELEASE_TAG" = "main" ]; then
+            version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
             RELEASE_TAG="electro-$version"
+            export RELEASE_TAG
           fi
-          release_url=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
-          apk_url=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[] | select(.name | endswith(".apk")) | .url' | head -n 1)
-          test -n "$apk_url"
-          message=$(printf 'ELECTRO release %s has been published.\n\nRelease: %s\nAPK: %s\n' "$RELEASE_TAG" "$release_url" "$apk_url")
-          curl --fail --silent --show-error --request POST \
-            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=${message}"
+          python3 scripts/telegram_release_notify.py
