@@ -6,6 +6,7 @@ Never print secrets or API URLs containing a Telegram bot token.
 from __future__ import annotations
 
 import argparse
+import hashlib
 from pathlib import Path
 import html
 import json
@@ -467,6 +468,7 @@ def update_profile_photo(token: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--webhook-fingerprint", action="store_true", help="Print a non-secret credential fingerprint")
     parser.add_argument("--setup", action="store_true", help="Register commands and announce activation")
     args = parser.parse_args()
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
@@ -476,6 +478,10 @@ def main() -> int:
         return 1
     try:
         private_chat_id(chat_id)
+        if args.webhook_fingerprint:
+            print("ELECTRO_WEBHOOK_SHA256=" + hashlib.sha256(token.replace(":", "_", 1).encode()).hexdigest())
+            print("ELECTRO_OWNER=" + chat_id)
+            return 0
         if args.setup:
             configure_private_commands(token, chat_id)
             update_profile_photo(token)
