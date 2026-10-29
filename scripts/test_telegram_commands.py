@@ -61,7 +61,7 @@ class TestBot(unittest.TestCase):
                 return {"url": ""}
             if method == "getUpdates" and "offset" not in kwargs and len(
                 [x for x in calls if x[0] == "getUpdates" and "offset" not in x[1]]) == 1:
-                return [{"update_id": 101, "message": {"text": "/apk", "chat": {"id": 999, "type": "private"}}}]
+                return [{"update_id": 101, "message": {"text": "/apk", "chat": {"id": 999, "type": "private"}, "from": {"id": 999, "is_bot": False}}}]
             return []
         with mock.patch.object(bot, "tg_form", side_effect=fake_tg), mock.patch.object(bot, "send_document") as upload, mock.patch.object(bot, "send_text") as send:
             bot.poll("secret", "123")
@@ -77,7 +77,7 @@ class TestBot(unittest.TestCase):
                 return {"url": ""}
             if method == "getUpdates" and "offset" not in kwargs and len(
                 [x for x in calls if x[0] == "getUpdates" and "offset" not in x[1]]) == 1:
-                return [{"update_id": 200, "message": {"text": "/version", "chat": {"id": 123, "type": "private"}}}]
+                return [{"update_id": 200, "message": {"text": "/version", "chat": {"id": 123, "type": "private"}, "from": {"id": 123, "is_bot": False}}}]
             return []
         with mock.patch.object(bot, "tg_form", side_effect=fake_tg), mock.patch.object(bot, "latest_release", return_value=RELEASE), mock.patch.object(bot, "send_text") as send:
             bot.poll("secret", "123")
@@ -96,8 +96,8 @@ class TestBot(unittest.TestCase):
             if method == "getUpdates":
                 if "offset" not in kwargs:
                     return [
-                        {"update_id": 210, "message": {"text": "/start", "chat": {"id": 123, "type": "private"}}},
-                        {"update_id": 211, "message": {"text": "/version", "chat": {"id": 123, "type": "private"}}},
+                        {"update_id": 210, "message": {"text": "/start", "chat": {"id": 123, "type": "private"}, "from": {"id": 123, "is_bot": False}}},
+                        {"update_id": 211, "message": {"text": "/version", "chat": {"id": 123, "type": "private"}, "from": {"id": 123, "is_bot": False}}},
                     ]
                 return []
             raise AssertionError(f"unexpected API method: {method}")
@@ -109,6 +109,61 @@ class TestBot(unittest.TestCase):
             updates = [opts for method, opts in calls if method == "getUpdates"]
             self.assertEqual(len(updates), 2)
             self.assertEqual(updates[1]["offset"], 212)
+
+
+    def test_owner_message_requires_sender_and_private_chat(self):
+        owner = {"chat": {"id": 123, "type": "private"},
+                 "from": {"id": 123, "is_bot": False}, "text": "/apk"}
+        self.assertTrue(bot.is_authorized_private_message(owner, "123"))
+        for message in (
+            {"chat": {"id": 123, "type": "private"}, "text": "/apk"},
+            {"chat": {"id": 123, "type": "private"}, "from": {"id": 999}, "text": "/apk"},
+            {"chat": {"id": 123, "type": "private"}, "from": {"id": 123, "is_bot": True}, "text": "/apk"},
+            {"chat": {"id": 123, "type": "group"}, "from": {"id": 123}, "text": "/apk"},
+            {"chat": {"id": -123, "type": "supergroup"}, "from": {"id": 123}, "text": "/apk"},
+            {"chat": {"id": 999, "type": "private"}, "from": {"id": 123}, "text": "/apk"},
+        ):
+            with self.subTest(message=message):
+                self.assertFalse(bot.is_authorized_private_message(message, "123"))
+
+    def test_owner_only_command_scope(self):
+        calls = []
+        with mock.patch.object(bot, "tg_form", side_effect=lambda method, token, **kwargs: calls.append((method, kwargs)) or True):
+            bot.configure_private_commands("secret", "123")
+        command_scope = calls[0]
+        self.assertEqual(command_scope[0], "setMyCommands")
+        self.assertEqual(command_scope[1]["scope"], {"type": "chat", "chat_id": 123})
+        self.assertEqual(command_scope[1]["commands"], bot.COMMANDS)
+        removed_scopes = [args["scope"]["type"] for method, args in calls[1:] if method == "deleteMyCommands"]
+        self.assertIn("default", removed_scopes)
+        self.assertIn("all_private_chats", removed_scopes)
+        self.assertIn("all_group_chats", removed_scopes)
+        self.assertEqual(len(calls), 5)
+
+    def test_reject_nonprivate_chat_id(self):
+        for value in ("-100123456789", "@publicchat", "abc", "0", "", "+123"):
+            with self.subTest(chat_id=value):
+                with self.assertRaises(bot.TelegramError):
+                    bot.private_chat_id(value)
+
+    def test_spoofed_sender_is_ignored_in_poll(self):
+        calls = []
+        def fake_tg(method, token, **kwargs):
+            calls.append((method, kwargs))
+            if method == "getWebhookInfo":
+                return {"url": ""}
+            if method == "getUpdates" and "offset" not in kwargs:
+                return [{
+                    "update_id": 300,
+                    "message": {"text": "/apk",
+                                "chat": {"id": 123, "type": "private"},
+                                "from": {"id": 999, "is_bot": False}},
+                }]
+            return []
+        with mock.patch.object(bot, "tg_form", side_effect=fake_tg), mock.patch.object(bot, "send_document") as send:
+            bot.poll("secret", "123")
+            send.assert_not_called()
+            self.assertTrue(any(options.get("offset") == 301 for method, options in calls if method == "getUpdates"))
 
     def test_webhook_does_not_get_deleted(self):
         with mock.patch.object(bot, "tg_form", return_value={"url": "https://example.com/webhook"}) as req:
