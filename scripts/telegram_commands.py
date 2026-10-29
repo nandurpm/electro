@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Private ELECTRO Telegram command bot, polled by GitHub Actions.
+"""Private ELECTRO command helpers and manual polling fallback.
 
 Never print secrets or API URLs containing a Telegram bot token.
 """

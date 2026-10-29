@@ -4,17 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       setup:
-        description: "Register the Telegram bot menu and send an activation message"
+        description: "Verify and activate the private Telegram webhook"
         required: false
         type: boolean
         default: false
-  schedule:
-    - cron: '4-59/5 * * * *'
   push:
     branches: [main]
     paths:
       - .github/workflows/telegram-bot-commands.yml
       - scripts/bot-profile.jpg
+      - scripts/telegram_webhook_setup.py
       - scripts/telegram_commands.py
       - scripts/test_telegram_commands.py
 
@@ -22,7 +21,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: electro-telegram-command-poll
+  group: electro-telegram-webhook-setup
   cancel-in-progress: false
 
 jobs:
@@ -36,16 +35,8 @@ jobs:
       - name: Validate Telegram command code
         if: github.event_name == 'push'
         run: python3 -m unittest discover -s scripts -p 'test_telegram_commands.py' -v
-      - name: Respond to ELECTRO Telegram commands
+      - name: Verify and activate instant ELECTRO webhook
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          DO_SETUP: ${{ github.event_name == 'push' || inputs.setup == true }}
-        run: |
-          set -euo pipefail
-          python3 scripts/telegram_commands.py --webhook-fingerprint
-          if [ "$DO_SETUP" = "true" ]; then
-            python3 scripts/telegram_commands.py --setup
-          else
-            python3 scripts/telegram_commands.py
-          fi
+        run: python3 scripts/telegram_webhook_setup.py
