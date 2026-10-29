@@ -21,6 +21,23 @@ RELEASE = {
 
 
 class TestBot(unittest.TestCase):
+
+    def test_navigation_and_changelog_escape_release_notes(self):
+        with mock.patch.object(bot, "latest_release", return_value={**RELEASE, "body": "Fixed <input> & ratios"}), mock.patch.object(bot, "send_text") as send:
+            bot.handle_command("test", "123", "/changelog", downloads_left=1)
+            self.assertIn("&lt;input&gt; &amp;", send.call_args.args[2])
+            bot.handle_command("test", "123", "🏠 Main Menu", downloads_left=1)
+            self.assertTrue(send.call_args.kwargs["with_menu"])
+            bot.handle_command("test", "123", "/about", downloads_left=1)
+            self.assertIn("private account", send.call_args.args[2])
+
+    def test_profile_photo_uses_bot_upload(self):
+        with mock.patch.object(bot, "telegram", return_value=True) as upload:
+            bot.update_profile_photo("test")
+            self.assertEqual(upload.call_args.args[0], "setMyProfilePhoto")
+            self.assertIn(b"attach://avatar", upload.call_args.args[2])
+            self.assertIn(b"image/jpeg", upload.call_args.args[2])
+
     def test_version_command(self):
         with mock.patch.object(bot, "latest_release", return_value=RELEASE), mock.patch.object(bot, "send_text") as send:
             self.assertFalse(bot.handle_command("secret", "allowed", "/version", downloads_left=3))
