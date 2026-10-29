@@ -50,6 +50,43 @@ BUTTON_COMMANDS = {
     "❓ Help": "/help",
 }
 
+def private_chat_id(chat_id: str) -> int:
+    """Fail closed: a private Telegram user chat ID must be a positive integer."""
+    if not re.fullmatch(r"[1-9][0-9]{0,15}", chat_id):
+        raise TelegramError("Authorized private chat ID must be a positive Telegram user ID")
+    return int(chat_id)
+
+
+def is_authorized_private_message(message: dict[str, Any], chat_id: str) -> bool:
+    """Accept commands only from the configured account in its own 1:1 chat.
+
+    A chat ID alone is insufficient: verify Telegram's authenticated sender,
+    the peer's chat ID, and that this is not a group or channel message.
+    """
+    chat = message.get("chat") or {}
+    sender = message.get("from") or {}
+    expected = private_chat_id(chat_id)
+    return (
+        chat.get("type") == "private"
+        and type(chat.get("id")) is int
+        and chat["id"] == expected
+        and type(sender.get("id")) is int
+        and sender["id"] == expected
+        and sender.get("is_bot") is not True
+    )
+
+
+def configure_private_commands(token: str, chat_id: str) -> None:
+    """Only the authorized Telegram chat gets the slash-command menu."""
+    owner_scope = {"type": "chat", "chat_id": private_chat_id(chat_id)}
+    tg_form("setMyCommands", token, commands=COMMANDS, scope=owner_scope)
+    # Previous versions registered these commands globally.
+    # Remove broad scopes without deleting the owner's chat-specific list.
+    for scope_type in ("default", "all_private_chats", "all_group_chats", "all_chat_administrators"):
+        tg_form("deleteMyCommands", token, scope={"type": scope_type})
+    print("Private Telegram command scopes configured for the authorized chat.")
+
+
 class PublicDataError(RuntimeError):
     pass
 
@@ -300,9 +337,8 @@ def poll(token: str, chat_id: str) -> None:
                 continue
 
             message = update.get("message") or {}
-            chat = message.get("chat") or {}
             user_text = message.get("text")
-            if str(chat.get("id", "")) == chat_id and chat.get("type") == "private" and isinstance(user_text, str) and user_text.strip():
+            if is_authorized_private_message(message, chat_id) and isinstance(user_text, str) and user_text.strip():
                 try:
                     was_file = handle_command(
                         token, chat_id, user_text,
@@ -341,8 +377,9 @@ def main() -> int:
         print("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID GitHub Actions secret", file=sys.stderr)
         return 1
     try:
+        private_chat_id(chat_id)
         if args.setup:
-            tg_form("setMyCommands", token, commands=COMMANDS)
+            configure_private_commands(token, chat_id)
             try:
                 tg_form("setMyShortDescription", token, short_description="⚡ ELECTRO: Android APKs, releases and engineering app updates.")
                 tg_form("setMyDescription", token, description="⚡ Your ELECTRO engineering app companion.\n\n📲 Get the latest APK\n📦 Browse source code and releases\n🟢 Check build status\n\nUse /start to open your menu.")
