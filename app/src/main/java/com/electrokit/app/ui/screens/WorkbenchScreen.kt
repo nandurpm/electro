@@ -390,6 +390,7 @@ private fun ComponentDetail(asset: ComponentAsset, prefs: PreferencesState, vm: 
     Scaffold(topBar = { Bar(asset.name, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite component") } } }) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item { ComponentImage(asset, Modifier.fillMaxWidth().heightIn(max = 420.dp).aspectRatio(1f).clip(RoundedCornerShape(10.dp)), detail = true) }
+            if (asset.id == "digital_multimeter") item { MultimeterLesson() }
             item { Text(asset.category.uppercase(), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium); SectionTitle(asset.name) }
             val info = componentNotes(asset)
             items(info) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text(title, style = MaterialTheme.typography.titleMedium); Text(body, Modifier.padding(top = 8.dp)) } } }
@@ -403,6 +404,7 @@ private fun ComponentDetail(asset: ComponentAsset, prefs: PreferencesState, vm: 
  */
 private fun componentNotes(asset: ComponentAsset): List<Pair<String, String>> {
     val principle = when {
+        asset.id == "digital_multimeter" -> "A digital multimeter measures electrical quantities using selectable functions. Study the guided tests above before any real measurement, then follow your meter’s actual jack and CAT ratings."
         "resistor" in asset.id -> "A resistor opposes current: V = I × R for an ohmic element. Power is dissipated as heat. Value, tolerance, temperature coefficient and power rating depend on the actual part."
         "capacitor" in asset.id -> "A capacitor stores energy in an electric field. Capacitance, working voltage, polarity, leakage and ESR depend on construction and the exact part. Stored charge may remain after disconnection."
         "inductor" in asset.id -> "An inductor stores energy in a magnetic field and opposes changes in current. Saturation current, winding resistance and insulation limits must come from its datasheet."

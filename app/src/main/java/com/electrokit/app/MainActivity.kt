@@ -109,7 +109,7 @@ class MainActivity : ComponentActivity() {
             }
 
             LaunchedEffect(Unit) {
-                if (UpdateSettings.autoCheck(this@MainActivity)) checkForUpdates(false)
+                if (!BuildConfig.DEBUG && UpdateSettings.autoCheck(this@MainActivity)) checkForUpdates(false)
             }
             ElectroTheme(light) {
                 Box {
