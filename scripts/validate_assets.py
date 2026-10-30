@@ -37,7 +37,11 @@ for key,entries in modules.items():
             try: float(value)
             except ValueError: raise AssertionError((part['name'],name,value))
 manifest=(root/'app/src/main/AndroidManifest.xml').read_text()
-assert 'INTERNET' not in manifest and 'uses-permission' not in manifest
+# 4.3 uses only INTERNET to retrieve published release metadata; prohibit other permissions.
+import re
+permissions = re.findall(r'<uses-permission\s+android:name="([^"]+)"\s*/>', manifest)
+assert permissions == ['android.permission.INTERNET'], ('Unexpected app permission', permissions)
+assert 'http://' not in manifest and 'android:usesCleartextTraffic="true"' not in manifest
 
 # Every page must disclose provenance; URL presence alone must not imply verified table cells.
 assert all(p.get("provenance", "").strip() for p in pages.values())
