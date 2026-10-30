@@ -87,7 +87,7 @@ object ApkUpdateDownloader {
             val hostname = url.host.lowercase()
             require(url.protocol == "https" &&
                 (hostname == "github.com" || hostname == "release-assets.githubusercontent.com" ||
-                    hostname == "objects.githubusercontent.com" || hostname.endsWith(".githubusercontent.com"))
+                    hostname == "objects.githubusercontent.com")
             ) { "Untrusted download redirect" }
             val connection = url.openConnection() as HttpURLConnection
             connection.instanceFollowRedirects = false
@@ -128,6 +128,9 @@ object ApkUpdateDownloader {
         require(candidate.packageName == context.packageName && candidate.versionName == version) {
             "Update does not match installed ELECTRO package and version"
         }
+        val candidateCode = if (Build.VERSION.SDK_INT >= 28) candidate.longVersionCode else candidate.versionCode.toLong()
+        val installedCode = if (Build.VERSION.SDK_INT >= 28) current.longVersionCode else current.versionCode.toLong()
+        require(candidateCode > installedCode) { "Update version code must be newer than the installed app" }
         val candidateSignatures = if (Build.VERSION.SDK_INT >= 28)
             candidate.signingInfo?.apkContentsSigners else candidate.signatures
         val installedSignatures = if (Build.VERSION.SDK_INT >= 28)

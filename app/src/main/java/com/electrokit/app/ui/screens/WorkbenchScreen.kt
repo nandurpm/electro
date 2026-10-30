@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -114,6 +115,8 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     BackHandler(enabled = detail == null && tab == 1 && !hub) { hub = true; category = "Calculators"; query = "" }
     val context = LocalContext.current
     val components by produceState<List<ComponentAsset>>(emptyList()) { value = withContext(Dispatchers.IO) { loadComponents(context) } }
+    val guides by produceState<Map<String, ComponentGuide>>(emptyMap()) { value = withContext(Dispatchers.IO) { loadComponentGuides(context) } }
+    val componentStateHolder = rememberSaveableStateHolder()
     val publicComponents = components
     val names = listOf("Home", "Tools", "Learn", "Favorites", "Profile")
     val component = components.firstOrNull { detail == "component:${it.id}" }
@@ -122,7 +125,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     if (detail == "unit-converter") { UnitConverterScreen(vm, prefs) { detail = null }; return }
     if (utility != null) { UtilityScreen(utility, vm, prefs) { detail = null }; return }
     if (component != null) {
-        ComponentDetail(component, prefs, vm) { detail = null }
+        ComponentReferenceDetail(component, guides[componentFamily(component).orEmpty()], componentNotes(component), prefs, vm, { detail = null }, openEntry)
         return
     }
     if (lesson != null) { LearningDetail(lesson, prefs, vm) { detail = null }; return }
@@ -271,7 +274,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
             }
             2 -> Column(body) {
                 if (category == "Lessons") LearnLanguageSelector(prefs, vm)
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                if (category == "Lessons") Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Text(if (category == "Lessons") "Learn by topic" else "Component Library", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Text(if (category == "Lessons") "Choose a guide. Understand the concept, then explore the details." else "Identify parts, understand their purpose and explore connections.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -292,27 +295,9 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         }
                     }
                 } else {
-                    val gallery: @Composable () -> Unit = {
-                        LazyVerticalGrid(GridCells.Adaptive(150.dp), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            gridItems(publicComponents
-                                .filter { it.name.contains(query, true) || it.category.contains(query, true) }, key = { it.id }) { c ->
-                                Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
-                                    ComponentImage(c, Modifier.fillMaxWidth().aspectRatio(1f))
-                                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                        Text(c.category, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                                        Text(c.name, style = MaterialTheme.typography.titleSmall)
-                                        Text(componentNotes(c).first().second, style = MaterialTheme.typography.bodySmall,
-                                            maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("View component →", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            }
-                        }
+                    componentStateHolder.SaveableStateProvider("component-library") {
+                        ComponentReferenceLibrary(publicComponents, guides, query, prefs, vm, Modifier.weight(1f)) { asset -> detail = "component:${asset.id}" }
                     }
-                    if (publicComponents.none { it.name.contains(query, true) || it.category.contains(query, true) }) {
-                        Box(Modifier.padding(16.dp)) { WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint)) }
-                    } else gallery()
                 }
             }
             3 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
