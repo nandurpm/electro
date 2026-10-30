@@ -15,8 +15,8 @@ android {
         applicationId = "com.electrokit.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 23
-        versionName = "4.2.0"
+        versionCode = 24
+        versionName = "4.3.0"
     }
     // Compose owns rendering; BuildConfig supplies the displayed version.
     buildFeatures {
@@ -83,7 +83,7 @@ android {
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }
 
-// No ads, analytics, account or network SDK is part of the runtime dependencies.
+// No ads, analytics or account SDK. Only GitHub release metadata is fetched when enabled.
 dependencies {
     implementation(libs.androidx.core)
     implementation(libs.activity)

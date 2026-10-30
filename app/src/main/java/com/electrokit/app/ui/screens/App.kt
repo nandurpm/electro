@@ -83,12 +83,13 @@ fun share(context: Context, text: String) {
  *
  * @param vm Lifecycle-owned application state and persistence coordinator.
  * @param prefs Current immutable preference snapshot.
+ * @param onCheckUpdates Opens the manual GitHub release check.
  * @return Unit; rendering effects and state changes are delivered through callbacks or observable
  *   state. Rendering/callback failures propagate; recoverable persistence failures belong to the
  *   ViewModel.
  */
 @Composable
-fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
+fun ElectroApp(vm: AppViewModel, prefs: PreferencesState, onCheckUpdates: () -> Unit = {}) {
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.flushInputs() }
     val nav = rememberNavController()
     val loaded by vm.loaded.collectAsStateWithLifecycle()
@@ -150,6 +151,7 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                         { vm.visited(it); nav.navigate("entry/$it") },
                         { nav.navigate("info/$it") },
                         { nav.navigate("settings") },
+                        onCheckUpdates,
                     )
                 }
                 composable("settings") {
