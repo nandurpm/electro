@@ -1,0 +1,663 @@
+{
+  "resistor": {
+    "category": "Passive",
+    "aliases": [
+      "resistor",
+      "resistance",
+      "fixed resistor",
+      "4k7",
+      "102",
+      "SMD"
+    ],
+    "principle": "A resistor opposes current and dissipates electrical energy as heat. For an ohmic resistor V = I × R. A divider uses the ratio of two resistances; loading changes its output.",
+    "specifications": [
+      "Resistance and tolerance",
+      "Rated dissipation at specified ambient temperature",
+      "Temperature coefficient in ppm/°C",
+      "Working voltage and operating temperature: obtain from the exact part datasheet"
+    ],
+    "testing": [
+      "Equipment: resistance-capable DMM and the nominal value/tolerance.",
+      "Disconnect power, verify zero voltage and discharge nearby capacitors by their approved method.",
+      "Isolate at least one lead if parallel paths affect the reading. Select Ω, then place probes across the resistor.",
+      "Compare the stable reading with the marked value and tolerance. Lead resistance matters at low values.",
+      "An open reading can mean an open part or bad contact. A low in-circuit reading may be a parallel path, not a failed resistor."
+    ],
+    "identification": "Four bands use two digits, multiplier and tolerance; five bands use three digits. Six-band parts add temperature coefficient: decode only with the applicable marking standard. SMD 3/4-digit and EIA-96 conventions differ; an R may be a decimal marker.",
+    "application": "Voltage divider: an ideal 5 V source and R1 = R2 = 10 kΩ give Vout = 5 × 10k / (10k + 10k) = 2.5 V without a load. Power in each resistor is 0.625 mW. This is a low-energy educational example, not a production design.",
+    "source": "https://www.vishay.com/en/resistors-fixed/"
+  },
+  "potentiometer": {
+    "category": "Passive",
+    "aliases": [
+      "potentiometer",
+      "trimmer",
+      "variable resistor",
+      "rheostat"
+    ],
+    "principle": "A movable wiper contacts a resistive track. The two end terminals form a fixed resistance; wiper-to-end resistance changes with position. Track taper determines how resistance changes with rotation.",
+    "specifications": [
+      "End-to-end resistance and tolerance",
+      "Linear or logarithmic taper",
+      "Wiper current and track power",
+      "Travel and mechanical life: exact part dependent"
+    ],
+    "testing": [
+      "Use a DMM in Ω mode with power removed and the part isolated.",
+      "Identify terminal roles from the exact drawing; do not assume physical order.",
+      "Measure end-to-end resistance, then wiper-to-each-end while slowly adjusting.",
+      "Look for smooth changes and intermittent open readings. This does not certify rated power or mechanical life."
+    ],
+    "identification": "A resistance marking describes the track, not pin order. Check taper codes against the maker.",
+    "application": "An unloaded potentiometer divides a low-voltage reference. Keep wiper current within the datasheet rating; use a buffer when the load would alter the ratio.",
+    "source": "https://www.bourns.com/products/trimpot-trimming-potentiometers"
+  },
+  "capacitor": {
+    "category": "Passive",
+    "aliases": [
+      "capacitor",
+      "capacitance",
+      "electrolytic",
+      "ceramic",
+      "film",
+      "tantalum",
+      "104",
+      "ESR"
+    ],
+    "principle": "A capacitor stores charge in an electric field: Q = C × V. Its impedance depends on frequency; real parts also have leakage, ESR and inductance. Polarized types require the specified polarity.",
+    "specifications": [
+      "Capacitance and tolerance",
+      "Rated voltage and derating",
+      "Dielectric type and polarity",
+      "ESR, ripple current, leakage and temperature range: exact part dependent"
+    ],
+    "testing": [
+      "Use a capacitance-capable DMM; ESR needs suitable equipment.",
+      "Remove power and follow the manufacturer discharge method using a properly rated discharge resistor. Never short the terminals directly.",
+      "Verify absence of stored voltage, isolate the part and identify polarity before connecting the meter.",
+      "Compare settled capacitance with nominal value and tolerance. An ohmmeter charging transient is not a capacitance or ESR test.",
+      "A short indication or grossly wrong capacitance is a screening clue, not complete health certification. High-voltage, leakage and ESR faults need appropriate instruments."
+    ],
+    "identification": "A common three-digit code is significant digits × 10^exponent in pF: 104 = 100000 pF = 100 nF. Voltage and tolerance codes depend on the maker. Polarity stripes on aluminum electrolytics commonly mark negative; tantalum conventions differ.",
+    "application": "RC timing: R = 10 kΩ and C = 100 µF give τ = R × C = 1 s. A charging capacitor reaches about 63.2% after one τ under the ideal model. Observe voltage, polarity and discharge limits.",
+    "source": "https://www.murata.com/en-global/products/capacitor"
+  },
+  "diode": {
+    "category": "Semiconductor",
+    "aliases": [
+      "diode",
+      "rectifier",
+      "zener",
+      "schottky",
+      "PN junction",
+      "polarity"
+    ],
+    "principle": "A diode conducts asymmetrically. Forward drop depends on current, temperature and technology. Zener operation uses specified reverse breakdown; Schottky and ordinary junction behavior differ.",
+    "specifications": [
+      "Reverse voltage",
+      "Forward current and surge rating",
+      "Forward-voltage test conditions",
+      "Leakage and temperature range",
+      "Zener voltage at specified test current, where applicable"
+    ],
+    "testing": [
+      "Use diode-test mode on an isolated, de-energized component.",
+      "Identify anode and cathode from the exact marking/datasheet.",
+      "Connect red to anode and black to cathode; note the reading, reverse the probes and compare.",
+      "A silicon diode may show roughly 0.5–0.8 V at a meter test current, but Schottky, LEDs and meter compliance differ.",
+      "Low readings both ways can suggest a short; open both ways can mean an open part or inadequate meter voltage. A normal forward test does not verify reverse breakdown, leakage or power rating."
+    ],
+    "identification": "A band often marks the cathode on axial rectifiers. Never transfer that assumption to every package. Top codes are not globally unique.",
+    "application": "A series diode permits one current direction in a low-energy test circuit. Include a current-limiting resistor. A DMM does not characterize rectification under load or validate reverse-voltage margin.",
+    "source": "https://www.vishay.com/en/diodes/"
+  },
+  "led": {
+    "category": "Semiconductor",
+    "aliases": [
+      "LED",
+      "RGB LED",
+      "indicator",
+      "light emitting diode"
+    ],
+    "principle": "An LED emits light when forward biased. It needs controlled current; forward voltage and light output depend on chemistry, current and temperature. Reverse-voltage capability is limited.",
+    "specifications": [
+      "Forward voltage at specified current",
+      "Continuous and pulse-current ratings",
+      "Reverse limits",
+      "Optical wavelength and luminous intensity",
+      "Thermal resistance and package"
+    ],
+    "testing": [
+      "Use diode mode with the LED isolated and power removed.",
+      "Check anode/cathode from the exact part data. Leg length and flat edges are only identification clues.",
+      "Apply red to anode and black to cathode. Some meters light an LED faintly; others lack sufficient compliance voltage.",
+      "Reverse and compare. Failure to light is not conclusive. Never connect a bare LED directly to a voltage source."
+    ],
+    "identification": "Flat edges, lead length and internal geometry vary. RGB LEDs may be common-anode or common-cathode; confirm the exact pinout.",
+    "application": "Educational LED limiter: assume Vs = 5 V, Vf = 2 V and I = 10 mA. R = (5 − 2)/0.01 = 300 Ω and resistor dissipation = I²R = 0.03 W. These are assumed teaching values; select real ratings with margin from datasheets.",
+    "source": "https://www.vishay.com/en/leds/"
+  },
+  "bjt": {
+    "category": "Active",
+    "aliases": [
+      "BJT",
+      "NPN",
+      "PNP",
+      "transistor",
+      "base",
+      "collector",
+      "emitter"
+    ],
+    "principle": "BJT-family guide: first confirm the exact device is a BJT. TO-92/TO-220 shapes also contain other devices. A BJT uses base-emitter excitation to control collector current. Gain varies with device, current and temperature; switching saturation is not the same as linear amplification.",
+    "specifications": [
+      "Collector-emitter voltage",
+      "Collector current and power",
+      "Gain at specified conditions",
+      "Base-emitter and saturation limits",
+      "Package and thermal ratings"
+    ],
+    "testing": [
+      "Use diode mode only as an isolated junction screening check.",
+      "Remove power, discharge the circuit and identify B/C/E from the selected part and package datasheet.",
+      "For NPN, red on base typically forward biases each junction to emitter/collector; PNP uses reversed polarity.",
+      "Check reverse directions and collector-emitter shorts. Internal resistors, protection and Darlington structures change readings.",
+      "This cannot verify gain, breakdown, speed or rated-load switching. Never infer pin order from a TO-92 or TO-220 silhouette."
+    ],
+    "identification": "Package shape does not define B/C/E order. A short top marking may identify several unrelated devices.",
+    "application": "A low-side NPN switch uses a base resistor, emitter at the low-voltage reference and collector to the load. An inductive load needs a correctly rated flyback path. Size drive from the exact saturation data, not typical gain alone.",
+    "source": "https://www.nexperia.com/products/bipolar-transistors"
+  },
+  "mosfet": {
+    "category": "Active",
+    "aliases": [
+      "MOSFET",
+      "gate",
+      "drain",
+      "source",
+      "IGBT",
+      "JFET",
+      "FET"
+    ],
+    "principle": "A MOSFET is voltage-controlled through an insulated gate. Its gate stores charge; switching requires charging and discharging it. Threshold voltage is not the gate voltage that guarantees low on-resistance.",
+    "specifications": [
+      "Drain-source voltage and gate-source limits",
+      "Continuous current with thermal conditions",
+      "RDS(on) at specified VGS and temperature",
+      "Gate charge, capacitances and safe operating area",
+      "Exact package, terminal layout and tab connection"
+    ],
+    "testing": [
+      "Remove power, discharge stored energy and use ESD precautions.",
+      "Identify G/D/S from the exact datasheet; do not assume a universal TO-220 order or tab connection.",
+      "A DMM can screen for obvious drain-source shorts and, where specified, a body-diode direction.",
+      "Avoid uncontrolled gate charging and observe the maker test procedure. Gate charge can change readings.",
+      "A basic DMM cannot establish threshold, RDS(on) at load, switching losses or safe operating area. Use a controlled test fixture for characterization."
+    ],
+    "identification": "MOSFET, JFET and IGBT packages can look similar but their drive and junction behavior differ. Verify the full marking.",
+    "application": "A low-voltage low-side MOSFET switch requires appropriate gate drive, a defined off-state bias and load protection. Calculate conduction loss using I²RDS(on) at actual VGS and temperature; do not select by threshold alone.",
+    "source": "https://www.infineon.com/cms/en/product/power/mosfet/"
+  },
+  "inductor": {
+    "category": "Passive",
+    "aliases": [
+      "inductor",
+      "ferrite bead",
+      "choke",
+      "coil"
+    ],
+    "principle": "An inductor stores energy in a magnetic field and resists changes in current: v = L × di/dt. Saturation reduces effective inductance; winding resistance causes copper loss.",
+    "specifications": [
+      "Inductance at specified frequency and bias",
+      "DCR",
+      "Saturation and thermal current",
+      "Core material, self-resonance and temperature limits"
+    ],
+    "testing": [
+      "Disconnect and discharge the surrounding circuit.",
+      "Use Ω mode to screen for an open winding; a low resistance can be normal.",
+      "An LCR meter is needed for inductance. A DMM continuity beep does not detect shorted turns or core saturation.",
+      "Do not interrupt substantial winding current without a designed discharge/protection path."
+    ],
+    "identification": "Marking codes and band conventions vary; distinguish inductors from axial resistors using documentation and measurement.",
+    "application": "An inductor and capacitor can form a resonant network with ideal f0 = 1/(2π√LC). Real Q, saturation and winding losses require the actual component data.",
+    "source": "https://www.murata.com/en-global/products/inductor"
+  },
+  "transformer": {
+    "category": "Power",
+    "aliases": [
+      "transformer",
+      "primary",
+      "secondary",
+      "turns ratio",
+      "current transformer"
+    ],
+    "principle": "A transformer couples changing magnetic flux between windings. Turns ratio relates ideal AC voltage, but losses, frequency, insulation and loading matter. A current transformer has different operating constraints.",
+    "specifications": [
+      "Rated frequency and VA",
+      "Primary/secondary ratings",
+      "Insulation and isolation category",
+      "Winding resistance and temperature rise",
+      "Current-transformer burden and current limits"
+    ],
+    "testing": [
+      "Disconnect every source; identify all windings from the exact manual.",
+      "A DMM can screen disconnected winding continuity, not prove isolation or insulation strength.",
+      "Do not energize an unidentified transformer for this guide. Specialized insulation/ratio instruments and qualified procedures are needed.",
+      "Never open a current-transformer secondary while primary current flows."
+    ],
+    "identification": "Wire colours are not universal winding assignments. Check the nameplate and terminal drawing.",
+    "application": "Ideal ratio example: Vp = 12 V AC, Np = 1000, Ns = 100 gives Vs = 1.2 V AC. This is an educational model and does not authorize energizing an unknown winding.",
+    "source": "https://www.fluke.com/en-us/learn/blog/electrical/transformer-testing"
+  },
+  "relay": {
+    "category": "Electromechanical",
+    "aliases": [
+      "relay",
+      "reed relay",
+      "contactor",
+      "coil",
+      "NO",
+      "NC"
+    ],
+    "principle": "An energized coil moves contacts; coil and contact circuits have distinct electrical ratings. NO/NC describe the specified de-energized contact state. Some devices contain polarity-sensitive suppression.",
+    "specifications": [
+      "Coil voltage and AC/DC type",
+      "Pickup/dropout limits",
+      "Contact arrangement and load category",
+      "Isolation, endurance and thermal limits"
+    ],
+    "testing": [
+      "Remove all coil and load power; identify coil and contacts from the exact drawing.",
+      "Use Ω mode to check an isolated coil against its documented resistance and continuity mode for the unpowered contact state.",
+      "Do not apply a guessed voltage to a coil. Powered functional tests need the specified isolated source and procedure.",
+      "A DMM cannot certify contact load capacity, insulation integrity or operation under real load."
+    ],
+    "identification": "Terminal numbering and coil polarity depend on the device. A printed circuit diagram is the authority, not the photo.",
+    "application": "An isolated low-voltage DC relay driver can use a transistor and a correctly oriented flyback diode across the coil. Select all ratings and drive current from actual datasheets; this guide does not provide a live-mains wiring design.",
+    "source": "https://www.omron.com/global/en/technology/"
+  },
+  "switch": {
+    "category": "Electromechanical",
+    "aliases": [
+      "switch",
+      "push button",
+      "limit switch",
+      "selector",
+      "encoder",
+      "contact"
+    ],
+    "principle": "A switch changes electrical continuity mechanically. Poles and throws describe independent circuits and selectable paths. Encoders may contain electronics rather than simple contacts.",
+    "specifications": [
+      "Contact voltage/current and load type",
+      "Pole/throw arrangement",
+      "Contact resistance and mechanical life",
+      "Environmental and insulation ratings"
+    ],
+    "testing": [
+      "Disconnect the switch from all energized circuits.",
+      "Use continuity or Ω mode on documented contact pairs while operating the mechanism.",
+      "Compare each state with its exact contact diagram; account for latching, momentary and multi-pole behavior.",
+      "Continuity does not certify a safety function, insulation or rated-load performance. Electronic encoders require their specified test method."
+    ],
+    "identification": "NO/NC definitions refer to the documented normal state. Physical terminal order alone is not sufficient.",
+    "application": "A push button can pull a low-voltage logic input to reference with a suitable pull-up and debounce. Input voltage, wetting current and protection must match the actual devices.",
+    "source": "https://www.omron.com/global/en/technology/"
+  },
+  "sensor": {
+    "category": "Sensors",
+    "aliases": [
+      "sensor",
+      "NTC",
+      "PTC",
+      "LDR",
+      "Hall",
+      "proximity",
+      "temperature",
+      "pressure",
+      "humidity",
+      "accelerometer",
+      "gyroscope",
+      "ultrasonic"
+    ],
+    "principle": "Sensors translate a physical quantity into resistance, voltage, current, switching or digital data. These interfaces are not interchangeable; sensing technology and supply requirements come from the exact model.",
+    "specifications": [
+      "Measured quantity and range",
+      "Supply and output interface",
+      "Accuracy, response and calibration conditions",
+      "Output load, isolation and environmental limits"
+    ],
+    "testing": [
+      "Identify the exact sensor and interface before testing. Remove power before resistance checks.",
+      "Only passive resistive sensors may be checked with Ω mode under a known condition and their documented curve.",
+      "Active/digital sensors usually need a specified supply, load and oscilloscope or protocol tool. A DMM may show an average, not a valid digital signal.",
+      "Do not connect a 24 V industrial output directly to microcontroller logic."
+    ],
+    "identification": "PNP/NPN, analog and bus outputs require different interfaces. Wire colours and package shape do not establish the pinout.",
+    "application": "A resistive sensor and reference resistor can form a divider read by an ADC. Use the measured transfer curve, ADC reference, loading and self-heating limits to derive the quantity.",
+    "source": "https://www.ti.com/sensors/overview.html"
+  },
+  "connector": {
+    "category": "Connectors",
+    "aliases": [
+      "connector",
+      "USB",
+      "RJ45",
+      "JST",
+      "DB9",
+      "DB25",
+      "terminal",
+      "pinout",
+      "cable",
+      "HDMI",
+      "VGA"
+    ],
+    "principle": "A connector provides mechanical mating and electrical contacts. Contact numbering depends on the defined view, gender, keying and exact variant. Similar housings can carry incompatible interfaces.",
+    "specifications": [
+      "Exact series and mating part",
+      "Contact count and view",
+      "Voltage/current and environmental rating",
+      "Wire size, contact finish and insertion life"
+    ],
+    "testing": [
+      "Disconnect equipment, all supplies and PoE before continuity testing.",
+      "Identify stamped pin numbers and front/rear view from the exact drawing.",
+      "Use a DMM to check documented end-to-end continuity, shorts and shield continuity where specified.",
+      "A continuity test cannot certify high-speed signaling, cable category, insulation rating or power-delivery negotiation."
+    ],
+    "identification": "Consult the existing Pin-outs references. A universal visual mapping between RJ45/DB9 and RS-485/CAN/serial protocols does not exist.",
+    "application": "Use a fully disconnected connector breakout to learn numbered continuity. Never apply voltage based only on a matching connector shape or generated illustration.",
+    "source": "https://www.usb.org/documents"
+  },
+  "ic": {
+    "category": "ICs",
+    "aliases": [
+      "IC",
+      "integrated circuit",
+      "NE555",
+      "timer",
+      "op amp",
+      "comparator",
+      "microcontroller",
+      "EEPROM",
+      "ADC",
+      "DAC",
+      "motor driver",
+      "logic"
+    ],
+    "principle": "An integrated circuit combines active and passive structures for a defined function. Supply rails, input limits, output drive, decoupling and package orientation must match the selected device.",
+    "specifications": [
+      "Full part number, revision and package",
+      "Supply and absolute maximum limits",
+      "Input/output characteristics",
+      "Timing, accuracy and thermal data",
+      "Pin function table and recommended operating conditions"
+    ],
+    "testing": [
+      "Identify the exact part and package, remove power and discharge surrounding circuits.",
+      "A DMM can screen gross supply-rail shorts but parallel circuit paths may affect the reading.",
+      "Do not probe an unknown powered IC or infer function from a continuity reading.",
+      "Functional testing usually requires a controlled supply, known input stimulus and a scope/logic analyzer. A DMM alone cannot certify an IC."
+    ],
+    "identification": "Pin 1 marks and notches establish orientation only with the exact package drawing. PDIP, SOIC, QFN and other packages differ. The verified NE555 PDIP-8 viewer below is not universal.",
+    "application": "The existing NE555 calculator explains astable and monostable timing. The ideal astable high time is ln(2)(RA+RB)C, low time ln(2)RB C. Follow the exact chip supply, reset, decoupling and output-load guidance.",
+    "source": "https://www.ti.com/lit/ds/symlink/ne555.pdf"
+  },
+  "protection": {
+    "category": "Protection",
+    "aliases": [
+      "fuse",
+      "PTC",
+      "MOV",
+      "TVS",
+      "ESD",
+      "circuit breaker",
+      "MCB",
+      "MCCB",
+      "overload"
+    ],
+    "principle": "Protection components limit faults using different mechanisms: a fuse opens, a PTC heats to higher resistance, and a varistor/TVS clamps transients. They are not interchangeable.",
+    "specifications": [
+      "Rated voltage, current and interruption capability",
+      "Trip/clearing or pulse-energy characteristics",
+      "Time-temperature conditions",
+      "Coordination, approval and replacement requirements"
+    ],
+    "testing": [
+      "Isolate every source and verify a safe state before inspection.",
+      "An isolated fuse may be screened for continuity. Never bypass a fuse or fit a higher rating to stop nuisance opening.",
+      "A normal DMM reading does not certify a breaker trip curve, TVS/MOV clamping or remaining surge life.",
+      "Use specified test equipment and qualified procedures; investigate the fault before replacement."
+    ],
+    "identification": "Read the exact printed rating, type and approvals. Similar size does not imply equivalent protection.",
+    "application": "Select protection for the actual fault energy and circuit conditions. This guide does not size mains protection or infer cable ampacity.",
+    "source": "https://www.littelfuse.com/products.aspx"
+  },
+  "motor": {
+    "category": "Electromechanical",
+    "aliases": [
+      "motor",
+      "DC motor",
+      "stepper",
+      "servo",
+      "induction"
+    ],
+    "principle": "Motors convert electrical energy to mechanical motion. Brushed DC, stepper, servo and induction systems require different supplies and drivers; stored mechanical energy must also be controlled.",
+    "specifications": [
+      "Motor type and supply",
+      "Rated current, speed and torque",
+      "Duty cycle and thermal limits",
+      "Winding connections, feedback and insulation system"
+    ],
+    "testing": [
+      "Isolate power, lock out motion and follow the exact service procedure.",
+      "A DMM may screen disconnected winding continuity; it does not establish insulation strength or motor health.",
+      "Do not energize unidentified windings. Drives and servo feedback require appropriate instruments and original documentation."
+    ],
+    "identification": "Wire colours, connector shape and motor appearance do not establish winding assignments.",
+    "application": "A low-voltage motor driver must be selected for starting/stall current, regeneration and thermal limits, not just no-load current. This is not an equipment commissioning procedure.",
+    "source": "https://www.ti.com/motor-drivers/overview.html"
+  },
+  "module": {
+    "category": "Active",
+    "aliases": [
+      "communication interface",
+      "CAN module",
+      "RS-485 converter",
+      "gateway",
+      "network module",
+      "transceiver"
+    ],
+    "principle": "An interface module combines circuitry to translate electrical signaling or communication protocols. Connector shape alone does not identify the protocol, supply or pin assignment. Isolation, logic levels and direction control depend on the exact module.",
+    "specifications": [
+      "Exact board revision and underlying IC",
+      "Supply and logic-level limits",
+      "Supported protocol and electrical interface",
+      "Isolation, termination and driver-control requirements"
+    ],
+    "testing": [
+      "Identify the exact module manual before connecting it. Disconnect all power before continuity checks.",
+      "Do not use a continuity test to infer active circuit functionality or bus protocol.",
+      "A DMM may check documented supply test points under an approved isolated low-voltage setup; a scope or protocol analyzer is normally needed for functional verification.",
+      "Never connect a 24 V interface or RS-232 signal directly to TTL logic."
+    ],
+    "identification": "Board markings may identify chips, not the whole module. Confirm the board revision and documented terminal labels.",
+    "application": "Two documented compatible devices can exchange data over the supported interface with correct supply, topology and settings. This is not a universal RJ45/DB9 wiring prescription.",
+    "source": "https://www.ti.com/interface/overview.html"
+  },
+  "display": {
+    "category": "Display",
+    "aliases": [
+      "display",
+      "LCD",
+      "OLED",
+      "seven segment",
+      "LED matrix",
+      "indicator lamp",
+      "HMI"
+    ],
+    "principle": "Displays and indicators make electrical state visible. A bare LED, lamp, LCD, OLED and controller module need different drive circuits; do not infer the supply from appearance.",
+    "specifications": [
+      "Display technology and exact part/module",
+      "Supply and input limits",
+      "Interface, polarity and pin assignment",
+      "Driver/controller requirements and current limits"
+    ],
+    "testing": [
+      "Identify the exact technology and documentation. Disconnect power before inspection.",
+      "Do not apply an assumed voltage or diode-test method to an unidentified display or indicator.",
+      "A DMM can screen only the documented passive paths or supply points. Functional display testing requires the specified driver, data and safe supply."
+    ],
+    "identification": "Similar-looking displays may have incompatible controllers and connectors. Use the exact part number and pin drawing.",
+    "application": "A documented display module can present measured values from a compatible controller. Supply, logic voltage and interface requirements must be checked before connection.",
+    "source": "https://www.ti.com/power-management/display-power/overview.html"
+  },
+  "bridge": {
+    "category": "Semiconductor",
+    "aliases": [
+      "bridge rectifier",
+      "full wave rectifier",
+      "AC DC bridge"
+    ],
+    "principle": "A conventional full-wave bridge contains four diodes. Each AC half-cycle routes current through a different diode pair so the DC output retains its polarity. This does not itself smooth or regulate the voltage.",
+    "specifications": [
+      "Reverse voltage",
+      "Forward current and surge rating",
+      "Forward-voltage test conditions",
+      "Leakage and temperature range",
+      "Zener voltage at specified test current, where applicable"
+    ],
+    "testing": [
+      "Disconnect all power, safely discharge reservoir capacitors using an approved method, verify zero voltage and isolate the bridge.",
+      "Confirm the two AC, positive and negative terminals from the exact part drawing. Do not infer their physical order.",
+      "For a documented conventional four-diode bridge, diode mode can screen AC-to-positive and negative-to-AC forward paths, and their reverse directions.",
+      "Compare readings with the actual internal circuit and meter compliance; parallel paths or integrated protection change the result.",
+      "A DMM cannot certify reverse blocking at rated voltage, surge capability or performance under load."
+    ],
+    "identification": "A band often marks the cathode on axial rectifiers. Never transfer that assumption to every package. Top codes are not globally unique.",
+    "application": "A conventional bridge routes both AC half-cycles to a same-polarity load current. Two forward junctions conduct in each path. Follow actual diode, source-isolation, load and reservoir-capacitor ratings; this guide is not a mains rectifier construction instruction.",
+    "source": "https://www.vishay.com/en/diodes/"
+  },
+  "breadboard": {
+    "category": "Connectors",
+    "aliases": [
+      "breadboard",
+      "solderless",
+      "prototype",
+      "contact strips"
+    ],
+    "principle": "A solderless breadboard joins holes using internal spring contacts so low-energy temporary circuits can be assembled without solder. Terminal strips and power rails have different connection groups; rails may be split.",
+    "specifications": [
+      "Contact grouping and rail breaks",
+      "Supported wire size and insertion limits",
+      "Manufacturer voltage/current and frequency limitations"
+    ],
+    "testing": [
+      "Disconnect every source and remove connected components.",
+      "Use continuity mode to map a few empty-board contact groups; never assume a rail is continuous end to end.",
+      "Check for unintended shorts before applying a documented low-voltage circuit supply.",
+      "A continuity map does not establish load capacity or high-frequency suitability."
+    ],
+    "identification": "The central gap normally separates terminal strips, but the exact board must be checked. Printed rail colours do not create electrical connections.",
+    "application": "Prototype a low-voltage LED limiter only after mapping the board. Use an actual series resistor and verify the rail polarity; breadboards are not suitable for mains construction.",
+    "source": "https://learn.sparkfun.com/tutorials/how-to-use-a-breadboard/all"
+  },
+  "crystal": {
+    "category": "Passive",
+    "aliases": [
+      "crystal",
+      "quartz",
+      "resonator",
+      "oscillator"
+    ],
+    "principle": "A quartz resonator uses the piezoelectric effect to provide a narrow mechanical/electrical resonance. A bare resonator is not the same as a powered oscillator module.",
+    "specifications": [
+      "Nominal frequency, tolerance and temperature stability",
+      "Load capacitance, ESR and drive level",
+      "Bare resonator versus powered oscillator and exact pinout"
+    ],
+    "testing": [
+      "Remove power before checking physical connections.",
+      "A bare crystal can appear open on a DMM in normal condition; this does not establish whether it oscillates correctly.",
+      "Use a suitable low-loading oscillator test circuit, frequency counter or scope with the specified drive/load.",
+      "Do not apply an assumed supply to an unidentified package."
+    ],
+    "identification": "Two-, four- and other terminal packages may be resonators or complete oscillator circuits. Confirm the exact marking.",
+    "application": "A microcontroller oscillator needs the specified crystal, load capacitance and board layout. Probe capacitance can itself stop or shift oscillation.",
+    "source": "https://www.murata.com/en-global/products/timingdevice"
+  },
+  "supply": {
+    "category": "Power",
+    "aliases": [
+      "SMPS",
+      "regulated supply",
+      "DC supply"
+    ],
+    "principle": "A power supply converts and regulates energy. A switching supply may contain hazardous stored energy and an isolated or non-isolated output; appearance does not establish isolation.",
+    "specifications": [
+      "Input/output voltage and current",
+      "Isolation and protective earth requirements",
+      "Ripple, regulation, transient response and temperature limits"
+    ],
+    "testing": [
+      "Identify the exact supply and approved test procedure. Do not open or probe a mains-powered enclosure as a learning exercise.",
+      "A qualified user can measure only documented accessible low-voltage outputs with a suitably rated DMM and correct DC voltage jack.",
+      "Disconnect power before changing connections. Internal capacitors can retain hazardous voltage.",
+      "A DMM does not certify ripple, isolation, load regulation or protective functions."
+    ],
+    "identification": "Read the nameplate and exact output terminal drawing; do not infer ratings or earth connections from the image.",
+    "application": "A documented isolated DC supply can power a compatible low-voltage learning circuit with suitable current limiting and polarity checks.",
+    "source": "https://www.ti.com/power-management/overview.html"
+  },
+  "instrument": {
+    "category": "Equipment",
+    "aliases": [
+      "multimeter",
+      "clamp meter",
+      "insulation tester",
+      "DMM",
+      "test instrument"
+    ],
+    "principle": "Test instruments use different measurement methods and input protection. A clamp meter, DMM and insulation tester are not interchangeable; insulation-test outputs can themselves be hazardous.",
+    "specifications": [
+      "Exact instrument functions and ranges",
+      "CAT category, voltage and lead ratings",
+      "Specified fuses and input-jack limits",
+      "Calibration conditions and operating instructions"
+    ],
+    "testing": [
+      "Read the exact instrument manual and inspect leads, enclosure and input protection before use.",
+      "Use the built-in/self-test or reference procedure specified by its maker. Do not test an instrument by connecting it to an unknown energized source.",
+      "Insulation tests require equipment isolation, sensitive-electronics precautions and discharge after testing; use the approved procedure.",
+      "The Learn multimeter guide provides isolated low-energy demonstrations, not authorization for mains work."
+    ],
+    "identification": "Confirm mode, jack and rating every time. A clamp around both conductors does not measure ordinary load current correctly.",
+    "application": "Choose the appropriate instrument for the required quantity and measurement environment. Use supervised isolated low-energy practice examples.",
+    "source": "https://www.fluke.com/en-us/learn/blog/safety/multimeter-safety"
+  },
+  "network": {
+    "category": "Connectors",
+    "aliases": [
+      "CAN bus",
+      "RS-485",
+      "termination",
+      "daisy chain",
+      "twisted pair"
+    ],
+    "principle": "These network references illustrate differential signaling and topology, not a universal connector or a physical component with inferred ratings. CAN and RS-485 are different interfaces and must use compatible documented devices.",
+    "specifications": [
+      "Exact physical layer and device interface",
+      "Cable impedance and end termination",
+      "Reference/common, shield and isolation arrangements",
+      "Documented bit rate, topology and grounding limits"
+    ],
+    "testing": [
+      "Disconnect power and attached equipment before passive continuity/resistance checks.",
+      "Use the exact network diagram and specified test method; do not infer pin assignments from a housing.",
+      "A DMM cannot decode protocol frames or certify signal integrity; use a scope or protocol analyzer as appropriate.",
+      "Never bridge protective circuits or transmit on operational equipment without authorization."
+    ],
+    "identification": "RS-485 A/B conventions vary by maker. 120 Ω end termination is common in several bus systems but is not universal.",
+    "application": "Study the existing CAN and RS-485 lessons and connector references. Terminate only as required by the exact physical-layer and transceiver guidance.",
+    "source": "https://www.ti.com/lit/an/slla272d/slla272d.pdf"
+  }
+}

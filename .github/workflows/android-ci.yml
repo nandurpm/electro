@@ -35,11 +35,16 @@ jobs:
         run: echo '3b8a25775a69158b5ad2b1d17a80a88dc7b40a352a73eb27d06c612a7ce68e98  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
       - name: Python validation
         run: |
+          trap 'echo "::error::Python validation failed at line $LINENO: $BASH_COMMAND"' ERR
           python3 -m venv "$RUNNER_TEMP/electro-python"
           source "$RUNNER_TEMP/electro-python/bin/activate"
           python -m pip install -r scripts/requirements-dev.txt
           python scripts/check_comments.py
-          python -m unittest discover -s scripts -p 'test_*.py'
+          if ! python -m unittest discover -s scripts -p 'test_*.py' > "$RUNNER_TEMP/electro-python-tests.log" 2>&1; then
+            python -c 'import pathlib,sys; text=pathlib.Path(sys.argv[1]).read_text(); print("::error::" + text[-12000:].replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))' "$RUNNER_TEMP/electro-python-tests.log"
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/electro-python-tests.log"
           python scripts/validate_assets.py
           python scripts/validate_library.py
           python scripts/check_contrast.py

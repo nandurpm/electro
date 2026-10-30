@@ -26,6 +26,11 @@ on:
         description: 'Existing version tag to release, for example v3.2.0'
         required: false
         type: string
+      publish:
+        description: 'Publish a stable release (false publishes a signed review prerelease only)'
+        required: false
+        type: boolean
+        default: true
   push:
     tags: ['v*']
 permissions:
@@ -138,7 +143,17 @@ jobs:
           mkdir -p app/build/outputs/distribution
           cp app/build/outputs/apk/release/app-release.apk "app/build/outputs/distribution/ELECTRO-$version.apk"
           python3 scripts/package_project.py --archive "app/build/outputs/distribution/ELECTRO-$version-source.zip"
+      - name: Publish signed review prerelease
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == false }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
+          review_tag="components-review-$version-$GITHUB_RUN_ID"
+          gh release create "$review_tag" app/build/outputs/distribution/* --target "$GITHUB_SHA" --title "ELECTRO $version components review" --prerelease --latest=false --notes "Signed review candidate. Not a Google Play Protect clearance. Does not replace the latest stable update. See source release notes for implemented scope and remaining work."
       - name: Publish matching version tag
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish == false) }}
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag || github.event.client_payload.release_tag || github.ref_name }}
@@ -159,7 +174,7 @@ jobs:
             gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --verify-tag --title "ELECTRO $version" --generate-notes
           fi
       - name: Notify Telegram about published release
-        if: ${{ success() }}
+        if: ${{ success() && !(github.event_name == 'workflow_dispatch' && inputs.publish == false) }}
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}

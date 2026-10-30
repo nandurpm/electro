@@ -208,4 +208,46 @@ class WorkbenchUiTests {
             bitmap.recycle()
         }
     }
+    @Test fun componentMarkingSearchAndCapacitorDecoder() {
+        ready(); ui.onNodeWithText("Learn").performClick()
+        ui.onNode(hasSetTextAction() and hasText("Search")).performTextReplacement("104")
+        ui.waitUntil(10000) { ui.onAllNodesWithText("Ceramic Capacitor").fetchSemanticsNodes().isNotEmpty() }
+        ui.onNodeWithText("Ceramic Capacitor").performClick()
+        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Identification & markings", substring = true))
+        ui.onNodeWithText("Identification & markings", substring = true).performClick()
+        ui.onNode(hasSetTextAction() and hasText("Three-digit capacitor code")).performTextReplacement("104")
+        ui.onNodeWithText("100 nF").assertExists()
+        capture44("Component-capacitor-guide")
+    }
+
+    @Test fun onlySelectedVerifiedPackageShowsNumberedPins() {
+        ready(); ui.onNodeWithText("Learn").performClick()
+        ui.onNode(hasSetTextAction() and hasText("Search")).performTextReplacement("DIP Integrated Circuit")
+        ui.onNode(hasText("DIP Integrated Circuit") and !hasSetTextAction()).performClick()
+        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Pin configuration", substring = true))
+        ui.onNodeWithText("Pin configuration", substring = true).performClick()
+        ui.onNodeWithText("TI NE555 • PDIP-8 • top view").performClick()
+        ui.onNodeWithText("8 VCC").performScrollTo().performClick()
+        ui.onNodeWithText("Pin 8: VCC — Supply").assertExists()
+        capture44("Component-verified-pinout")
+    }
+    @Test fun componentFiltersAndSavedListPosition() {
+        ready(); ui.onNodeWithText("Learn").performClick()
+        ui.waitUntil(10000) { ui.onAllNodesWithText("ELECTRO — Components").fetchSemanticsNodes().isNotEmpty() }
+        capture44("Components-library-dark")
+        ui.onNode(hasText("Passive") and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.Selected)).performClick()
+        ui.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange)).performScrollToNode(hasText("Axial Resistor"))
+        ui.onNodeWithText("Axial Resistor").performClick()
+        ui.onNodeWithContentDescription("Back").performClick()
+        ui.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange)).performScrollToIndex(0)
+        ui.onNode(hasText("Passive") and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.Selected)).assertIsSelected()
+        ui.onNodeWithText("Home").performClick()
+        ui.onNodeWithText("Profile").performClick()
+        ui.onNodeWithText("Appearance").performClick()
+        ui.onNodeWithText("Light").performClick()
+        ui.waitUntil(10000) { com.electrokit.app.data.StartupTheme.light(ui.activity) }
+        ui.onNodeWithText("Learn").performClick()
+        capture44("Components-library-light")
+    }
+
 }

@@ -219,9 +219,11 @@ class QuickToolTests(unittest.TestCase):
         self.assertIn("Check the values", bot.quick_tools("/threephase 415 10 1.2"))
         self.assertIn("Check the values", bot.quick_tools("/ohm 230 0"))
 
-    def test_fault_search(self):
-        self.assertIn("Safety Line Broken", bot.fault_search("/fault E001"))
-        self.assertIn("No matching", bot.fault_search("/fault nonexistent"))
+    def test_removed_equipment_command_is_not_advertised_or_handled(self):
+        self.assertNotIn("/fault", bot.help_message())
+        with mock.patch.object(bot, "send_text") as send:
+            self.assertFalse(bot.handle_command("test-token", "12345", "/fault E001", downloads_left=1))
+        self.assertIn("Unknown command", send.call_args.args[2])
 
 if __name__ == "__main__":
     unittest.main()
