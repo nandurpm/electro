@@ -125,7 +125,7 @@ fun RecentRow(entry: Entry, onClick: () -> Unit) {
  * @param title Visible category heading.
  * @param subtitle One-line description of what the category contains.
  * @param badge Key understood by [categoryAccent] for the badge symbol and colour.
- * @param asset Optional bundled public component image; protected escalator art must never be passed.
+ * @param asset Optional bundled public component image; all artwork is general-purpose.
  * @param onClick Opens the category through the caller's existing navigation state.
  * @return Unit; the whole card is one accessible button.
  */
@@ -159,15 +159,15 @@ private data class HubCard(
     val badge: String,
     /** Existing Tools category key, or "Converters" for the unit-converter route. */
     val target: String,
-    /** Optional bundled public component image id; protected escalator art is never used here. */
+    /** Optional bundled public component image id; all images are ordinary component references. */
     val imageId: String? = null,
 )
 
 /** Mockup-style Tools landing page: one large card per category instead of a row of filter chips.
  * @param components Bundled component metadata used only for the optional public card artwork.
  * @param modifier Host-provided insets and layout bounds.
- * @param onSelect Receives the selected category key (Calculators, Data, Pin-outs, Reference, Converters, Engineering or Utilities).
- * @return Unit; engineering access remains guarded by the existing gate when that category opens.
+ * @param onSelect Receives a public category key or the converter route.
+ * @return Unit after the caller opens the requested tool group.
  */
 @Composable
 fun ToolsHub(components: List<ComponentAsset>, modifier: Modifier = Modifier, onSelect: (String) -> Unit) {
@@ -178,8 +178,7 @@ fun ToolsHub(components: List<ComponentAsset>, modifier: Modifier = Modifier, on
             HubCard("Pin-outs", "Connectors, ports and interfaces", "Pin-outs", "Pin-outs"),
             HubCard("Reference", "Tables, charts and resources", "Reference", "Reference"),
             HubCard("Converters", "Unit conversions", "Converters", "Converters"),
-            HubCard("Escalator Engineering", "Fault codes, drives and diagrams", "Escalator", "Engineering"),
-            HubCard("Engineering Utilities", "Transformer, cable sizing, scientific tools", "Utilities", "Utilities"),
+            HubCard("Extra Utilities", "Transformer, cable sizing and scientific tools", "Utilities", "Utilities"),
         )
     }
     LazyColumn(modifier, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -251,7 +250,7 @@ fun ProfileScreen(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier 
                 Spacer(Modifier.width(14.dp))
                 Column {
                     Text("ELECTRO", style = MaterialTheme.typography.titleLarge)
-                    Text("Your engineering workspace", style = MaterialTheme.typography.bodySmall)
+                    Text("Your electronics workspace", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -274,8 +273,6 @@ fun ProfileScreen(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier 
         ProfileRow("Privacy & Help", "Offline by design", "✓", Color(0xFF4C5FD5), details = {
             Text("No accounts, analytics, ads or network permission. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share.",
                 style = MaterialTheme.typography.bodyMedium)
-            Text("Engineering access is a basic local restriction. References are bundled, not encrypted.",
-                Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodyMedium)
         })
     }
     if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Clear saved results?") },

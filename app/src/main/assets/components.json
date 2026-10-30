@@ -66,12 +66,6 @@
     "image": "components/clamp_meter.png"
   },
   {
-    "id": "comb_plate",
-    "name": "Comb Plate",
-    "category": "Escalator",
-    "image": "components/comb_plate.png"
-  },
-  {
     "id": "control_transformer",
     "name": "Control Transformer",
     "category": "Electrical",
@@ -150,40 +144,10 @@
     "image": "components/electrolytic_capacitor.png"
   },
   {
-    "id": "electromagnetic_brake",
-    "name": "Electromagnetic Brake",
-    "category": "Escalator",
-    "image": "components/electromagnetic_brake.png"
-  },
-  {
-    "id": "emergency_stop",
-    "name": "Emergency Stop",
-    "category": "Escalator",
-    "image": "components/emergency_stop.png"
-  },
-  {
     "id": "emergency_stop_button",
     "name": "Emergency Stop Button",
     "category": "Electrical",
     "image": "components/emergency_stop_button.png"
-  },
-  {
-    "id": "escalator_control_cabinet",
-    "name": "Escalator Control Cabinet",
-    "category": "Escalator",
-    "image": "components/escalator_control_cabinet.png"
-  },
-  {
-    "id": "escalator_hmi",
-    "name": "Escalator HMI",
-    "category": "Escalator",
-    "image": "components/escalator_hmi.png"
-  },
-  {
-    "id": "escalator_step",
-    "name": "Escalator Step",
-    "category": "Escalator",
-    "image": "components/escalator_step.png"
   },
   {
     "id": "ethernet_patch_cable",
@@ -216,12 +180,6 @@
     "image": "components/float_switch.png"
   },
   {
-    "id": "gear_reducer",
-    "name": "Gear Reducer",
-    "category": "Escalator",
-    "image": "components/gear_reducer.png"
-  },
-  {
     "id": "green_push_button",
     "name": "Green Push Button",
     "category": "Electrical",
@@ -238,12 +196,6 @@
     "name": "HMI Touch Screen",
     "category": "Sensors and Controls",
     "image": "components/hmi_touch_screen.png"
-  },
-  {
-    "id": "handrail_drive_roller",
-    "name": "Handrail Drive Roller",
-    "category": "Escalator",
-    "image": "components/handrail_drive_roller.png"
   },
   {
     "id": "induction_motor",
@@ -334,12 +286,6 @@
     "name": "Magnetic Contactor",
     "category": "Electrical",
     "image": "components/magnetic_contactor.png"
-  },
-  {
-    "id": "main_drive_motor",
-    "name": "Main Drive Motor",
-    "category": "Escalator",
-    "image": "components/main_drive_motor.png"
   },
   {
     "id": "micro_usb",
@@ -516,12 +462,6 @@
     "image": "components/smps_power_supply.png"
   },
   {
-    "id": "safety_limit_switch",
-    "name": "Safety Limit Switch",
-    "category": "Escalator",
-    "image": "components/safety_limit_switch.png"
-  },
-  {
     "id": "screw_terminal",
     "name": "Screw Terminal",
     "category": "Connectors and Communication",
@@ -546,40 +486,10 @@
     "image": "components/single_pole_mcb.png"
   },
   {
-    "id": "skirt_brush",
-    "name": "Skirt Brush",
-    "category": "Escalator",
-    "image": "components/skirt_brush.png"
-  },
-  {
-    "id": "skirt_switch",
-    "name": "Skirt Switch",
-    "category": "Escalator",
-    "image": "components/skirt_switch.png"
-  },
-  {
-    "id": "sprocket",
-    "name": "Sprocket",
-    "category": "Escalator",
-    "image": "components/sprocket.png"
-  },
-  {
     "id": "start_stop_station",
     "name": "Start Stop Station",
     "category": "Electrical",
     "image": "components/start_stop_station.png"
-  },
-  {
-    "id": "step_chain",
-    "name": "Step Chain",
-    "category": "Escalator",
-    "image": "components/step_chain.png"
-  },
-  {
-    "id": "step_lighting",
-    "name": "Step Lighting",
-    "category": "Escalator",
-    "image": "components/step_lighting.png"
   },
   {
     "id": "to220_mosfet",
@@ -670,12 +580,6 @@
     "name": "VGA DB15",
     "category": "Connectors and Communication",
     "image": "components/vga_db15.png"
-  },
-  {
-    "id": "variable_frequency_drive",
-    "name": "Variable Frequency Drive",
-    "category": "Escalator",
-    "image": "components/variable_frequency_drive.png"
   },
   {
     "id": "zener_diode",

@@ -26,24 +26,19 @@ Asynchronous saving keeps typing responsive. An abrupt process kill before the f
 | `MainActivity.kt` | Single Activity, theme startup, visible system bars | Changing full-screen behaviour; keep edge gestures available |
 | `ui/screens/App.kt` | NavHost routes, toolbar, catalogue pager, sticky search, bottom navigation, share action | Adding a screen or changing list layout |
 | `ui/screens/CalculatorScreen.kt` | Generic input controls, unit selectors, result cards, colour-code UI | Changing calculator presentation |
-| `ui/screens/EngineeringScreens.kt` | Engineering dashboard, fault explorer, source library, technical details | Changing Engineering navigation and cards |
 | `ui/theme/Theme.kt` | Named semantic colour tokens, Material theme | Changing palette; run contrast checker afterwards |
 | `ui/components/` | Canvas diagrams, tables and original vector-style drawings | Changing technical illustrations; preserve orientation and pin numbers |
 | `viewmodel/AppViewModel.kt` | Preference loading, input write queue, retry ownership | Changing persistence; never put blocking disk work in `values` |
-| `viewmodel/EngineeringViewModel.kt` | Engineering asset parsing and relationship validation | Adding new content types; keep unique IDs and valid links |
 | `data/Repository.kt` | Serializable registry/page models and repository boundary | Changing asset schema or preference storage |
 | `data/InputJournal.kt` | Atomic pending-input backup | Changing recovery; retain compare-before-clear behaviour |
 | `data/PreferenceCodec.kt` | Saved-state encoding/decoding | Changing saved schema; preserve old installations |
 | `domain/Engineering.kt` | Number parsing and formatting | Changing grammar or display precision |
 | `domain/UnitCatalog.kt` | Shared units, suffixes and explicit conversion rules | Adding field units; keep parser and dropdown scales consistent |
-| `domain/EngineeringSearch.kt` | Matching and engineering search helpers | Changing lookup behaviour |
 | `domain/NumericFilter.kt` | Typed numeric component filters | Adding parametric filters |
-| `data/EngineeringContent.kt` | Serializable engineering records, source links and tool fields | Extending the engineering JSON schema |
 | `data/StartupTheme.kt` | Early startup palette before DataStore loading | Preventing a wrong-colour launch frame |
 | `domain/Calculators.kt` | Original calculator specifications and formulas | Adding calculator behaviour |
-| `domain/EngineeringTools.kt` | Engineering formulas and validation | Adding motor, drive or mechanical tools |
 | `domain/Messages.kt` | Domain result/error labels | Changing domain wording |
-| `app/src/main/assets/` | Offline JSON content | Adding references, components, faults and tool definitions |
+| `app/src/main/assets/` | Offline JSON content | Adding general references, components and calculators |
 | `app/src/main/res/values/strings.xml` | Android UI strings | Changing labels; use `stringResource` in Compose |
 | `app/src/test/` | Pure Kotlin tests for both variants | Testing formulas and formatters |
 | `app/src/testDebug/` | Robolectric UI/persistence tests | Testing screens, rotation, search and save failures |
@@ -67,14 +62,6 @@ Toolbar visibility observes vertical nested-scroll gestures. It hides when brows
 5. Add a vector icon or reuse the relevant original component renderer with a deliberate icon key.
 6. Add known-answer, boundary and blank-input tests. Extend the extreme-input grid and validator expected counts intentionally; a count change must correspond to actual new content.
 7. Confirm its row opens, values survive rotation, reset works, and share/copy contain the displayed result.
-
-## Add an Engineering tool or section
-
-Tool fields live in `engineering_tools.json`; executable calculations live in `EngineeringTools.calculate`. Add a stable tool ID to both, use the existing field schema and include formula/assumptions. Add tests with independent expected values. A new section needs a unique ID in `engineering.json`, records that refer to that section, and a real navigation route in `EngineeringScreen`. Supply a specific dashboard description in strings.xml. Ensure search reaches the new record and links resolve.
-
-## Add or correct a fault record
-
-Keep the original serial, code, message, reset type and group exactly as supplied. Append new verified records with unique codes; runtime validation no longer assumes exactly 125. The validator deliberately checks the delivered source dataset, so update its fixture only when new authentic source rows are available. Include source IDs, certainty and related-record IDs. Do not infer a reset procedure, PLC logic, terminal number or safe bypass from an error label. Shared generic checks are labelled reference context, not an OEM diagnosis. Distinct diagnostic instructions require the applicable manufacturer's documentation.
 
 ## Add a reference page, diagram or table
 

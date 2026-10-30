@@ -91,10 +91,6 @@ fun share(context: Context, text: String) {
 fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.flushInputs() }
     val nav = rememberNavController()
-    val engineering =
-        androidx.lifecycle.viewmodel.compose.viewModel<
-            com.electrokit.app.viewmodel.EngineeringViewModel
-        >()
     val loaded by vm.loaded.collectAsStateWithLifecycle()
     val err by vm.error.collectAsStateWithLifecycle()
     // A neutral brand loading surface avoids flashing the wrong persisted theme during migration.
@@ -154,19 +150,6 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState) {
                         { vm.visited(it); nav.navigate("entry/$it") },
                         { nav.navigate("info/$it") },
                         { nav.navigate("settings") },
-                        engineering,
-                        { nav.navigate("engineering/${android.net.Uri.encode(it)}") },
-                    )
-                }
-                composable("engineering/{route}") { destination ->
-                    EngineeringScreen(
-                        destination.arguments?.getString("route") ?: "home",
-                        engineering,
-                        vm,
-                        prefs,
-                        { nav.navigate("engineering/${android.net.Uri.encode(it)}") },
-                        { nav.navigate("entry/$it") },
-                        { nav.popBackStack() },
                     )
                 }
                 composable("settings") {
@@ -276,7 +259,7 @@ fun Bar(
                         Column(Modifier.weight(1f)) {
                             Text(title, modifier = Modifier.semantics { heading() }, color = TopBarText,
                                 style = if (brand) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium)
-                            if (brand) Text("Engineering Toolkit", color = TopBarText,
+                            if (brand) Text("Electronics Toolkit", color = TopBarText,
                                 style = MaterialTheme.typography.labelSmall)
                         }
                     }
@@ -303,8 +286,6 @@ fun Bar(
  * @param openEntry Opens a stable registry route through caller-owned navigation.
  * @param info Opens a requested Info tab through caller-owned navigation.
  * @param settings Opens saved appearance and preference controls.
- * @param engineering Shared engineering asset-loading state.
- * @param openEngineering Opens a stable engineering module/detail route.
  * @return Unit; rendering effects and state changes are delivered through callbacks or observable
  *   state. Rendering/callback failures propagate; recoverable persistence failures belong to the
  *   ViewModel.
@@ -517,7 +498,6 @@ fun Info(vm: AppViewModel, initial: Int, back: () -> Unit, openEntry: (String) -
             "PIN-OUTS" to stringResource(R.string.tab_pinouts),
             "RESOURCES" to stringResource(R.string.tab_resources),
             "PLUGINS" to stringResource(R.string.ui_plugins),
-            "ENGINEERING" to stringResource(R.string.engine_tab),
         )
 
     var tab by rememberSaveable { mutableIntStateOf(initial) }

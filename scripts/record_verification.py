@@ -85,7 +85,6 @@ def record(apk, build_log, variants, require_signed=False):
         checks = {
             'comments.txt': ['scripts/check_comments.py'],
             'assets.txt': ['scripts/validate_assets.py'],
-            'engineering.txt': ['scripts/validate_engineering.py'],
             'library.txt': ['scripts/validate_library.py'],
             'contrast.txt': ['scripts/check_contrast.py'],
             'python-tests.txt': ['-m', 'unittest', 'discover', '-s', 'scripts', '-p', 'test_*.py'],

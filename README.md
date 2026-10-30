@@ -1,8 +1,8 @@
 # ELECTRO
 
-**Electrical • Electronics • Engineering**
+**Electrical • Electronics • Offline Reference**
 
-Offline native Android engineering workbench. Version **4.0.0**, code **20**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline native Android electronics toolkit. Version **4.2.0**, code **23**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 ## Features
 
@@ -11,17 +11,10 @@ Offline native Android engineering workbench. Version **4.0.0**, code **20**, ap
 - All original **31 calculators, 55 pinout entries, 21 resources and three Parts/AVR/PIC databases** remain reachable.
 - Seven additional utilities: ideal transformer, battery/UPS runtime, explicit-resistivity DC cable voltage-drop sizing, single-phase power factor, energy/cost, temperature and bounded scientific arithmetic.
 - Eight-dimensional unit converter with explicit source/destination units.
-- **114 image-backed component/diagram entries**, locally bundled with sampled off-thread decoding and an 8 MiB decoded cache. Generated artwork is illustrative, not manufacturer wiring authority.
+- **98 image-backed component/diagram entries**, locally bundled with sampled off-thread decoding and an 8 MiB decoded cache. Generated artwork is illustrative, not manufacturer wiring authority.
 - Multimeter, T568A/B, RS-485, RS-232, Modbus, CAN and interface lessons. The meter includes an interactive native drawing with mode/jack explanations.
-- Preserved engineering module: 125 exact fault records, 325 technical records, 14 source-photo transcriptions and 15 engineering calculators.
 
 Exact manufacturer ratings, terminal drawings and part-specific test procedures have not been supplied for every image. Pages identify those gaps. Cable estimates do not select code-compliant ampacity/protection. New external reference downloads were blocked by this environment's network policy; citations are provided for review and are not represented as freshly verified equipment documentation.
-
-## Engineering access
-
-The initial local code is defined in `LocalPin.kt` / `DEVELOPER_GUIDE.md` and is intentionally not published here. Engineering and escalator image routes require verification. **Lock engineering** revokes the current grant. Rotation retains the Activity session; a new Activity/process starts locked. Public search/favorites omit protected fault snippets. Protected pages request Android's secure-window flag.
-
-The salted PBKDF2 record, constant-time comparison and session-local attempt delay provide a **basic restriction**, not encryption or strong protection against APK extraction or reverse engineering. Restarting can bypass the attempt delay. Bundle only material you are authorized to distribute. No remote account/recovery is implemented.
 
 ## Installation
 
@@ -68,7 +61,6 @@ python -m pip install -r scripts/requirements-dev.txt
 python scripts/check_comments.py
 python -m unittest discover -s scripts -p 'test_*.py'
 python scripts/validate_assets.py
-python scripts/validate_engineering.py
 python scripts/validate_library.py
 python scripts/check_contrast.py
 python scripts/package_project.py --check
@@ -93,10 +85,9 @@ All Kotlin paths below are under `app/src/main/java/com/electrokit/app/`.
 | Public utility UI / models | `ui/screens/UtilityScreen.kt`, `domain/WorkbenchTools.kt` |
 | Converter UI / models | `ui/screens/UnitConverterScreen.kt`, `domain/UnitConversions.kt` |
 | Learning text / meter drawing | `data/ComponentLibrary.kt`, `ui/components/MultimeterLesson.kt` |
-| Access boundary / state / verifier | `ui/screens/EngineeringGate.kt`, `viewmodel/EngineeringAccess.kt`, `domain/LocalPin.kt` |
 | Preference schema / mutation | `data/Repository.kt`, `viewmodel/AppViewModel.kt` |
 
-Images/metadata: `app/src/main/assets/components/` and `components.json`. Original engineering content: `app/src/main/assets/engineering.json` and `engineering_tools.json`. Android strings/icons: `app/src/main/res/`.
+Images/metadata: `app/src/main/assets/components/` and `components.json`. General references: `registry.json`, `pages.json` and `modules.json`. Android strings/icons: `app/src/main/res/`.
 
 The missing nested project files were restored from the existing `FULL_SOURCE.md` and verified byte-for-byte against the original SHA-256 manifest, including its Base64 wrapper JAR. Verification files are generated from each current APK, tests and lint reports and published as build artifacts; they are not committed. `python scripts/check_verification.py` rejects stale versions; signed publication additionally requires the active, user-authorized release certificate. See [release status](docs/RELEASE_3_0.md). The older 2.1.0 build report is explicitly historical.
 
