@@ -6,9 +6,9 @@ import android.content.Context
 object StartupTheme {
     /** Reads a bounded synchronous launch hint before DataStore loads.
      * @param context Application or Activity context; never retained.
-     * @return Last mirrored light preference, defaulting to dark; Android storage failures propagate.
+     * @return Last mirrored light preference, defaulting to light; Android storage failures propagate.
      */
-    fun light(context: Context): Boolean = context.getSharedPreferences("startup_appearance", Context.MODE_PRIVATE).getBoolean("light", false)
+    fun light(context: Context): Boolean = context.getSharedPreferences("startup_appearance", Context.MODE_PRIVATE).getBoolean("light", true)
 
     /** Distinguishes an older installation without a launch hint from a deliberately saved dark theme.
      * @param context Application or Activity context; never retained.
@@ -23,7 +23,7 @@ object StartupTheme {
      */
     fun remember(context: Context, light: Boolean) {
         val preferences = context.getSharedPreferences("startup_appearance", Context.MODE_PRIVATE)
-        if (!preferences.contains("light") || preferences.getBoolean("light", false) != light) {
+        if (!preferences.contains("light") || preferences.getBoolean("light", true) != light) {
             preferences.edit().putBoolean("light", light).apply()
         }
     }

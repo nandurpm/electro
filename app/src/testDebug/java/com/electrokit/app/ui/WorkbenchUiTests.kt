@@ -147,8 +147,8 @@ class WorkbenchUiTests {
     @Test fun learnLanguageChangesProseAndSurvivesRecreation() {
         ready()
         ui.onNodeWithText("Learn").performClick()
-        ui.onNodeWithText("தமிழ்").performClick()
         ui.onNodeWithText("Lessons").performClick()
+        ui.onNodeWithText("தமிழ்").performClick()
         ui.onNodeWithText("Digital multimeter • practical guide").performClick()
         ui.onNodeWithText("தமிழ்").assertIsSelected()
         ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("What you will learn"))
@@ -161,5 +161,19 @@ class WorkbenchUiTests {
         ui.onNodeWithText("English").performClick()
         ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("What you will learn"))
         ui.onNodeWithText("Identify the display", substring = true).assertExists()
+    }
+    @Test fun freshInstallUsesLightAndSavedDarkSurvivesRestart() {
+        kotlinx.coroutines.runBlocking { com.electrokit.app.data.Repository(ui.activity).resetPreferences() }
+        ui.activity.getSharedPreferences("startup_appearance", android.content.Context.MODE_PRIVATE).edit().clear().commit()
+        ui.activityRule.scenario.recreate()
+        ready()
+        ui.onNodeWithText("Profile").performClick()
+        ui.onNodeWithText("Appearance").performClick()
+        ui.onNodeWithText("Light").assertIsSelected()
+        ui.onNodeWithText("Dark").performClick()
+        ui.waitUntil(10000) { !com.electrokit.app.data.StartupTheme.light(ui.activity) }
+        ui.activityRule.scenario.recreate()
+        ui.waitForIdle()
+        ui.onNodeWithText("Dark").assertIsSelected()
     }
 }

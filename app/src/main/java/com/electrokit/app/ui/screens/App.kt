@@ -100,7 +100,7 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState, onCheckUpdates: () -> 
     val err by vm.error.collectAsStateWithLifecycle()
     // A neutral brand loading surface avoids flashing the wrong persisted theme during migration.
     var confirmReset by remember { mutableStateOf(false) }
-    Surface(Modifier.fillMaxSize(), contentColor = if (!loaded) TopBarText else MaterialTheme.colorScheme.onBackground, color = if (!loaded) BrandNavy else MaterialTheme.colorScheme.background) {
+    Surface(Modifier.fillMaxSize(), contentColor = MaterialTheme.colorScheme.onBackground, color = MaterialTheme.colorScheme.background) {
         if (!loaded) {
             Column(
                 Modifier.fillMaxSize().padding(24.dp),
