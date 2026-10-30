@@ -41,7 +41,9 @@ manifest=(root/'app/src/main/AndroidManifest.xml').read_text()
 import re
 permissions = re.findall(r'<uses-permission\s+android:name="([^"]+)"\s*/>', manifest)
 assert permissions == ['android.permission.INTERNET'], ('Unexpected app permission', permissions)
-assert 'http://' not in manifest and 'android:usesCleartextTraffic="true"' not in manifest
+# The standard Android XML namespace uses http://; disallow only cleartext network traffic.
+assert 'android:usesCleartextTraffic="true"' not in manifest
+assert 'android:networkSecurityConfig' not in manifest
 
 # Every page must disclose provenance; URL presence alone must not imply verified table cells.
 assert all(p.get("provenance", "").strip() for p in pages.values())
