@@ -243,6 +243,7 @@ private fun ProfileRow(title: String, subtitle: String, symbol: String, accent: 
  * @param modifier Host-provided insets and layout bounds.
  * @param openFavorites Switches to the Favorites tab, which also lists saved calculations.
  * @param openAbout Opens the existing About/Info pages.
+ * @param onCheckUpdates Runs the manual update check.
  * @return Unit; destructive history clearing still requires the confirmation dialog.
  */
 @Composable

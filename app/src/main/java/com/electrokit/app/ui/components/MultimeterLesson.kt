@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
 
-/** An isolated, low-voltage exercise; an illustration cannot identify a real meter's ratings. */
+/** Low voltage exercise. @property name Mode name. @property dial Selector symbol. @property redJack Probe jack. @property wiring Wiring topology. @property example Expected example. @property steps Guided procedure. @property normal Typical display. @property diagnosis Reading interpretation. @property caution Safety limitation. */
 internal data class MeterExercise(
     val name: String,
     val dial: String,
@@ -118,7 +118,7 @@ internal val meterExercises = listOf(
     )
 )
 
-/** Guided meter diagram, example, setup sequence, results and mistakes for each selected function. */
+/** Guided meter lab, setup, reading and troubleshooting. @return Unit after composing interactive lesson. */
 @Composable
 fun MultimeterLesson() {
     var selected by rememberSaveable { mutableIntStateOf(0) }

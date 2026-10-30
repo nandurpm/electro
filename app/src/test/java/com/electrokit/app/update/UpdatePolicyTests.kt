@@ -3,6 +3,7 @@ package com.electrokit.app.update
 import org.junit.Assert.*
 import org.junit.Test
 
+/** Version policy regression tests for future feature and patch releases. */
 class UpdatePolicyTests {
     @Test fun patchesAreOptional() {
         assertEquals(UpdatePriority.OPTIONAL_PATCH, UpdatePolicy.priority("4.3.0", "4.3.1"))

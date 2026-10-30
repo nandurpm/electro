@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** Verified, stable, GitHub-published ELECTRO APK; no third-party download URLs. */
+/** Verified release. @property tag Stable release tag. @property version Numeric release version. @property apkUrl Canonical release download. @property notes Published change notes. @property size APK bytes. */
 data class UpdateRelease(val tag: String, val version: String, val apkUrl: String, val notes: String, val size: Long)
 
 /** Only requests release metadata; the calculator, bookmark and personal data remain local. */
@@ -16,6 +16,7 @@ object ReleaseChecker {
     private const val MAX_REPLY = 512 * 1024
     private const val MAX_APK = 50L * 1024L * 1024L
 
+    /** @return Official, stable GitHub release or throws when metadata cannot be validated. */
     fun fetchLatest(): UpdateRelease {
         val conn = URL(ENDPOINT).openConnection() as HttpURLConnection
         try {
@@ -40,6 +41,7 @@ object ReleaseChecker {
     }
 
     /** Enforces a published non-prerelease and an official version-matched GitHub asset. */
+    /** @param data Parsed release metadata. @return Valid release or null for rejected metadata. */
     fun decode(data: JSONObject): UpdateRelease? {
         if (data.optBoolean("draft") || data.optBoolean("prerelease")) return null
         val tag = data.optString("tag_name")
@@ -65,10 +67,13 @@ object ReleaseChecker {
 object UpdateSettings {
     private const val NAME = "electro_release_check_settings"
     private fun store(context: Context) = context.getSharedPreferences(NAME, Context.MODE_PRIVATE)
+    /** @param context Private application context. @return Whether to check on launch. */
     fun autoCheck(context: Context): Boolean = store(context).getBoolean("auto_check", true)
+    /** @param context App context. @param value Desired checking preference. @return Unit. */
     fun setAutoCheck(context: Context, value: Boolean) {
         store(context).edit().putBoolean("auto_check", value).apply()
     }
+    /** @param context App context. @param installed Current installed version. @return Previously verified requirement or null. */
     fun requiredRelease(context: Context, installed: String): UpdateRelease? {
         val s = store(context)
         val version = s.getString("verified_required_version", null) ?: return null
@@ -84,6 +89,7 @@ object UpdateSettings {
         return UpdateRelease("v" + version, version, address,
             s.getString("verified_required_notes", "") ?: "", 0)
     }
+    /** @param context App context. @param release Verified required release. @return Unit after persistence. */
     fun rememberRequired(context: Context, release: UpdateRelease) {
         store(context).edit()
             .putString("verified_required_version", release.version)

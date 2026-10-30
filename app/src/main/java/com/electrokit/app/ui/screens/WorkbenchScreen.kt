@@ -96,6 +96,7 @@ fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail:
  * @param openEntry Opens an original public registry route.
  * @param info Opens an existing information tab.
  * @param settings Opens the standalone appearance page.
+ * @param onCheckUpdates Requests a user-triggered release check.
  * @return Unit after composing the selected destination; storage errors remain visible in the host banner.
  */
 @Composable

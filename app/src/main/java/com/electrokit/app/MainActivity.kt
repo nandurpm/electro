@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
             var checkStatus by remember { mutableStateOf<String?>(null) }
             var checking by remember { mutableStateOf(false) }
 
-            /** Manual checks always run; automatic checks run on launch when enabled. */
+            /** @param manual True for explicit request. @return Unit; asynchronous check updates UI. */
             fun checkForUpdates(manual: Boolean) {
                 if (checking) return
                 checking = true
