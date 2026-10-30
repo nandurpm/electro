@@ -27,7 +27,6 @@ MAX_UPDATES_PER_RUN = 40
 MAX_FILE_SENDS_PER_RUN = 3
 COMMANDS = [
     {"command": "tools", "description": "Quick electrical formulas and calculations"},
-    {"command": "fault", "description": "Search equipment error codes: /fault E001"},
     {"command": "start", "description": "Open the ELECTRO bot menu"},
     {"command": "menu", "description": "Return to the main menu"},
     {"command": "changelog", "description": "Read what changed in the latest release"},
@@ -41,7 +40,7 @@ COMMANDS = [
 ]
 MENU = {
     "keyboard": [
-        [{"text": "🧮 Quick Tools"}, {"text": "🔎 Error Codes"}],
+        [{"text": "🧮 Quick Tools"}],
         [{"text": "📲 Download APK"}, {"text": "🆕 Latest Version"}],
         [{"text": "📦 Source Code"}, {"text": "📚 Releases"}],
         [{"text": "🟢 Build Status"}, {"text": "📝 What’s New"}],
@@ -54,7 +53,6 @@ MENU = {
 }
 BUTTON_COMMANDS = {
     "🧮 Quick Tools": "/tools",
-    "🔎 Error Codes": "/fault",
     "📲 Download APK": "/apk",
     "🆕 Latest Version": "/version",
     "📦 Source Code": "/source",
@@ -267,7 +265,6 @@ def help_message() -> str:
         "━━━━━━━━━━━━━━━━━━\n"
         "🔌 <i>Your electrical &amp; electronics toolkit.</i>\n\n"
         "🧮 <b>/tools</b> — Quick electrical calculations\n"
-        "🔎 <b>/fault E001</b> — Search error codes\n"
         "📲 <b>/apk</b> — Get the latest Android APK\n"
         "🆕 <b>/version</b> — Check the latest release\n"
         "📦 <b>/source</b> — Download the source ZIP\n"
@@ -311,29 +308,11 @@ def quick_tools(text: str) -> str:
         return "⚠️ Check the values; all must be positive and PF must be ≤ 1.\n\n" + guide
 
 
-def fault_search(text: str) -> str:
-    query = text.partition(" ")[2].strip().casefold()
-    if len(query) < 2:
-        return "🔎 <b>EQUIPMENT ERROR CODES</b>\nUse /fault E001 or /fault motor.\nReference only: verify the exact controller model and manufacturer manual before troubleshooting."
-    source = Path(__file__).resolve().parent.parent / "app/src/test/resources/faults-original.tsv"
-    rows = [line.split("|") for line in source.read_text(encoding="utf-8").splitlines()]
-    matches = [r for r in rows if len(r) >= 5 and query in " ".join(r[1:3]).casefold()]
-    lines = ["🔎 <b>ERROR CODE RESULTS</b>"]
-    for row in matches[:12]:
-        lines.append(html.escape(f"{row[1]} · {row[2]} · Reset: {row[3]}"))
-    if not matches:
-        lines.append("No matching code found.")
-    lines.append("\nReference data from ELECTRO. Verify the exact controller manual; never bypass safety circuits.")
-    return "\n".join(lines)
-
-
 def handle_command(token: str, chat_id: str, user_text: str, *, downloads_left: int) -> bool:
     """Return True only when a file transfer consumes the run quota."""
     command = BUTTON_COMMANDS.get(user_text.strip()) or (user_text.strip().split(maxsplit=1)[0].split("@", 1)[0].lower() if user_text.strip() else "")
     if command in ("/tools", "/ohm", "/power", "/threephase"):
         send_text(token, chat_id, quick_tools(user_text), with_menu=True)
-    elif command == "/fault":
-        send_text(token, chat_id, fault_search(user_text), with_menu=True)
     elif command in ("/start", "/help", "/menu"):
         send_text(token, chat_id, help_message(), with_menu=True)
     elif command == "/about":
