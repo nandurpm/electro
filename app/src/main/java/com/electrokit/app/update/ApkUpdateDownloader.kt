@@ -35,7 +35,7 @@ object ApkUpdateDownloader {
                 if (destination.length() == release.size) {
                     try {
                         validateInstalledIdentity(context, destination, release.version)
-                        onProgress(100)
+                        withContext(Dispatchers.Main) { onProgress(100) }
                         return@withContext destination
                     } catch (_: Exception) {
                         destination.delete()

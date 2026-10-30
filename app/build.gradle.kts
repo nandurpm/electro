@@ -15,8 +15,8 @@ android {
         applicationId = "com.electrokit.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 26
-        versionName = "4.3.2"
+        versionCode = 27
+        versionName = "4.3.3"
     }
     // Compose owns rendering; BuildConfig supplies the displayed version.
     buildFeatures {
