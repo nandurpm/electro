@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -125,7 +126,7 @@ class MainActivity : ComponentActivity() {
                                 else "ELECTRO update available") },
                             text = {
                                 Column(verticalArrangement = Arrangement.spacedBy(
-                                    androidx.compose.ui.unit.dp(9))) {
+                                    9.dp)) {
                                     Text("Installed: " + BuildConfig.VERSION_NAME +
                                         "    New: " + release.version)
                                     Text(if (required)
