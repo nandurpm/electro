@@ -200,8 +200,6 @@ class MainActivity : ComponentActivity() {
                         val required = UpdatePolicy.priority(BuildConfig.VERSION_NAME, release.version) ==
                             UpdatePriority.REQUIRED_FEATURE
                         AlertDialog(
-                            onDismissRequest = { pending = null },
-                            title = { Text(if (required) "ELECTRO feature update available"
                             onDismissRequest = { if (!required && !downloading) pending = null },
                             title = { Text(if (required) "Update ELECTRO to continue"
                                 else "ELECTRO update available") },
@@ -211,7 +209,7 @@ class MainActivity : ComponentActivity() {
                                     Text("Installed: " + BuildConfig.VERSION_NAME +
                                         "    New: " + release.version)
                                     Text(if (required)
-                                        "A new feature version is available. You can keep using offline tools and install the official APK later."
+                                        "A new feature version is available. Install the official APK to continue."
                                     else
                                         "A maintenance patch is available. Update now or choose Later.")
                                     Text("WHAT'S NEW", style = MaterialTheme.typography.titleSmall)
@@ -228,23 +226,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             confirmButton = {
-                                Button(onClick = {
-                                    try {
-                                        startActivity(
-                                            Intent(Intent.ACTION_VIEW, Uri.parse(release.apkUrl))
-                                                .addCategory(Intent.CATEGORY_BROWSABLE)
-                                        )
-                                    } catch (_: ActivityNotFoundException) {
-                                        Toast.makeText(this@MainActivity,
-                                            "A browser is required to open the update",
-                                            Toast.LENGTH_LONG).show()
-                                    }
-                                }) {
-                                    Text("Download Update")
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { pending = null }) { Text("Later") }
                                 Button(
                                     enabled = !downloading,
                                     onClick = {
@@ -272,7 +253,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             properties = DialogProperties(
-                                dismissOnBackPress = true, dismissOnClickOutside = true
+                                dismissOnBackPress = !required && !downloading, dismissOnClickOutside = !required && !downloading
                             ),
                         )
                     }
