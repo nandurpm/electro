@@ -2,7 +2,7 @@
 
 VersionName: **4.0.0**. VersionCode: **20**. Android application ID: `com.electrokit.app`.
 
-This release carries forward the existing offline ELECTRO workbench, calculators, local reference data and visual design. It incorporates the correctness, lifecycle, input-persistence and accessibility improvements described in the [28 October audit follow-up](docs/AUDIT_2026_10_28.md). Numeric edge cases, E-series calculations, SMD code handling and formula boundaries received additional regression coverage.
+This release carries forward the existing offline ELECTRO workbench, calculators, local reference data and visual design. It incorporates the correctness, lifecycle, input-persistence and accessibility improvements. Numeric edge cases, E-series calculations, SMD code handling and formula boundaries received additional regression coverage.
 
 The build dependency catalog was restored to the last tested combination after concurrent automated dependency merges introduced duplicate TOML keys. The release workflow performs Android tests, lint, signing certificate validation and signed APK verification before publishing downloadable APK and source ZIP files.
 

@@ -7,14 +7,12 @@
 - Strengthened engineering access lifecycle locking, reset/error feedback, text scaling and saved-input handling.
 - Restored the validated dependency catalog after merged updates introduced duplicate TOML keys and broke Android CI.
 - The signed-release workflow must pass unit tests, lint, APK signature/certificate verification and source packaging before publication; physical-device validation remains outstanding.
-- See [the audit follow-up](docs/AUDIT_2026_10_28.md) for unresolved items.
 
 ## Audit changes originally prepared in 3.3.0 source
 
 - Corrected formatter, resistor-code, list-input and numeric-boundary behavior; added regression coverage.
 - Improved reference-gate lifecycle, error/reset accessibility and input-write scheduling.
 - Build both variants in CI and generate verification/source evidence as artifacts.
-- See [the audit follow-up](docs/AUDIT_2026_10_28.md) for remaining migrations and limitations.
 
 ## 3.1.0 — workbench UI redesign and verified release
 
@@ -65,7 +63,7 @@
 - Preserved original calculator/reference/database routes, exact engineering/fault records and existing local input/preferences.
 - Added recent tools and bounded saved calculation history; invalidated explicit results after input/mode changes.
 - Added Android regression coverage, source/asset validators, debug/release workflows and maintenance guides.
-- Production signing, real-device upgrade/accessibility checks and independent external reference verification remain unrun; see docs/AUDIT_REPORT.md.
+- Production signing, real-device upgrade/accessibility checks and independent external reference verification remain unrun.
 
 ## 2.0.3
 

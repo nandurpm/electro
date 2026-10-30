@@ -103,7 +103,6 @@ The missing nested project files were restored from the existing `FULL_SOURCE.md
 - [Releases and signing](docs/GITHUB_RELEASE_GUIDE.md)
 - [Phone-only workflow](docs/ANDROID_PHONE_BUILD_GUIDE.md)
 - [Testing](docs/TESTING_GUIDE.md)
-- [Audit and limitations](docs/AUDIT_REPORT.md)
 
 Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the new 3.0.2 private key and all values outside the repository. A release is signed only when valid credentials are supplied.
 
