@@ -110,7 +110,7 @@ def record(apk, build_log, variants, require_signed=False):
             'internet_permission': 'android.permission.INTERNET' in badging,
             'external_references_rechecked': False,
         }
-        assert not summary['internet_permission']
+        assert summary['internet_permission'], 'Missing explicit permission for verified GitHub updates'
         (stage / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
         (stage / 'README.md').write_text(
             f'# Current ELECTRO {version} verification\n\n'

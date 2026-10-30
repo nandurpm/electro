@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Send a styled ELECTRO release announcement with Telegram inline buttons.
+"""Send the official ELECTRO APK as a Telegram document with release details.
 
 GitHub Actions supplies GH_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
 GITHUB_REPOSITORY and RELEASE_TAG. Credentials are never printed.
@@ -7,10 +7,13 @@ GITHUB_REPOSITORY and RELEASE_TAG. Credentials are never printed.
 import html
 import json
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import urllib.request
+import uuid
 
 
 def required(name):
@@ -70,69 +73,102 @@ def highlights(tag, body):
     return choices or ["See the release notes for the latest changes."]
 
 
+
+MAX_APK_BYTES = 49 * 1024 * 1024
+
+
+def download_apk(repository, tag, asset):
+    """Retrieve only a matching official release APK and verify its size and ZIP magic."""
+    name = str(asset.get("name", ""))
+    size = asset.get("size")
+    if (name != f"ELECTRO-{tag.removeprefix('v')}.apk" or
+            not isinstance(size, int) or not 0 < size <= MAX_APK_BYTES):
+        raise ValueError("The official APK name or size is not eligible for Telegram delivery.")
+    with tempfile.TemporaryDirectory(prefix="electro-apk-") as folder:
+        result = subprocess.run(
+            ["gh", "release", "download", tag, "--repo", repository,
+             "--pattern", name, "--dir", folder],
+            capture_output=True, text=True, check=False,
+        )
+        if result.returncode:
+            raise ValueError("Unable to retrieve the official release APK.")
+        content = (Path(folder) / name).read_bytes()
+    if len(content) != size or not content.startswith(b"PK\x03\x04"):
+        raise ValueError("Official release APK download failed integrity checks.")
+    return content
+
+
+def send_apk_document(token, chat_id, filename, content, caption, keyboard):
+    """Send actual APK bytes using Telegram sendDocument, not an inline download link."""
+    if not str(chat_id).isdigit() or int(chat_id) <= 0:
+        raise ValueError("Telegram destination must be a private numeric chat ID.")
+    if not 0 < len(content) <= MAX_APK_BYTES:
+        raise ValueError("APK exceeds Telegram's supported upload size.")
+    boundary = "electro" + uuid.uuid4().hex
+    fields = {
+        "chat_id": str(chat_id), "caption": caption, "parse_mode": "HTML",
+        "reply_markup": json.dumps({"inline_keyboard": keyboard}, ensure_ascii=False),
+    }
+    parts = []
+    for key, value in fields.items():
+        parts.append(
+            (f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"'
+             f'\r\n\r\n{value}\r\n').encode("utf-8")
+        )
+    parts.append(
+        (f'--{boundary}\r\nContent-Disposition: form-data; name="document";'
+         f' filename="{filename}"\r\nContent-Type: application/vnd.android.package-archive'
+         f'\r\n\r\n').encode("utf-8")
+    )
+    data = b"".join(parts) + content + f"\r\n--{boundary}--\r\n".encode("utf-8")
+    request = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/sendDocument",
+        data=data,
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            answer = json.load(response)
+    except Exception:
+        # Do not print Telegram exceptions: they may contain a token-bearing API URL.
+        raise ValueError("Telegram APK document upload failed.") from None
+    if not answer.get("ok") or not answer.get("result", {}).get("document"):
+        raise ValueError("Telegram did not confirm the APK document attachment.")
+    return answer["result"]["document"].get("file_id")
+
+
 def announce():
     token = required("TELEGRAM_BOT_TOKEN")
     chat_id = required("TELEGRAM_CHAT_ID")
-    repository = required("GITHUB_REPOSITORY")
+    repo = required("GITHUB_REPOSITORY")
     tag = required("RELEASE_TAG")
-    release = published_release(repository, tag)
-    release_url = safe_url(release.get("url"), repository)
+    release = published_release(repo, tag)
+    notes_url = safe_url(release.get("url"), repo)
     assets = release.get("assets") or []
     apk = asset_link(assets, ".apk")
     if not apk:
         raise ValueError("The published release does not contain an APK.")
-    apk_url = safe_url(apk.get("url"), repository)
+    safe_url(apk.get("url"), repo)
     source = asset_link(assets, "-source.zip")
-    version = html.escape(tag.removeprefix("v"))
-    bullets = "\n".join(f"  • {html.escape(line)}" for line in highlights(tag, release.get("body")))
-    size = apk.get("size")
-    size_label = f"{size / (1024 * 1024):.1f} MB" if isinstance(size, (int, float)) and size > 0 else "Ready"
-    message = (
-        "⚡ <b>E L E C T R O</b>\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🚀 <b>NEW RELEASE AVAILABLE</b>\n\n"
-        f"📱 <b>Version {version}</b>\n"
-        "Your offline electrical &amp; electronics workbench.\n\n"
-        "🛠 <b>WHAT'S NEW</b>\n"
-        f"{bullets}\n\n"
-        f"📦 <b>APK size:</b> {size_label}\n"
-        "✅ <b>Available on GitHub Releases</b>\n\n"
-        "👇 <i>Tap below to download or view the details.</i>"
+    notes = "\n".join(
+        "• " + html.escape(s[:130]) for s in highlights(tag, release.get("body"))[:3]
     )
-    keyboard = [
-        [{"text": "📲 DOWNLOAD APK", "url": apk_url}],
-        [{"text": "📝 Release Notes", "url": release_url}],
-    ]
+    caption = (
+        "⚡ <b>ELECTRO — ANDROID APK</b>\n"
+        f"📱 Version: <b>{html.escape(tag.removeprefix('v'))}</b>\n"
+        f"📦 Size: {apk['size'] / (1024 * 1024):.1f} MB\n"
+        "✅ Official signed ELECTRO release.\n\n"
+        f"<b>What's new</b>\n{notes}\n\n"
+        "Tap the attached APK file to download or install it."
+    )
+    keyboard = [[{"text": "📝 Release Notes", "url": notes_url}]]
     if source:
-        keyboard[1].append({
-            "text": "📦 Source ZIP",
-            "url": safe_url(source.get("url"), repository),
-        })
-    keyboard.append([{
-        "text": "💻 ELECTRO on GitHub",
-        "url": f"https://github.com/{repository}",
-    }])
-    payload = {
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "HTML",
-        "link_preview_options": {"is_disabled": True},
-        "reply_markup": {"inline_keyboard": keyboard},
-    }
-    request = urllib.request.Request(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        headers={"Content-Type": "application/json; charset=utf-8"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=25) as response:
-            answer = json.load(response)
-    except Exception:
-        raise ValueError("Telegram notification failed. Check bot permissions and secrets.") from None
-    if not answer.get("ok"):
-        raise ValueError("Telegram API did not confirm successful delivery.")
-    print(f"Telegram confirmed the styled {tag} announcement was sent.")
+        keyboard[0].append({"text": "📦 Source ZIP", "url": safe_url(source.get("url"), repo)})
+    keyboard.append([{"text": "💻 ELECTRO on GitHub", "url": f"https://github.com/{repo}"}])
+    content = download_apk(repo, tag, apk)
+    send_apk_document(token, chat_id, apk["name"], content, caption, keyboard)
+    print(f"Telegram confirmed ELECTRO {tag} APK attachment delivery.")
 
 
 if __name__ == "__main__":

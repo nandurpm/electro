@@ -96,11 +96,12 @@ fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail:
  * @param openEntry Opens an original public registry route.
  * @param info Opens an existing information tab.
  * @param settings Opens the standalone appearance page.
+ * @param onCheckUpdates Requests a user-triggered release check.
  * @return Unit after composing the selected destination; storage errors remain visible in the host banner.
  */
 @Composable
 fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) -> Unit,
-    info: (Int) -> Unit, settings: () -> Unit) {
+    info: (Int) -> Unit, settings: () -> Unit, onCheckUpdates: () -> Unit = {}) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable(tab) { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("Calculators") }
@@ -308,7 +309,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     Card { Text(result, Modifier.padding(16.dp)); TextButton({ share(context, result) }) { Text("Share calculation") } }
                 }
             }
-            else -> ProfileScreen(vm, prefs, body, { tab = 3 }, { info(0) })
+            else -> ProfileScreen(vm, prefs, body, { tab = 3 }, { info(0) }, onCheckUpdates)
         }
     }
 }
@@ -391,6 +392,7 @@ private fun ComponentDetail(asset: ComponentAsset, prefs: PreferencesState, vm: 
     Scaffold(topBar = { Bar(asset.name, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite component") } } }) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item { ComponentImage(asset, Modifier.fillMaxWidth().heightIn(max = 420.dp).aspectRatio(1f).clip(RoundedCornerShape(10.dp)), detail = true) }
+            if (asset.id == "digital_multimeter") item { MultimeterLesson() }
             item { Text(asset.category.uppercase(), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium); SectionTitle(asset.name) }
             val info = componentNotes(asset)
             items(info) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text(title, style = MaterialTheme.typography.titleMedium); Text(body, Modifier.padding(top = 8.dp)) } } }
@@ -404,6 +406,7 @@ private fun ComponentDetail(asset: ComponentAsset, prefs: PreferencesState, vm: 
  */
 private fun componentNotes(asset: ComponentAsset): List<Pair<String, String>> {
     val principle = when {
+        asset.id == "digital_multimeter" -> "A digital multimeter measures electrical quantities using selectable functions. Study the guided tests above before any real measurement, then follow your meter’s actual jack and CAT ratings."
         "resistor" in asset.id -> "A resistor opposes current: V = I × R for an ohmic element. Power is dissipated as heat. Value, tolerance, temperature coefficient and power rating depend on the actual part."
         "capacitor" in asset.id -> "A capacitor stores energy in an electric field. Capacitance, working voltage, polarity, leakage and ESR depend on construction and the exact part. Stored charge may remain after disconnection."
         "inductor" in asset.id -> "An inductor stores energy in a magnetic field and opposes changes in current. Saturation current, winding resistance and insulation limits must come from its datasheet."
@@ -421,7 +424,7 @@ private fun componentNotes(asset: ComponentAsset): List<Pair<String, String>> {
         "Symbol, terminals & connection" to "Use the exact device's schematic symbol and numbered terminal drawing. Generated markings and connector geometry are not wiring authority. Consult the Tools → Pin-outs references and Learn → Lessons for generic interface concepts.",
         "Testing procedure" to "1. Identify the exact part. 2. Isolate all energy sources and verify the safe state. 3. Follow the manufacturer's test method with a correctly rated instrument. 4. Compare results with documented limits. This page does not authorize live testing.",
         "Troubleshooting" to "Record the symptom and actual model. Inspect for damage only in a safe isolated state. Check documented connections and supply conditions. Do not bypass interlocks or replace a part solely because it resembles this image.",
-        "Safety & provenance" to "User-supplied AI-generated artwork, optimized for visual learning rather than product verification. Never rely on it for exact geometry or terminal markings. Escalator work requires qualified personnel and the equipment's approved procedures.")
+        "Safety & provenance" to "User-supplied AI-generated artwork, optimized for visual learning rather than product verification. Never rely on it for exact geometry or terminal markings. Confirm the appropriate safe-testing procedure and exact manufacturer documentation before working with real equipment.")
 }
 
 /** Scrollable, bookmarkable lessons use authored text rather than embedding instruction screenshots.
