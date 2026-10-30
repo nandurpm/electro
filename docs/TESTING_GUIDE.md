@@ -6,7 +6,6 @@ From the repository root, with the toolchain and Python requirements installed:
 python scripts/check_comments.py
 python -m unittest discover -s scripts -p 'test_*.py'
 python scripts/validate_assets.py
-python scripts/validate_engineering.py
 python scripts/validate_library.py
 python scripts/check_contrast.py
 python scripts/package_project.py --check
@@ -15,7 +14,7 @@ python scripts/package_project.py --check
 
 PowerShell uses `.\gradlew.bat`. XML: `app/build/test-results/testDebugUnitTest/`. Test HTML: `app/build/reports/tests/testDebugUnitTest/`. Lint: `app/build/reports/lint-results-debug.html` and `.xml`. The current `verification/` snapshot is regenerated from actual APK/test/lint outputs. Run `python scripts/check_verification.py` to reject stale versions; use `--apk PATH --require-signed` before production publication.
 
-Coverage includes original calculation/unit/formatting/fault contracts, all 107 legacy calculator/reference routes, database filters, persistence failures/recovery, new utility examples and invalid domains, SI/temperature conversion, PIN verification and UI session/search restrictions, component image/favorite navigation, large text and simulated screenshots. New suites are `WorkbenchToolsTests`, `UnitConversionsTests`, `LocalPinTests` and `WorkbenchUiTests`.
+Coverage includes original calculation/unit/formatting/numerical contracts, all 107 legacy calculator/reference routes, database filters, persistence failures/recovery, new utility examples and invalid domains, SI/temperature conversion, PIN verification and UI session/search restrictions, component image/favorite navigation, large text and simulated screenshots. New suites are `WorkbenchToolsTests`, `UnitConversionsTests`, `LocalPinTests` and `WorkbenchUiTests`.
 
 Robolectric is simulated Android API 34. `app/build/design-previews/` contains current simulated renders when the screenshot tests execute. These are not physical-device or API-24 emulator results.
 

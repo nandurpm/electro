@@ -1,4 +1,4 @@
-"""Validate bundled component IDs, protected grouping, PNG integrity and image-memory boundaries."""
+"""Validate bundled component IDs, general component categories, PNG integrity and image-memory boundaries."""
 import hashlib
 import json
 import struct
@@ -28,9 +28,9 @@ def validate(root=ROOT):
         images.add(path)
     actual = {p.resolve() for p in (root / 'components').glob('*.png')}
     assert actual == images, 'Unreferenced or missing component files'
-    assert any(item['category'] == 'Escalator' for item in records), 'Protected category missing'
+    assert not any(item['category'] == 'Escalator' for item in records), 'Removed escalator image still linked'
     assert sum(p.stat().st_size for p in images) < 32 * 1024 * 1024, 'Review excessive library size'
-    print(f"PASS: {len(records)} component records, {len(images)} unique PNGs, explicit Escalator category, valid local paths and dimensions.")
+    print(f"PASS: {len(records)} component records, {len(images)} unique PNGs, no escalator images, valid local paths and dimensions.")
 
 
 if __name__ == '__main__':

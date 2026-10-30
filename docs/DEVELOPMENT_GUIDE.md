@@ -14,7 +14,6 @@ Kotlin paths below start at `app/src/main/java/com/electrokit/app/`.
 | Component image | Add descriptive PNG to `app/src/main/assets/components/` and an `id/name/category/image` entry to `components.json`; reuse identical assets |
 | Connection drawing | Extend `ui/components/` or original `assets/pages.json`; specify connector variant, contact-number view and original source |
 | Learning content | `data/ComponentLibrary.kt`; add citations and explicit limits. Meter illustration: `ui/components/MultimeterLesson.kt` |
-| Fault records | `assets/engineering.json`; preserve original serial/code/message/reset/group fields unless an authoritative correction is supplied |
 | Language | Extract new workbench Kotlin text into `res/values/strings.xml`, then add translated resource directories. Only English is currently implemented |
 | Version | `app/build.gradle.kts`, `versionCode`/`versionName`; increase code monotonically |
 
