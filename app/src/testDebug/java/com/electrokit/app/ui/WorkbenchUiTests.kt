@@ -144,4 +144,22 @@ class WorkbenchUiTests {
         ui.onNodeWithText("Extra Utilities").performClick()
         ui.onNodeWithText("Ideal transformer").assertExists()
     }
+    @Test fun learnLanguageChangesProseAndSurvivesRecreation() {
+        ready()
+        ui.onNodeWithText("Learn").performClick()
+        ui.onNodeWithText("தமிழ்").performClick()
+        ui.onNodeWithText("Lessons").performClick()
+        ui.onNodeWithText("Digital multimeter guide").performClick()
+        ui.onNodeWithText("தமிழ்").assertIsSelected()
+        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Know the instrument"))
+        ui.onNodeWithText("Know the instrument").assertExists()
+        ui.onNodeWithText("Display தேர்ந்தெடுத்த", substring = true).assertExists()
+        ui.activityRule.scenario.recreate()
+        ui.waitForIdle()
+        ui.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
+        ui.onNodeWithText("தமிழ்").assertIsSelected()
+        ui.onNodeWithText("English").performClick()
+        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Know the instrument"))
+        ui.onNodeWithText("The display reports", substring = true).assertExists()
+    }
 }

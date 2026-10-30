@@ -261,6 +261,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                 }
             }
             2 -> Column(body) {
+                LearnLanguageSelector(prefs, vm)
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(listOf("Components", "Lessons")) { name -> FilterChip(category == name, { category = name }, label = { Text(name) }) }
                 }
@@ -438,9 +439,28 @@ private fun LearningDetail(page: LearningPage, prefs: PreferencesState, vm: AppV
     val id = "learn:${page.id}"
     Scaffold(topBar = { Bar(page.title, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite lesson") } } }) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            item { LearnLanguageSelector(prefs, vm) }
             item { Text("LEARN • OFFLINE REFERENCE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium) }
             if (page.id == "multimeter") item { MultimeterLesson() }
-            items(page.sections) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(20.dp)) { SectionTitle(title); Text(body) } } }
+            items(learningSections(page, prefs.values["learn:preferences"]?.get("language") ?: "en")) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(20.dp)) { SectionTitle(title); Text(body) } } }
         }
+    }
+}
+
+/** Learn-only language preference uses existing offline persistence.
+ * @param prefs Current preference snapshot.
+ * @param vm Existing persistence owner.
+ * @return English/Tamil controls; technical labels remain English.
+ */
+@Composable
+private fun LearnLanguageSelector(prefs: PreferencesState, vm: AppViewModel) {
+    val language = prefs.values["learn:preferences"]?.get("language") ?: "en"
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("en" to "English", "ta" to "தமிழ்").forEach { (code, label) ->
+                FilterChip(language == code, { vm.values("learn:preferences", mapOf("language" to code)) }, label = { Text(label) })
+            }
+        }
+        Text(if (language == "ta") "பாட விளக்கங்கள் தமிழில் • Technical terms in English" else "Lesson language • Technical terms stay in English", style = MaterialTheme.typography.bodySmall)
     }
 }
