@@ -15,6 +15,7 @@ data class WorkbenchTool(val id: String, val title: String, val fields: List<Str
 object WorkbenchTools {
     /** Public utility catalogue, independent of protected controller reference data. */
     val all = listOf(
+        WorkbenchTool("radix", "Binary / HEX converter", listOf("Value", "Source base (2, 10, 16)"), "Convert an unsigned integer between base 2, 10 and 16", "Whole numbers only, up to 256 input characters. ASCII is shown only for printable single-byte values."),
         WorkbenchTool("transformer", "Ideal transformer", listOf("Primary voltage (V)", "Primary turns", "Secondary turns"), "Vs = Vp × Ns / Np", "Ideal AC transformer ratio only; losses, insulation, frequency, VA and regulation are not modeled."),
         WorkbenchTool("ups", "Battery / UPS runtime", listOf("Battery voltage (V)", "Capacity (Ah)", "Usable depth (%)", "Efficiency (%)", "Load (W)"), "t = V × Ah × depth/100 × efficiency/100 / P", "Constant-power estimate. Battery aging, temperature, discharge-rate effects and inverter standby losses are excluded. Not a runtime guarantee."),
         WorkbenchTool("cable", "DC cable voltage-drop sizing", listOf("One-way length (m)", "Current (A)", "Resistivity (Ω·mm²/m)", "Allowed drop (V)"), "A = 2 × ρ × L × I / ΔV", "Two-conductor DC resistance model with user-entered resistivity. This does not select code-compliant cable, insulation, ampacity, protection, temperature or standard sizes."),
@@ -47,7 +48,15 @@ object WorkbenchTools {
     private fun calculateChecked(id: String, raw: List<String>): String {
         val tool = requireNotNull(all.firstOrNull { it.id == id }) { "Unknown utility." }
         require(raw.size == tool.fields.size) { "Enter every required field." }
-        return if (id == "scientific") Engineering.format(Expression(raw.single().lowercase(java.util.Locale.ROOT)).evaluate())
+        return if (id == "radix") {
+            val base = raw[1].trim().toIntOrNull()
+            require(base in listOf(2, 10, 16)) { "Source base must be 2, 10 or 16." }
+            val input = raw[0].trim()
+            require(input.length in 1..256 && input.all { it.digitToIntOrNull(base!!) != null }) { "Enter valid unsigned digits for the selected base (up to 256 characters)." }
+            val value = java.math.BigInteger(input, base!!)
+            "Binary: ${value.toString(2)}\nDecimal: ${value.toString(10)}\nHEX: ${value.toString(16).uppercase(java.util.Locale.ROOT)}" +
+                if (value >= java.math.BigInteger.valueOf(32) && value <= java.math.BigInteger.valueOf(126)) "\nASCII: ${value.toInt().toChar()}" else "\nASCII: not a printable single-byte character"
+        } else if (id == "scientific") Engineering.format(Expression(raw.single().lowercase(java.util.Locale.ROOT)).evaluate())
         else {
             val v = raw.map { Engineering.parse(it)?.takeIf(Double::isFinite) ?: error("Enter a valid number in every field.") }
             /** Positive input used for nonzero denominators and physical dimensions.

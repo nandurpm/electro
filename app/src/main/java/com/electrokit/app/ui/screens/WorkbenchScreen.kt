@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.electrokit.app.ui.screens
 
 import android.graphics.BitmapFactory
@@ -119,7 +119,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     val component = components.firstOrNull { detail == "component:${it.id}" }
     val lesson = learningPages.firstOrNull { detail == "learn:${it.id}" }
     val utility = WorkbenchTools.all.firstOrNull { detail == "utility:${it.id}" }
-    if (detail == "unit-converter") { UnitConverterScreen { detail = null }; return }
+    if (detail == "unit-converter") { UnitConverterScreen(vm, prefs) { detail = null }; return }
     if (utility != null) { UtilityScreen(utility, vm, prefs) { detail = null }; return }
     if (component != null) {
         ComponentDetail(component, prefs, vm) { detail = null }
@@ -150,7 +150,8 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         verticalArrangement = Arrangement.Center) {
                         Box(Modifier.clip(RoundedCornerShape(10.dp)).background(if (tab == i) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
                             .padding(horizontal = 16.dp, vertical = 4.dp)) {
-                            Icon(when(i) { 0 -> Icons.Default.Home; 1 -> Icons.Default.Build; 2 -> Icons.Default.Info; 3 -> Icons.Default.Star; else -> Icons.Default.Person }, null, Modifier.size(24.dp))
+                            if (i == 2) Icon(painterResource(R.drawable.ic_home_book), null, Modifier.size(24.dp))
+                            else Icon(when(i) { 0 -> Icons.Default.Home; 1 -> Icons.Default.Build; 3 -> Icons.Default.Star; else -> Icons.Default.Person }, null, Modifier.size(24.dp))
                         }
                         Text(name, Modifier.fillMaxWidth(), maxLines = 2, minLines = if (LocalDensity.current.fontScale > 1.3f) 2 else 1,
                             fontSize = 11.sp, lineHeight = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
@@ -182,7 +183,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     }
                     if (prefs.recent.isNotEmpty()) {
                         item { SectionTitle("Recently Used") }
-                        items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }.take(4)) {
+                        items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }.take(5)) {
                             RecentRow(it) { openEntry(it.id) }
                         }
                     }
@@ -206,7 +207,13 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         ListItem(headlineContent = { Text(c.name) }, supportingContent = { Text(c.category) }, modifier = Modifier.clickable { detail = "component:${c.id}" })
                     }
                     items(learningPages.filter { it.title.contains(query, true) }) { page ->
-                        QuickCard(page.title, Modifier.fillMaxWidth()) { detail = "learn:${page.id}" }
+                        Card(onClick = { detail = "learn:${page.id}" }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(page.title, style = MaterialTheme.typography.titleMedium)
+                                Text("${page.sections.size} sections  •  English / தமிழ்", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                Text("Open guide →", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
                     }
                 } else {
                     item { SectionTitle("Component discovery") }
@@ -234,8 +241,8 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     items(utilities, key = { "utility:${it.id}" }) { tool -> QuickCard(tool.title, Modifier.fillMaxWidth()) { detail = "utility:${tool.id}" } }
                 }
             } else Column(body) {
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(listOf("Calculators", "Pin-outs", "Reference", "Data", "Utilities")) { name ->
+                FlowRow(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Calculators", "Pin-outs", "Reference", "Data", "Utilities").forEach { name ->
                         FilterChip(category == name, { category = name }, label = { Text(name) })
                     }
                 }
@@ -263,7 +270,11 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                 }
             }
             2 -> Column(body) {
-                LearnLanguageSelector(prefs, vm)
+                if (category == "Lessons") LearnLanguageSelector(prefs, vm)
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(if (category == "Lessons") "Learn by topic" else "Component Library", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(if (category == "Lessons") "Choose a guide. Understand the concept, then explore the details." else "Identify parts, understand their purpose and explore connections.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(listOf("Components", "Lessons")) { name -> FilterChip(category == name, { category = name }, label = { Text(name) }) }
                 }
@@ -272,7 +283,13 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint))
                     }
                     items(learningPages.filter { it.title.contains(query, true) }) { page ->
-                        QuickCard(page.title, Modifier.fillMaxWidth()) { detail = "learn:${page.id}" }
+                        Card(onClick = { detail = "learn:${page.id}" }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(page.title, style = MaterialTheme.typography.titleMedium)
+                                Text("${page.sections.size} sections  •  English / தமிழ்", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                Text("Open guide →", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
                     }
                 } else {
                     val gallery: @Composable () -> Unit = {
@@ -281,7 +298,14 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                                 .filter { it.name.contains(query, true) || it.category.contains(query, true) }, key = { it.id }) { c ->
                                 Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
                                     ComponentImage(c, Modifier.fillMaxWidth().aspectRatio(1f))
-                                    Text(c.name, Modifier.padding(12.dp), style = MaterialTheme.typography.titleSmall)
+                                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                        Text(c.category, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                        Text(c.name, style = MaterialTheme.typography.titleSmall)
+                                        Text(componentNotes(c).first().second, style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("View component →", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
                                 }
                             }
                         }
@@ -409,6 +433,9 @@ private fun ComponentDetail(asset: ComponentAsset, prefs: PreferencesState, vm: 
 private fun componentNotes(asset: ComponentAsset): List<Pair<String, String>> {
     val principle = when {
         asset.id == "digital_multimeter" -> "A digital multimeter measures electrical quantities using selectable functions. Study the guided tests above before any real measurement, then follow your meter’s actual jack and CAT ratings."
+        asset.id == "breadboard" -> "A breadboard lets you build temporary circuits without soldering. Contacts are joined in groups beneath the holes; power rails may be split. Verify the board's connections before use."
+        asset.id == "can_bus_module" -> "A CAN interface module connects compatible controller logic to a CAN network. The exact module determines supply voltage, logic levels, termination and connector pin assignments; check its datasheet."
+        asset.id == "bridge_rectifier" -> "A bridge rectifier uses four diodes to convert an AC input into a pulsating DC output. Identify the two AC terminals and the +/− output from the exact part's markings and datasheet."
         "resistor" in asset.id -> "A resistor opposes current: V = I × R for an ohmic element. Power is dissipated as heat. Value, tolerance, temperature coefficient and power rating depend on the actual part."
         "capacitor" in asset.id -> "A capacitor stores energy in an electric field. Capacitance, working voltage, polarity, leakage and ESR depend on construction and the exact part. Stored charge may remain after disconnection."
         "inductor" in asset.id -> "An inductor stores energy in a magnetic field and opposes changes in current. Saturation current, winding resistance and insulation limits must come from its datasheet."
@@ -442,9 +469,9 @@ private fun LearningDetail(page: LearningPage, prefs: PreferencesState, vm: AppV
     Scaffold(topBar = { Bar(page.title, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite lesson") } } }) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item { LearnLanguageSelector(prefs, vm) }
-            item { Text("LEARN • OFFLINE REFERENCE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium) }
+            item { LessonVisual(page, prefs.values["learn:preferences"]?.get("language") == "ta") }
             if (page.id == "multimeter") item { MultimeterLesson() }
-            items(learningSections(page, prefs.values["learn:preferences"]?.get("language") ?: "en")) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(20.dp)) { SectionTitle(title); Text(body) } } }
+            itemsIndexed(learningSections(page, prefs.values["learn:preferences"]?.get("language") ?: "en")) { index, (title, body) -> LessonSection(index + 1, title, body) }
         }
     }
 }

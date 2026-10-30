@@ -43,10 +43,15 @@ class WorkbenchUiTests {
         ui.onNodeWithText("Unit converter").performClick()
         ui.onNode(hasSetTextAction() and hasText("Value")).performTextReplacement("3.3")
         ui.onNodeWithText("3300 mV").assertExists()
+        capture44("converter-4-4")
         ui.onNodeWithText("Quantity: Voltage").performClick()
         ui.onNodeWithText("Temperature").performClick()
         ui.onNode(hasSetTextAction() and hasText("Value")).performTextReplacement("100")
         ui.onNodeWithText("212 °F").assertExists()
+        ui.onNodeWithText("Save conversion").performScrollTo().performClick()
+        ui.waitUntil(10000) { ui.onAllNodesWithText("100 °C = 212 °F").fetchSemanticsNodes().isNotEmpty() }
+        ui.onNodeWithText("Reset").performScrollTo().performClick()
+        ui.onNodeWithText("Copy conversion").assertIsNotEnabled()
     }
 
     /** @return Unit; an actual bundled image renders and a component favorite is navigable. */
@@ -142,13 +147,14 @@ class WorkbenchUiTests {
         ui.onNodeWithText("Tools").performClick()
         ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Extra Utilities"))
         ui.onNodeWithText("Extra Utilities").performClick()
+        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Ideal transformer"))
         ui.onNodeWithText("Ideal transformer").assertExists()
     }
     @Test fun learnLanguageChangesProseAndSurvivesRecreation() {
         ready()
         ui.onNodeWithText("Learn").performClick()
-        ui.onNodeWithText("தமிழ்").performClick()
         ui.onNodeWithText("Lessons").performClick()
+        ui.onNodeWithText("தமிழ்").performClick()
         ui.onNodeWithText("Digital multimeter • practical guide").performClick()
         ui.onNodeWithText("தமிழ்").assertIsSelected()
         ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("What you will learn"))
@@ -161,5 +167,45 @@ class WorkbenchUiTests {
         ui.onNodeWithText("English").performClick()
         ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("What you will learn"))
         ui.onNodeWithText("Identify the display", substring = true).assertExists()
+    }
+    @Test fun freshInstallUsesLightAndSavedDarkSurvivesRestart() {
+        kotlinx.coroutines.runBlocking { com.electrokit.app.data.Repository(ui.activity).resetPreferences() }
+        ui.activity.getSharedPreferences("startup_appearance", android.content.Context.MODE_PRIVATE).edit().clear().commit()
+        ui.activityRule.scenario.recreate()
+        ready()
+        ui.onNodeWithText("Profile").performClick()
+        ui.onNodeWithText("Appearance").performClick()
+        ui.onNodeWithText("Light").assertIsSelected()
+        ui.onNodeWithText("Dark").performClick()
+        ui.waitUntil(10000) { !com.electrokit.app.data.StartupTheme.light(ui.activity) }
+        ui.activityRule.scenario.recreate()
+        ui.waitForIdle()
+        ui.onNodeWithText("Dark").assertIsSelected()
+    }
+    @Test fun databaseComparisonUsesBundledSpecifications() {
+        ready()
+        ui.onNodeWithText("Tools").performClick()
+        ui.onNodeWithText("Electronics").performClick()
+        ui.onNodeWithText("Parts Finder").performClick()
+        ui.onAllNodes(isToggleable())[0].performClick()
+        ui.onAllNodes(isToggleable())[1].performClick()
+        ui.onNodeWithText("Compare selected (2/3)").assertIsEnabled().performClick()
+        ui.onNodeWithText("Compare components").assertExists()
+        ui.onNodeWithText("Specification").assertExists()
+        capture44("comparison-4-4")
+        ui.onNodeWithText("Close").performClick()
+    }
+    private fun capture44(name: String) {
+        ui.mainClock.advanceTimeBy(700)
+        ui.waitForIdle()
+        ui.runOnIdle {
+            val view = ui.activity.window.decorView
+            val bitmap = android.graphics.Bitmap.createBitmap(view.width, view.height, android.graphics.Bitmap.Config.ARGB_8888)
+            view.draw(android.graphics.Canvas(bitmap))
+            val file = java.io.File("build/design-previews/$name.png")
+            file.parentFile!!.mkdirs()
+            file.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+            bitmap.recycle()
+        }
     }
 }

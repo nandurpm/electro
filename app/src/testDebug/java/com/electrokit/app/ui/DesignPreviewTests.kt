@@ -172,4 +172,23 @@ class DesignPreviewTests {
         for (frame in 0 until 64) save("home-motion-%02d".format(frame), 125)
         ui.mainClock.autoAdvance = true
     }
+    /** Reviews illustrated learning pages in the selected light theme.
+     * @return Unit after writing actual lesson and gallery previews.
+     */
+    @Test fun illustratedLearningPreview() {
+        ready(); theme(true)
+        ui.onNodeWithText("Learn").performClick()
+        ui.waitUntil(10000) { listOf("Breadboard", "Bridge Rectifier", "CAN Bus Module").all { label -> ui.onAllNodesWithContentDescription(label).fetchSemanticsNodes().isNotEmpty() } }
+        save("learn-library-light")
+        ui.onNodeWithText("Lessons").performClick(); save("learn-topics-light")
+        for (title in listOf("CAN bus fundamentals", "RJ45 • T568A / T568B")) {
+            ui.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange)).performScrollToNode(hasText(title))
+            ui.onNodeWithText(title).performClick()
+            save(if (title.startsWith("CAN")) "learn-can-light" else "learn-rj45-light")
+            if (title.startsWith("CAN")) ui.onRoot().performTouchInput { swipeUp() }
+            else ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("T568A — contacts 1 to 8"))
+            save(if (title.startsWith("CAN")) "learn-can-points" else "learn-rj45-colors")
+            ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
+        }
+    }
 }

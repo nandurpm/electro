@@ -41,4 +41,10 @@ class WorkbenchToolsTests {
         assertTrue(WorkbenchTools.evaluate("missing", emptyList()) is Calculation.Error)
         assertTrue(WorkbenchTools.evaluate("scientific", listOf("sqrt(-1)")) is Calculation.Error)
     }
+    @Test fun radixConversionValidatesItsBaseAndDigits() {
+        assertTrue(WorkbenchTools.calculate("radix", listOf("FF", "16")).contains("Decimal: 255"))
+        assertTrue(WorkbenchTools.calculate("radix", listOf("65", "10")).contains("ASCII: A"))
+        assertTrue(WorkbenchTools.evaluate("radix", listOf("2", "2")) is Calculation.Error)
+        assertTrue(WorkbenchTools.evaluate("radix", listOf("10", "8")) is Calculation.Error)
+    }
 }

@@ -2,8 +2,10 @@
 
 **Electrical • Electronics • Offline Reference**
 
-Offline-first native Android electronics toolkit. Version **4.2.0**, code **23**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
-\n- **4.3.3 stability patch:** repaired invalid merge artifacts in the updater dialog and fixed UI-thread progress delivery for cached APKs; automated validation now guards against duplicate update-dialog callbacks and browser redirects.\n
+Offline-first native Android electronics toolkit. Version **4.4.0**, code **28**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+
+- **4.3.3 stability patch:** repaired invalid merge artifacts in the updater dialog and fixed UI-thread progress delivery for cached APKs; automated validation now guards against duplicate update-dialog callbacks and browser redirects.
+
 ## Features
 
 - Material 3 dark-blue, light and system appearance; persistent header/search and visible Android system bars.

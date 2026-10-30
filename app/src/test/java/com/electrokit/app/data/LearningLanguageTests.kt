@@ -16,4 +16,9 @@ class LearningLanguageTests {
         }
         assertTrue(learningSections(learningPages.first(), "ta").any { it.second.contains("COM") })
     }
+    @Test fun freshPreferencesAreLightAndExplicitDarkIsPreserved() {
+        assertTrue(PreferenceCodec.decode(null).light)
+        assertFalse(PreferenceCodec.decode("{\"light\":false,\"themeMode\":\"dark\"}").light)
+        assertEquals("dark", PreferenceCodec.decode("{\"light\":false,\"themeMode\":\"dark\"}").themeMode)
+    }
 }

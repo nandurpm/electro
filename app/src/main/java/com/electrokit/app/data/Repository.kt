@@ -168,8 +168,8 @@ data class Part(
  */
 @Serializable
 data class PreferencesState(
-    /** Persisted palette choice; first run defaults to dark. */
-    val light: Boolean = false,
+    /** Persisted palette choice; first run defaults to light. */
+    val light: Boolean = true,
     /** True selects A–Z within favourite and ordinary groups. */
     val alphabetical: Boolean = false,
     /** Stable registry IDs pinned before other entries. */

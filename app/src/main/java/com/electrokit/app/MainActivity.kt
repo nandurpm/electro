@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
         val startupAvailable = StartupTheme.available(this)
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(
             when {
-                !startupAvailable -> 0xFF12243A.toInt()
+                !startupAvailable -> 0xFFF8FAFC.toInt()
                 startupLight -> 0xFFF5F7FA.toInt()
                 else -> 0xFF0C1422.toInt()
             }
