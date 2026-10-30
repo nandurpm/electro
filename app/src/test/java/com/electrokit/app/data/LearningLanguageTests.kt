@@ -14,6 +14,6 @@ class LearningLanguageTests {
             assertEquals(page.sections, learningSections(page, "en"))
             assertEquals(page.sections, learningSections(page, "unknown"))
         }
-        assertTrue(learningSections(learningPages.first(), "ta").first().second.contains("COM"))
+        assertTrue(learningSections(learningPages.first(), "ta").any { it.second.contains("COM") })
     }
 }

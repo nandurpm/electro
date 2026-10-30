@@ -1,5 +1,8 @@
 package com.electrokit.app.ui.components
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
@@ -70,7 +73,24 @@ fun CategoryBadge(title: String, modifier: Modifier = Modifier) {
     val (symbol, color) = categoryAccent(title)
     Surface(modifier, shape = RoundedCornerShape(9.dp), border = BorderStroke(1.dp, color.copy(alpha = .8f))) {
         Box(Modifier.background(Brush.linearGradient(listOf(color, color.copy(red = color.red * .5f, green = color.green * .5f, blue = color.blue * .5f)))).padding(6.dp), contentAlignment = Alignment.Center) {
-            Text(symbol, modifier = Modifier.clearAndSetSemantics { }, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Icon(categoryIcon(title), null, Modifier.size(28.dp), tint = Color.White)
         }
     }
+}
+
+/** Vector symbols shared by launcher tiles, categories and profile rows.
+ * @param title Visible category or action label.
+ * @return A bundled Material icon, without a font glyph dependency.
+ */
+fun categoryIcon(title: String): ImageVector = when {
+    title.contains("calc", true) -> Icons.Default.Create
+    title.contains("convert", true) -> Icons.Default.Refresh
+    title.contains("learn", true) || title.contains("lesson", true) -> Icons.Default.List
+    title.contains("favorite", true) -> Icons.Default.Star
+    title.contains("privacy", true) -> Icons.Default.Lock
+    title.contains("about", true) -> Icons.Default.Info
+    title.contains("appearance", true) -> Icons.Default.Settings
+    title.contains("update", true) -> Icons.Default.Refresh
+    title.contains("component", true) -> Icons.Default.Settings
+    else -> Icons.Default.Build
 }

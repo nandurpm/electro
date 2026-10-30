@@ -42,6 +42,7 @@ import com.electrokit.app.BuildConfig
 import com.electrokit.app.data.ComponentAsset
 import com.electrokit.app.data.Entry
 import com.electrokit.app.data.PreferencesState
+import com.electrokit.app.ui.components.categoryIcon
 import com.electrokit.app.ui.components.CategoryBadge
 import com.electrokit.app.ui.components.ElectroPanel
 import com.electrokit.app.ui.components.ToolIcon
@@ -96,7 +97,7 @@ fun QuickTile(title: String, modifier: Modifier = Modifier, onClick: () -> Unit)
     ) {
         Box(Modifier.size(48.dp).graphicsLayer { alpha = .82f + pulse * .18f }
             .clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = .20f)), contentAlignment = Alignment.Center) {
-            Text(symbol, Modifier.clearAndSetSemantics { }, color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.Bold)
+            Icon(categoryIcon(title), null, Modifier.size(28.dp), tint = Color.White)
         }
         Text(title, Modifier.padding(top = 6.dp), color = Color.White, style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.Center, maxLines = 2)
@@ -217,7 +218,7 @@ private fun ProfileRow(title: String, subtitle: String, symbol: String, accent: 
         ) {
             Box(Modifier.size(40.dp).clip(RoundedCornerShape(9.dp)).background(Brush.linearGradient(listOf(accent, shade(accent)))),
                 contentAlignment = Alignment.Center) {
-                Text(symbol, Modifier.clearAndSetSemantics { }, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Icon(categoryIcon(title), null, Modifier.size(28.dp), tint = Color.White)
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
@@ -287,7 +288,8 @@ fun ProfileScreen(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier 
                         com.electrokit.app.update.UpdateSettings.setAutoCheck(context, enabled)
                     })
                 }
-                Text("4.3.1 / 4.3.2: Update or Later. 4.4.0 / 5.0.0: Update to Continue.",
+                TextButton(onClick = onCheckUpdates) { Text("Check now") }
+                Text("Updates can be downloaded now or postponed with Later.",
                     style = MaterialTheme.typography.bodySmall)
                 Text("Only GitHub release metadata is checked. Calculators and learning content remain offline.",
                     style = MaterialTheme.typography.bodySmall)

@@ -147,7 +147,7 @@ jobs:
           version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [ "$GITHUB_EVENT_NAME" = repository_dispatch ]; then
             if [ -z "$RELEASE_TAG" ] || [ "$RELEASE_TAG" = "main" ]; then
-              RELEASE_TAG="electro-$version"
+              RELEASE_TAG="v$version"
             fi
             if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
               gh release upload "$RELEASE_TAG" app/build/outputs/distribution/* --clobber
@@ -174,7 +174,7 @@ jobs:
           fi
           if [ -z "$RELEASE_TAG" ] || [ "$RELEASE_TAG" = "main" ]; then
             version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
-            RELEASE_TAG="electro-$version"
+            RELEASE_TAG="v$version"
             export RELEASE_TAG
           fi
           python3 scripts/telegram_release_notify.py

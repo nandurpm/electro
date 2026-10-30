@@ -53,7 +53,7 @@ cd electro
 ls -lh app/build/outputs/apk/debug/app-debug.apk
 ```
 
-In this cloud workspace first run `source /workspace/toolchains/activate-electro.sh`. The saved environment Install script prepares JDK/SDK and writable caches. Gradle **8.9**, AGP **8.7.3**, Kotlin **2.0.21**, JDK **17**, SDK **35** and Build Tools **35.0.0** are the pinned toolchain. Kotlin needs no separate installation. First-time dependency downloads require network access; the app has no Internet permission. The wrapper distribution SHA-256 is pinned; TLS remains enabled.
+In this cloud workspace first run `source /workspace/toolchains/activate-electro.sh`. The saved environment Install script prepares JDK/SDK and writable caches. Gradle **8.9**, AGP **8.7.3**, Kotlin **2.0.21**, JDK **17**, SDK **35** and Build Tools **35.0.0** are the pinned toolchain. Kotlin needs no separate installation. First-time dependency downloads require network access; Internet access is used for GitHub update checks. The wrapper distribution SHA-256 is pinned; TLS remains enabled.
 
 ## Developer checks
 

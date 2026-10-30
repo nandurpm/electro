@@ -271,7 +271,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                         color =
                             if (result is Calculation.Error) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.headlineMedium,
                         modifier = Modifier.padding(top = 8.dp),
                     )
                     ResponsePlot(result.plot)
