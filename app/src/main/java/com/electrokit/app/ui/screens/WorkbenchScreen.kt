@@ -364,7 +364,7 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
         Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Language: English")
         Text("Offline by design", style = MaterialTheme.typography.titleMedium)
-        Text("No accounts, analytics, ads or network permission. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share.")
+        Text("No accounts, analytics or ads. Internet access is used for GitHub update checks. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share.")
         TextButton({ confirm = true }) { Text("Clear saved calculation history") }
         TextButton({ vm.sort() }) { Text(if (prefs.alphabetical) "Use original tool order" else "Sort tools A–Z") }
         } }

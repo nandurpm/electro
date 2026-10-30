@@ -63,6 +63,10 @@ import kotlinx.coroutines.launch
  *   ViewModel.
  */
 fun share(context: Context, text: String) {
+    if (text.toByteArray(Charsets.UTF_8).size > 128 * 1024 || text.length > 64 * 1024) {
+        android.widget.Toast.makeText(context, "Too much text to share. Narrow your selection and try again.", android.widget.Toast.LENGTH_LONG).show()
+        return
+    }
     try {
     context.startActivity(
         Intent.createChooser(
