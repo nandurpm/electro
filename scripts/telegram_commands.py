@@ -27,7 +27,7 @@ MAX_UPDATES_PER_RUN = 40
 MAX_FILE_SENDS_PER_RUN = 3
 COMMANDS = [
     {"command": "tools", "description": "Quick electrical formulas and calculations"},
-    {"command": "fault", "description": "Search escalator error codes: /fault E001"},
+    {"command": "fault", "description": "Search equipment error codes: /fault E001"},
     {"command": "start", "description": "Open the ELECTRO bot menu"},
     {"command": "menu", "description": "Return to the main menu"},
     {"command": "changelog", "description": "Read what changed in the latest release"},
@@ -314,7 +314,7 @@ def quick_tools(text: str) -> str:
 def fault_search(text: str) -> str:
     query = text.partition(" ")[2].strip().casefold()
     if len(query) < 2:
-        return "🔎 <b>ESCALATOR ERROR CODES</b>\nUse /fault E001 or /fault motor.\nReference only: verify the controller model and manufacturer manual before troubleshooting."
+        return "🔎 <b>EQUIPMENT ERROR CODES</b>\nUse /fault E001 or /fault motor.\nReference only: verify the exact controller model and manufacturer manual before troubleshooting."
     source = Path(__file__).resolve().parent.parent / "app/src/test/resources/faults-original.tsv"
     rows = [line.split("|") for line in source.read_text(encoding="utf-8").splitlines()]
     matches = [r for r in rows if len(r) >= 5 and query in " ".join(r[1:3]).casefold()]

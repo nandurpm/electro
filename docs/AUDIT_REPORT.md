@@ -2,7 +2,7 @@
 
 At remote `91f9725`, the checkout had root scripts/docs and 66 `photos/` PNGs but lacked nested Android files. Original files were recovered from `FULL_SOURCE.md` only after matching bytes to the original SHA-256 manifest. The Base64 wrapper also matched Gradle's upstream JAR. Recovery is a separate commit.
 
-Preserved: application ID, SDK bounds, datastore/journal identity, old preference keys, registry IDs, original calculation engines and exact fault/source rows. New preference fields are additive. All controller routes and escalator image pages use a shared session boundary.
+Preserved: application ID, SDK bounds, datastore/journal identity, old preference keys, registry IDs, original calculation engines and exact fault/source rows. New preference fields are additive. All controller routes use a shared session boundary.
 
 Confirmed corrections: explicit immersive bar hiding removed; scroll-triggered header hiding removed; complete project structure restored; executable wrapper and distribution checksum supplied; writable cloud caches configured without disabling TLS; Git internals/venvs excluded from packaging; large-font navigation overflow corrected; bounded off-thread image decoding added.
 

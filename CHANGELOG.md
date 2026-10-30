@@ -88,7 +88,7 @@ Coherent green semantic theme colours; visible navigation tabs; consistent launc
 ## 2.0.0 — Electro
 
 - Renamed the displayed app and original icon while retaining package, signing and stored data.
-- Added Elevator & Escalator Engineering, 125 exact supplied fault references, 245 technical records and all 14 photograph transcriptions.
+- Added additional technical references, 245 records and 14 photograph transcriptions.
 - Added source-traceable global search, fault filtering/bookmarks and bidirectional topic navigation.
 - Added selectable cutaway with zoom/pan, logical controller references and original industrial illustrations.
 - Added 15 engineering calculators and explicitly simulated CBM examples.
