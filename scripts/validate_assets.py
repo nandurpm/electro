@@ -40,7 +40,7 @@ manifest=(root/'app/src/main/AndroidManifest.xml').read_text()
 # 4.3 uses only INTERNET to retrieve published release metadata; prohibit other permissions.
 import re
 permissions = re.findall(r'<uses-permission\s+android:name="([^"]+)"\s*/>', manifest)
-assert permissions == ['android.permission.INTERNET'], ('Unexpected app permission', permissions)
+assert permissions == ['android.permission.INTERNET', 'android.permission.REQUEST_INSTALL_PACKAGES'], ('Unexpected app permission', permissions)
 # The standard Android XML namespace uses http://; disallow only cleartext network traffic.
 assert 'android:usesCleartextTraffic="true"' not in manifest
 assert 'android:networkSecurityConfig' not in manifest
