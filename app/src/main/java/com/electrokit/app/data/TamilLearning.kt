@@ -64,27 +64,5 @@ fun learningSections(page: LearningPage, language: String): List<Pair<String, St
     val translated = tamilBodies[page.id]
     return if (language == "ta" && translated?.size == page.sections.size)
         page.sections.mapIndexed { index, section -> section.first to translated[index] }
-    else if (language == "ta" && page.id == "multimeter") page.sections.mapIndexed { index, section ->
-        section.first to (multimeterTamil.getOrElse(index) { "சரியான function மற்றும் rating-ஐ உறுதிப்படுத்தி manufacturer manual பின்பற்றவும்." } + "\n\nEnglish technical instructions:\n" + section.second)
-    } else page.sections
+    else page.sections
 }
-
-/** Tamil summaries for the expanded practical guide; complete English safety instructions remain visible. */
-private val multimeterTamil = listOf(
-    "Display, rotary switch, range மற்றும் input jacks பற்றி அறிந்து கொள்ளுங்கள். Isolated low-voltage பயிற்சிகள் மட்டும் செய்யவும்.",
-    "Meter மற்றும் leads ratings, CAT markings, insulation, fuse மற்றும் battery எச்சரிக்கையைச் சரிபார்க்கவும். Probe tips-ஐத் தொடாதீர்கள்.",
-    "Black lead-க்கு COM பயன்படுத்தவும். Voltage மற்றும் Resistance-க்கு red lead V/Ω-இல் இருக்க வேண்டும். Current jack தனியானது; Voltage சோதனைக்கு அதைப் பயன்படுத்தாதீர்கள்.",
-    "Manual range-இல் உயர்ந்த range-இல் தொடங்கவும். Auto range தானாக அளவைத் தேர்வு செய்யும். OL வந்தால் manual-ஐப் பார்க்கவும்.",
-    "சிறிய isolated battery-யில் DC Voltage-ஐ parallel-ஆக அளவிடவும். Polarity மாறினால் negative reading வரும்.",
-    "Isolated low-voltage AC training source மட்டும் பயன்படுத்தவும். V~ தேர்வு செய்யவும். Household mains இந்தப் பயிற்சியில் இல்லை.",
-    "Power off செய்து isolate மற்றும் discharge செய்தபின் Resistor-ஐ Ω mode-இல் அளவிடவும். Powered circuit-இல் Ω பயன்படுத்தாதீர்கள்.",
-    "துண்டிக்கப்பட்ட wire-இல் continuity சோதிக்கவும். Beep என்பது insulation அல்லது protective conductor பாதுகாப்புக்கான சான்றல்ல.",
-    "Power இல்லாத isolated diode-இல் diode mode பயன்படுத்தவும். Anode-க்கு red, cathode-க்கு black probe. Forward/reverse readings device-ஐப் பொறுத்தவை.",
-    "Current-ஐ series-ஆக, சரியான fused jack மற்றும் range-உடன் மட்டுமே அளவிடவும். Connections மாற்றும் முன் power off செய்யவும்; பின்னர் red lead V/Ω-க்கு திருப்பவும்.",
-    "Capacitance mode ஆதரிக்கப்படும் meter மட்டும் பயன்படுத்தவும். Power off, discharge மற்றும் stored Voltage இல்லை என்பதை உறுதி செய்தபின் சோதிக்கவும்.",
-    "V⎓ என்பது DC Voltage; V~ என்பது AC Voltage; Ω என்பது Resistance. SELECT, HOLD, REL, MIN/MAX செயல்களுக்கு meter manual பார்க்கவும்.",
-    "Display, battery, contacts, range, jack மற்றும் fuse-ஐச் சரிபார்க்கவும். Fuse-ஐ ஒருபோதும் bypass செய்யாதீர்கள்.",
-    "Sources துண்டிக்கப்பட்ட நிலையில் மட்டும் leads மற்றும் fuse சோதிக்கவும். Manufacturer குறிப்பிடும் அதே type மற்றும் rating கொண்ட fuse பயன்படுத்தவும்.",
-    "Building mains, control cabinets அல்லது drives-இல் இந்தப் பாடத்தை வைத்து வேலை செய்யாதீர்கள். Qualification, authorization, PPE மற்றும் approved procedure தேவை.",
-    "Voltage: parallel. Current: series. Powered circuit-இல் Ω வேண்டாம். Current சோதனைக்குப் பின் red lead V/Ω-க்கு திருப்பவும். சந்தேகம் இருந்தால் நிறுத்தவும்."
-)
