@@ -111,8 +111,6 @@
     <string name="enlarge_diagram">Enlarge diagram</string>
     <string name="close_diagram">Close diagram</string>
     <string name="share_unavailable">No sharing application is available on this device.</string>
-    <string name="workbench_eyebrow">YOUR OFFLINE WORKBENCH</string>
-    <string name="workbench_intro">Calculate circuits, identify components and learn with confidence.</string>
     <string name="workbench_explore">Explore tools</string>
     <string name="workbench_search_results">Search results</string>
     <string name="workbench_no_matches">No matches yet</string>
@@ -126,4 +124,11 @@
     <string name="workbench_converter_hint">Enter a value to convert between the selected units.</string>
     <string name="workbench_swap">Swap units</string>
     <string name="workbench_copied">Copied to clipboard</string>
+    <string name="home_pocket_lab">YOUR POCKET ELECTRONICS LAB</string>
+    <string name="home_electrical">Electrical &amp;</string>
+    <string name="home_electronics">Electronics</string>
+    <string name="home_tagline">Calculate. Discover. Create.</string>
+    <string name="home_library_counts">%1$s  ·  %2$s  ·  Offline ready</string>
+    <plurals name="home_calculator_count"><item quantity="one">%d calculator</item><item quantity="other">%d calculators</item></plurals>
+    <plurals name="home_component_count"><item quantity="one">%d component</item><item quantity="other">%d components</item></plurals>
 </resources>

@@ -63,10 +63,11 @@ private val imageCache = object : LruCache<String, android.graphics.Bitmap>(8 * 
  * @param asset Bundled image metadata; not a verified manufacturer photograph.
  * @param modifier Caller-owned image bounds.
  * @param detail True permits a larger sampled decode for a detail page.
+ * @param framed False keeps the transparent artwork over its caller-owned hero background.
  * @return Unit; failed image decoding produces a readable fallback and never triggers network I/O.
  */
 @Composable
-fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail: Boolean = false) {
+fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail: Boolean = false, framed: Boolean = true) {
     val context = LocalContext.current
     val target = if (detail) 1024 else 256
     val key = "${asset.image}:$target"
@@ -84,7 +85,7 @@ fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail:
             }.getOrNull()?.also { imageCache.put(key, it) }
         }
     }
-    Box(modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest), contentAlignment = Alignment.Center) {
+    Box(modifier.background(if (framed) MaterialTheme.colorScheme.surfaceContainerLowest else Color.Transparent), contentAlignment = Alignment.Center) {
         bitmap?.let { Image(it.asImageBitmap(), asset.name, Modifier.fillMaxSize().padding(8.dp), contentScale = ContentScale.Fit) }
             ?: Text(asset.name, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(12.dp))
     }
@@ -163,7 +164,8 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
             0 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (query.isBlank()) {
                     item {
-                        WorkbenchHero(publicComponents.firstOrNull { it.id == "digital_multimeter" }) {
+                        WorkbenchHero(publicComponents.firstOrNull { it.id == "digital_multimeter" },
+                            calculatorCount = vm.repository.registry.count { it.screenType == "calculator" }, componentCount = publicComponents.size) {
                             tab = 1; hub = true; category = "Calculators"
                         }
                     }

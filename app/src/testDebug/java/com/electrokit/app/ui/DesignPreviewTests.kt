@@ -42,12 +42,13 @@ class DesignPreviewTests {
      * PixelCopy in Robolectric.
      *
      * @param name Asset filename or preview output name, as stated by the operation.
+     * @param advanceMillis Time between frames; defaults to one second for settled screenshots.
      * @return Unit; assertion failures identify regressions and are never swallowed.
      *   Assertion/time-out failures propagate; the failure fixture deliberately throws IOException
      *   while enabled.
      */
-    private fun save(name: String) {
-        ui.mainClock.advanceTimeBy(1000)
+    private fun save(name: String, advanceMillis: Long = 1000) {
+        ui.mainClock.advanceTimeBy(advanceMillis)
         ui.waitForIdle()
         val folder = File("build/design-previews")
         folder.mkdirs()
@@ -158,5 +159,17 @@ class DesignPreviewTests {
             ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
             ui.waitForIdle()
         }
+    }
+    /** Captures real frames for reviewing the lifecycle-aware homepage artwork.
+     * @return Unit after exporting a complete slow circuit-animation cycle.
+     */
+    @Test
+    fun animatedHomePreview() {
+        ready()
+        theme(false)
+        ui.mainClock.autoAdvance = false
+        ui.onNodeWithText("Home").performClick()
+        for (frame in 0 until 64) save("home-motion-%02d".format(frame), 125)
+        ui.mainClock.autoAdvance = true
     }
 }

@@ -1,6 +1,8 @@
 package com.electrokit.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -10,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.*
@@ -20,32 +23,60 @@ import com.electrokit.app.data.ComponentAsset
 import com.electrokit.app.domain.Calculation
 import com.electrokit.app.ui.components.ElectroPanel
 
-/** Responsive navy hero keeps illustrative artwork separate from readable text.
- * @param asset Optional public component illustration; loading does not block navigation.
+/** Illustrated dashboard hero with lifecycle-aware circuit motion and an existing Tools action.
+ * @param asset Optional bundled multimeter illustration.
+ * @param calculatorCount Actual available calculators, not a marketing constant.
+ * @param componentCount Actual loaded component count.
  * @param explore Opens the existing Tools destination.
- * @return Unit after composing the dashboard introduction.
+ * @return Unit; large text uses a text-first layout and artwork remains decorative.
  */
 @Composable
-fun WorkbenchHero(asset: ComponentAsset?, explore: () -> Unit) {
-    BoxWithConstraints(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
-        .background(Brush.linearGradient(listOf(Color(0xFF0B3957), Color(0xFF071A2C), Color(0xFF06111F))))) {
-        val compact = maxWidth < 350.dp || LocalDensity.current.fontScale > 1.3f
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.workbench_eyebrow), color = Color(0xFF83E2FF),
-                style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Electrical & Electronics", color = Color.White, style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
-                    Text(stringResource(R.string.workbench_intro), color = Color(0xFFD2E2EF),
-                        style = MaterialTheme.typography.bodyMedium)
+fun WorkbenchHero(asset: ComponentAsset?, calculatorCount: Int = 0, componentCount: Int = 0, explore: () -> Unit) {
+    val phase = rememberHomeMotion()
+    val resources = LocalContext.current.resources
+    val shape = RoundedCornerShape(24.dp)
+    BoxWithConstraints(Modifier.fillMaxWidth().clip(shape)
+        .background(Brush.linearGradient(listOf(Color(0xFF123C60), Color(0xFF08243C), Color(0xFF071526))))
+        .border(1.dp, Color(0xFF2E7598), shape)) {
+        val compact = maxWidth < 330.dp || LocalDensity.current.fontScale > 1.3f
+        HomeCircuitBackdrop(phase, Modifier.matchParentSize())
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.size(7.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFF70E8BE)))
+                Text(stringResource(R.string.home_pocket_lab), color = Color(0xFF9FE8FF),
+                    style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(stringResource(R.string.home_electrical), color = Color.White,
+                        style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.semantics { heading() })
+                    Text(stringResource(R.string.home_electronics), color = Color(0xFF82E4FF),
+                        style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                    Text(stringResource(R.string.home_tagline), color = Color(0xFFD1E6F3),
+                        style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
                 }
-                if (!compact && asset != null) ComponentImage(asset,
-                    Modifier.size(104.dp).clip(RoundedCornerShape(16.dp)))
+                if (!compact && asset != null) Box(Modifier.width(124.dp).height(144.dp).clip(RoundedCornerShape(20.dp)), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(112.dp).clip(RoundedCornerShape(56.dp))
+                        .background(Brush.radialGradient(listOf(Color(0xFF2789AC).copy(alpha = .35f), Color.Transparent)))
+                        .border(1.dp, Color(0xFF66DFFF).copy(alpha = .25f), RoundedCornerShape(56.dp)))
+                    ComponentImage(asset, Modifier.size(120.dp).graphicsLayer {
+                        scaleX = 1.6f; scaleY = 1.6f
+                        translationY = kotlin.math.sin(phase.value * 2 * Math.PI).toFloat() * 3.dp.toPx()
+                    }, framed = false)
+                }
             }
-            Button(explore, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF83E2FF), contentColor = Color(0xFF082039))) {
-                Text(stringResource(R.string.workbench_explore))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Button(explore, shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8AE8FF), contentColor = Color(0xFF082039))) {
+                    Text(stringResource(R.string.workbench_explore), fontWeight = FontWeight.Bold)
+                }
             }
+            if (calculatorCount > 0 && componentCount > 0) Text(
+                stringResource(R.string.home_library_counts,
+                    resources.getQuantityString(R.plurals.home_calculator_count, calculatorCount, calculatorCount),
+                    resources.getQuantityString(R.plurals.home_component_count, componentCount, componentCount)),
+                color = Color(0xFFB9D8E9), style = MaterialTheme.typography.labelSmall)
         }
     }
 }
@@ -98,9 +129,9 @@ fun WorkbenchQuickAccess(onOpen: (String) -> Unit) {
         val columns = if (maxWidth < 330.dp || LocalDensity.current.fontScale > 1.3f) 2 else 3
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             listOf("Calculators", "Components", "Diagrams", "Utilities", "Learning", "Converters")
-                .chunked(columns).forEach { row ->
+                .chunked(columns).forEachIndexed { rowIndex, row ->
                     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        row.forEach { title -> QuickTile(title, Modifier.weight(1f).fillMaxHeight()) { onOpen(title) } }
+                        row.forEachIndexed { columnIndex, title -> QuickTile(title, Modifier.weight(1f).fillMaxHeight(), entranceDelayMillis = (rowIndex * columns + columnIndex) * 45) { onOpen(title) } }
                     }
                 }
         }
