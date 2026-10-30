@@ -6,7 +6,7 @@ on:
       release_tag:
         description: "Existing published release tag"
         required: false
-        default: "v4.0.0"
+        default: ""
         type: string
   push:
     branches: [main]
@@ -18,17 +18,23 @@ permissions:
 
 jobs:
   notify:
-    name: Send a styled Telegram release card
+    name: Send signed ELECTRO APK file
     runs-on: ubuntu-24.04
     steps:
       - name: Check out notification template
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Announce the published APK with Telegram buttons
+      - name: Upload latest published APK as Telegram file
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag || 'v4.0.0' }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python3 scripts/telegram_release_notify.py
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_TAG:-}" ]; then
+            RELEASE_TAG="$(gh release view --json tagName -q .tagName)"
+            export RELEASE_TAG
+          fi
+          python3 scripts/telegram_release_notify.py
