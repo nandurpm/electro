@@ -11,7 +11,7 @@ spec.loader.exec_module(notify)
 APK = b"PK\x03\x04abcd"
 RELEASE = {
     "url": "https://github.com/nandurpm/electro/releases/tag/v4.2.0",
-    "body": "- Remove escalator pages\n- Keep generic calculators",
+    "body": "- Remove restricted equipment pages\n- Keep generic calculators",
     "assets": [
         {"name": "ELECTRO-4.2.0.apk", "size": len(APK), "url": "https://github.com/nandurpm/electro/releases/download/v4.2.0/ELECTRO-4.2.0.apk"},
         {"name": "ELECTRO-4.2.0-source.zip", "size": 22, "url": "https://github.com/nandurpm/electro/releases/download/v4.2.0/ELECTRO-4.2.0-source.zip"}

@@ -153,7 +153,7 @@ class WorkbenchUiTests {
         ui.onNodeWithText("தமிழ்").assertIsSelected()
         ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("What you will learn"))
         ui.onNodeWithText("What you will learn").assertExists()
-        ui.onNodeWithText("Display, rotary switch", substring = true).assertExists()
+        ui.onNodeWithText("digital multimeter", substring = true).assertExists()
         ui.activityRule.scenario.recreate()
         ui.waitForIdle()
         ui.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
