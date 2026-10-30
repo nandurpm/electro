@@ -32,6 +32,7 @@ import kotlinx.coroutines.withContext
 
 /** A single Compose host; version checks never run on the UI thread or upload personal data. */
 class MainActivity : ComponentActivity() {
+    /** @param savedInstanceState Framework-saved Activity state. @return Unit after UI initialization. */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val startupLight = StartupTheme.light(this)
