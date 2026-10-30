@@ -236,10 +236,10 @@ class WorkbenchUiTests {
         ui.waitUntil(10000) { ui.onAllNodesWithText("ELECTRO — Components").fetchSemanticsNodes().isNotEmpty() }
         capture44("Components-library-dark")
         ui.onNode(hasText("Passive") and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.Selected)).performClick()
-        ui.onNode(hasScrollToIndexAction() and !hasAnyAncestor(hasScrollToIndexAction())).performScrollToNode(hasText("Axial Resistor"))
+        ui.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange)).performScrollToNode(hasText("Axial Resistor"))
         ui.onNodeWithText("Axial Resistor").performClick()
         ui.onNodeWithContentDescription("Back").performClick()
-        ui.onNode(hasScrollToIndexAction() and !hasAnyAncestor(hasScrollToIndexAction())).performScrollToIndex(0)
+        ui.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange)).performScrollToIndex(0)
         ui.onNode(hasText("Passive") and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.Selected)).assertIsSelected()
         ui.onNodeWithText("Home").performClick()
         ui.onNodeWithText("Profile").performClick()
