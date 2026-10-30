@@ -3,6 +3,13 @@
 package com.electrokit.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.res.painterResource
+import com.electrokit.app.R
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -76,28 +83,45 @@ fun neonPulseFactor(active: Boolean): Float {
 /** Colored gradient launcher tile used by the Home quick-access grid.
  * @param title Visible caption; also selects the symbol and accent through [categoryAccent].
  * @param modifier Caller-owned size, normally a weighted cell of a three-column row.
+ * @param entranceDelayMillis Small stagger for the home grid; system animation scale governs transitions.
  * @param onClick Existing navigation callback; the tile performs no work itself.
  * @return Unit; the tile exposes its caption as a button and hides the decorative symbol from accessibility.
  */
 @Composable
-fun QuickTile(title: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun QuickTile(title: String, modifier: Modifier = Modifier, entranceDelayMillis: Int = 0, onClick: () -> Unit) {
     val (symbol, color) = categoryAccent(title)
     val shape = RoundedCornerShape(14.dp)
-    val pulse = neonPulseFactor(title.contains("Calculat", ignoreCase = true))
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val pressScale = animateFloatAsState(if (pressed) .96f else 1f, tween(140), label = "Tile press")
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { delay(entranceDelayMillis.toLong()); entered = true }
+    val entrance = animateFloatAsState(if (entered) 1f else 0f, tween(400), label = "Tile entrance")
     Column(
-        modifier.heightIn(min = 104.dp).shadow(10.dp, shape, clip = false)
+        modifier.graphicsLayer {
+            alpha = entrance.value
+            translationY = (1f - entrance.value) * 12.dp.toPx()
+            scaleX = pressScale.value; scaleY = pressScale.value
+        }.heightIn(min = 104.dp).shadow(6.dp, shape, clip = false)
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .background(Brush.verticalGradient(listOf(color.copy(alpha = .96f), shade(color))))
             .then(Modifier.border(1.dp, color.copy(alpha = .9f), shape))
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = LocalIndication.current, role = Role.Button, onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Box(Modifier.size(48.dp).graphicsLayer { alpha = .82f + pulse * .18f }
+        Box(Modifier.size(44.dp)
             .clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = .20f)), contentAlignment = Alignment.Center) {
-            Icon(categoryIcon(title), null, Modifier.size(28.dp), tint = Color.White)
+            Icon(painterResource(when (title) {
+                "Calculators" -> R.drawable.ic_home_calculator
+                "Components" -> R.drawable.ic_home_chip
+                "Diagrams" -> R.drawable.ic_home_diagram
+                "Learning" -> R.drawable.ic_home_book
+                "Converters" -> R.drawable.ic_home_convert
+                else -> R.drawable.ic_home_utilities
+            }), null, Modifier.size(28.dp), tint = Color.White)
         }
         Text(title, Modifier.padding(top = 6.dp), color = Color.White, style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.Center, maxLines = 2)
