@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.electrokit.app.ui.screens
 
 import android.graphics.BitmapFactory
@@ -119,7 +119,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     val component = components.firstOrNull { detail == "component:${it.id}" }
     val lesson = learningPages.firstOrNull { detail == "learn:${it.id}" }
     val utility = WorkbenchTools.all.firstOrNull { detail == "utility:${it.id}" }
-    if (detail == "unit-converter") { UnitConverterScreen { detail = null }; return }
+    if (detail == "unit-converter") { UnitConverterScreen(vm, prefs) { detail = null }; return }
     if (utility != null) { UtilityScreen(utility, vm, prefs) { detail = null }; return }
     if (component != null) {
         ComponentDetail(component, prefs, vm) { detail = null }
@@ -183,7 +183,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     }
                     if (prefs.recent.isNotEmpty()) {
                         item { SectionTitle("Recently Used") }
-                        items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }.take(4)) {
+                        items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }.take(5)) {
                             RecentRow(it) { openEntry(it.id) }
                         }
                     }
@@ -241,8 +241,8 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     items(utilities, key = { "utility:${it.id}" }) { tool -> QuickCard(tool.title, Modifier.fillMaxWidth()) { detail = "utility:${tool.id}" } }
                 }
             } else Column(body) {
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(listOf("Calculators", "Pin-outs", "Reference", "Data", "Utilities")) { name ->
+                FlowRow(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Calculators", "Pin-outs", "Reference", "Data", "Utilities").forEach { name ->
                         FilterChip(category == name, { category = name }, label = { Text(name) })
                     }
                 }

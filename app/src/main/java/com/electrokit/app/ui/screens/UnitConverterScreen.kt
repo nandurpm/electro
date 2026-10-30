@@ -12,17 +12,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.electrokit.app.R
+import com.electrokit.app.viewmodel.AppViewModel
+import com.electrokit.app.data.PreferencesState
 import com.electrokit.app.domain.Calculation
 import com.electrokit.app.domain.UnitConversions
 import com.electrokit.app.domain.Engineering
 import kotlinx.coroutines.launch
 
 /** Converts selected units offline, keeping invalid input out of clipboard actions.
+ * @param vm Optional existing persistence owner for saved conversions.
+ * @param prefs Current saved calculation history.
  * @param back Returns to the tools catalogue.
  * @return Unit; blank input shows guidance and valid conversions can be copied.
  */
 @Composable
-fun UnitConverterScreen(back: () -> Unit) {
+fun UnitConverterScreen(vm: AppViewModel? = null, prefs: PreferencesState = PreferencesState(), back: () -> Unit) {
     var group by rememberSaveable { mutableStateOf("Voltage") }
     var from by rememberSaveable { mutableStateOf("V") }
     var to by rememberSaveable { mutableStateOf("mV") }
@@ -51,20 +55,42 @@ fun UnitConverterScreen(back: () -> Unit) {
             })
             OutlinedTextField(raw, { raw = it }, label = { Text("Value") }, singleLine = true,
                 isError = result is Calculation.Error, modifier = Modifier.fillMaxWidth())
-            Choice("From", units, from, { from = it })
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Choice("From", units, from, { from = it }, Modifier.weight(1f))
+                Choice("To", units, to, { to = it }, Modifier.weight(1f))
+            }
             TextButton({ val previous = from; from = to; to = previous }, Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.workbench_swap))
             }
-            Choice("To", units, to, { to = it })
             WorkbenchResult(result, stringResource(R.string.workbench_converter_hint))
             OutlinedButton({
                 clipboard.setText(AnnotatedString("$raw $from = ${result?.text}"))
                 scope.launch { snackbar.showSnackbar(copied) }
             }, enabled = result is Calculation.Value, modifier = Modifier.fillMaxWidth()) { Text("Copy conversion") }
-            Text("SI prefix scales are exact. Temperature includes scale offsets. Inputs use the selected units; this converter does not accept an additional unit suffix.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Wire gauge diameter and area are available in Tools → Reference → AWG Table. A gauge conversion is not an ampacity or cable-selection recommendation.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton({ raw = "" }, Modifier.weight(1f)) { Text("Reset") }
+                TextButton({ vm?.saveCalculation("Conversion\n$raw $from = ${result?.text}") },
+                    enabled = result is Calculation.Value && vm != null, modifier = Modifier.weight(1f)) { Text("Save conversion") }
+            }
+            if (result is Calculation.Value) {
+                Text("Calculation", style = MaterialTheme.typography.titleMedium)
+                Text(if (group == "Temperature") when {
+                    from == to -> "Same temperature scale: $raw $from = ${result.text}"
+                    else -> "$raw $from → Kelvin → $to = ${result.text} (absolute temperature; scale offsets included)"
+                } else "$raw $from × ${Engineering.format(UnitConversions.groups.getValue(group).getValue(from) / UnitConversions.groups.getValue(group).getValue(to))} = ${result.text}",
+                    style = MaterialTheme.typography.bodyLarge)
+            }
+            var information by rememberSaveable { mutableStateOf(false) }
+            TextButton({ information = !information }) { Text(if (information) "Hide information" else "Information & assumptions") }
+            if (information) {
+                Text("SI scales are exact. Values use the selected units without an extra suffix. Temperature is absolute, not a temperature difference; offsets apply and values below absolute zero are rejected.")
+                Text("Wire diameter and cross-sectional area are in the AWG reference. Neither alone determines ampacity; use the applicable installation standard.")
+            }
+            val saved = prefs.calculations.filter { it.startsWith("Conversion\n") }.take(5)
+            if (saved.isNotEmpty()) {
+                Text("Saved conversions", style = MaterialTheme.typography.titleMedium)
+                saved.forEach { Text(it.removePrefix("Conversion\n"), Modifier.padding(vertical = 6.dp)) }
+            }
         }
     }
 }

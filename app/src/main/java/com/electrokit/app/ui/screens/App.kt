@@ -13,6 +13,7 @@ import androidx.compose.foundation.pager.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
@@ -239,7 +240,7 @@ fun Bar(
     val scale = LocalDensity.current.fontScale
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         BoxWithConstraints(Modifier.fillMaxWidth().background(BrandNavy)) {
-            val split = maxWidth < 380.dp || scale > 1.3f
+            val split = (!brand && maxWidth < 380.dp) || maxWidth < 320.dp || scale > 1.3f
             Column {
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 8.dp),
@@ -318,7 +319,7 @@ fun Search(
     OutlinedTextField(
         value,
         onChange,
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         shape = shape,
         colors =
             OutlinedTextFieldDefaults.colors(
@@ -444,6 +445,7 @@ fun Databases(
                 Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     .clip(RoundedCornerShape(22.dp))
                     .background(MaterialTheme.colorScheme.surface)
+                    .clickable { openEntry(id) }
                     .padding(16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -895,7 +897,9 @@ fun ModuleScreen(entry: Entry, vm: AppViewModel, back: () -> Unit) {
     var field by rememberSaveable { mutableStateOf("Any") }
     var min by rememberSaveable { mutableStateOf("") }
     var max by rememberSaveable { mutableStateOf("") }
-    val data = vm.repository.parts.getValue(entry.id)
+    val data = vm.repository.parts[entry.id].orEmpty()
+    var selected by rememberSaveable(entry.id) { mutableStateOf(listOf<String>()) }
+    var comparison by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val keys = remember(data) { listOf("Any") + data.flatMap { it.numericKeys }.distinct() }
     val filterError = NumericFilter.validation(min, max)
@@ -968,12 +972,41 @@ fun ModuleScreen(entry: Entry, vm: AppViewModel, back: () -> Unit) {
                 Modifier.padding(8.dp),
                 color = Heading,
             )
+            TextButton({ comparison = true }, enabled = selected.size >= 2) { Text("Compare selected (${selected.size}/3)") }
+            if (comparison) AlertDialog(onDismissRequest = { comparison = false },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                title = { Text("Compare components") },
+                text = { Column(Modifier.verticalScroll(rememberScrollState())) {
+                    val parts = data.filter { it.name in selected }
+                    Text("Swipe sideways for additional columns", style = MaterialTheme.typography.labelSmall)
+                    Column(Modifier.horizontalScroll(rememberScrollState())) {
+                        Row {
+                            Text("Specification", Modifier.width(100.dp), fontWeight = FontWeight.Bold)
+                            parts.forEach { Text(it.name, Modifier.width(112.dp), fontWeight = FontWeight.Bold) }
+                        }
+                        (parts.flatMap { it.specs.keys }.distinct() + "Source").forEach { label ->
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                            Row {
+                                Text(label, Modifier.width(100.dp))
+                                parts.forEach { part -> Text(if (label == "Source") part.source else part.specs[label] ?: "Not supplied", Modifier.width(112.dp).padding(end = 12.dp)) }
+                            }
+                        }
+                    }
+                    Text("Only bundled specifications are shown. Missing fields are not inferred; verify the exact manufacturer/package.")
+                } }, confirmButton = { TextButton({ comparison = false }) { Text("Close") } })
             LazyColumn(Modifier.weight(1f)) {
                 items(filtered, key = { it.name }) { part ->
                     var expanded by rememberSaveable(part.name) { mutableStateOf(false) }
                     Column(
                         Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(16.dp)
                     ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(part.name in selected, { checked ->
+                                selected = if (!checked) selected - part.name else if (selected.size < 3) selected + part.name else selected
+                            }, modifier = Modifier.semantics { contentDescription = "Compare ${part.name}" }, enabled = part.name in selected || selected.size < 3)
+                            Text("Select for comparison", style = MaterialTheme.typography.labelMedium)
+                        }
                         Text(part.name, fontWeight = FontWeight.Bold, color = Heading)
                         Text(part.category)
                         if (expanded) {
