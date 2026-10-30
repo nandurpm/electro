@@ -29,10 +29,25 @@ object WorkbenchTools {
      * @param raw Ordered field values, with engineering prefixes accepted by the shared parser.
      * @return Result with units or a readable validation error; no state or I/O is modified.
      */
-    fun calculate(id: String, raw: List<String>): String = try {
+    fun calculate(id: String, raw: List<String>): String = evaluate(id, raw).text
+
+    /** Keeps validation failures separate from results so UI actions cannot save error text.
+     * @param id Stable utility ID.
+     * @param raw Ordered input values from the tool fields.
+     * @return A valid calculation or a readable validation error.
+     */
+    fun evaluate(id: String, raw: List<String>): Calculation = try {
+        Calculation.Value(calculateChecked(id, raw))
+    } catch (e: IllegalArgumentException) {
+        Calculation.Error(e.message ?: "Invalid input.")
+    } catch (e: IllegalStateException) {
+        Calculation.Error(e.message ?: "Invalid input.")
+    }
+
+    private fun calculateChecked(id: String, raw: List<String>): String {
         val tool = requireNotNull(all.firstOrNull { it.id == id }) { "Unknown utility." }
         require(raw.size == tool.fields.size) { "Enter every required field." }
-        if (id == "scientific") Engineering.format(Expression(raw.single().lowercase(java.util.Locale.ROOT)).evaluate())
+        return if (id == "scientific") Engineering.format(Expression(raw.single().lowercase(java.util.Locale.ROOT)).evaluate())
         else {
             val v = raw.map { Engineering.parse(it)?.takeIf(Double::isFinite) ?: error("Enter a valid number in every field.") }
             /** Positive input used for nonzero denominators and physical dimensions.
@@ -60,7 +75,7 @@ object WorkbenchTools {
                 else -> error("Unknown utility.")
             }
         }
-    } catch (e: IllegalArgumentException) { e.message ?: "Invalid input." } catch (e: IllegalStateException) { e.message ?: "Invalid input." }
+    }
 }
 
 /** Bounded recursive-descent arithmetic parser; accepts a small mathematical grammar only.
