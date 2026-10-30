@@ -32,4 +32,13 @@ class WorkbenchToolsTests {
     }
     /** @return Unit; percentages cannot silently exceed the stated model's physical range. */
     @Test fun invalidPercentagesRejected() { assertTrue(WorkbenchTools.calculate("ups", listOf("24", "100", "101", "80", "200")).contains("at most 100")) }
+    @Test fun typedUtilityResultsSeparateFailuresFromValues() {
+        assertTrue(WorkbenchTools.evaluate("transformer", listOf("240", "1000", "100")) is Calculation.Value)
+        assertEquals("24 V", WorkbenchTools.evaluate("transformer", listOf("240", "1000", "100")).text)
+        for (input in listOf(listOf("", "", ""), listOf("240", "0", "100"))) {
+            assertTrue(WorkbenchTools.evaluate("transformer", input) is Calculation.Error)
+        }
+        assertTrue(WorkbenchTools.evaluate("missing", emptyList()) is Calculation.Error)
+        assertTrue(WorkbenchTools.evaluate("scientific", listOf("sqrt(-1)")) is Calculation.Error)
+    }
 }

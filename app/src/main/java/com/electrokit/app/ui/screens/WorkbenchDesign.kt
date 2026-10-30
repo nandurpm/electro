@@ -26,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
@@ -133,18 +134,23 @@ fun RecentRow(entry: Entry, onClick: () -> Unit) {
 fun ToolCategoryCard(title: String, subtitle: String, badge: String, asset: ComponentAsset?, onClick: () -> Unit) {
     val pulse = neonPulseFactor(title.contains("Calculat", ignoreCase = true))
     ElectroPanel(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 88.dp).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val showArtwork = maxWidth >= 350.dp && LocalDensity.current.fontScale <= 1.3f
+        Row(Modifier.fillMaxWidth().heightIn(min = 88.dp)
+            .background(Brush.horizontalGradient(listOf(categoryAccent(badge).second.copy(alpha = .12f), Color.Transparent)))
+            .padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             CategoryBadge(badge, Modifier.size(48.dp).graphicsLayer { alpha = .82f + pulse * .18f })
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
             }
-            if (asset != null) {
+            if (asset != null && showArtwork) {
                 Spacer(Modifier.width(8.dp))
                 ComponentImage(asset, Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)))
             }
             Icon(Icons.AutoMirrored.Filled.ArrowForward, null, Modifier.padding(start = 8.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         }
     }
 }

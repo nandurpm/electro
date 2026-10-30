@@ -242,7 +242,8 @@ class AndroidUiRegressionTests {
         kotlinx.coroutines.runBlocking { repository.loadAssets() }
         var opened = 0
         for (tab in listOf("CALCULATORS", "PIN-OUTS", "RESOURCES")) {
-            ui.onNodeWithText(mapOf("CALCULATORS" to "Tools", "PIN-OUTS" to "Pin-outs", "RESOURCES" to "Reference").getValue(tab)).performClick()
+            ui.onNodeWithText("Tools").performClick()
+            ui.onNodeWithText(mapOf("CALCULATORS" to "Electrical Calculators", "PIN-OUTS" to "Pin-outs", "RESOURCES" to "Reference").getValue(tab)).performClick()
             ui.waitForIdle()
             for (entry in repository.registry.filter { it.tab == tab }) {
                 ui.onNode(hasSetTextAction() and hasText("Search"))

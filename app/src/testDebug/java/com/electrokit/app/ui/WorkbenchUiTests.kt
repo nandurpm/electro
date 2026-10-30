@@ -83,4 +83,65 @@ class WorkbenchUiTests {
             bitmap.recycle()
         }
     }
+    @Test fun invalidUtilityCannotBeSavedAsCalculation() {
+        ready()
+        ui.onNodeWithText("Tools").performClick()
+        ui.onNodeWithText("Extra Utilities").performClick()
+        ui.onNodeWithText("Ideal transformer").performClick()
+        ui.onNodeWithText("Reset").performScrollTo().performClick()
+        ui.onNodeWithText("Calculate").performScrollTo().performClick()
+        ui.onNodeWithText("Check your input").assertExists()
+        ui.onNodeWithText("Save calculation").assertDoesNotExist()
+        ui.onNodeWithText("Copy result").assertDoesNotExist()
+        ui.onNode(hasSetTextAction() and hasText("Primary voltage (V)")).performScrollTo().performTextReplacement("240")
+        ui.onNode(hasSetTextAction() and hasText("Primary turns")).performScrollTo().performTextReplacement("1000")
+        ui.onNode(hasSetTextAction() and hasText("Secondary turns")).performScrollTo().performTextReplacement("100")
+        ui.onNodeWithText("Calculate").performScrollTo().performClick()
+        ui.onNodeWithText("24 V").assertExists()
+        ui.onNodeWithText("Save calculation").assertExists()
+        ui.onNode(hasSetTextAction() and hasText("Primary turns")).performScrollTo().performTextReplacement("0")
+        ui.onNodeWithText("Save calculation").assertDoesNotExist()
+    }
+
+    @Test fun converterSwapAndInvalidCopyState() {
+        ready()
+        ui.onNodeWithText("Tools").performClick()
+        ui.onNodeWithText("Converters").performClick()
+        ui.onNodeWithText("Copy conversion").assertIsNotEnabled()
+        ui.onNode(hasSetTextAction() and hasText("Value")).performTextReplacement("2")
+        ui.onNodeWithText("2000 mV").assertExists()
+        ui.onNodeWithText("Swap units").performClick()
+        ui.onNodeWithText("0.002 V").assertExists()
+        ui.onNode(hasSetTextAction() and hasText("Value")).performTextReplacement("NaN")
+        ui.onNodeWithText("Check your input").assertExists()
+        ui.onNodeWithText("Copy conversion").assertIsNotEnabled()
+    }
+
+    @Test fun dashboardAndToolsSearchFindReferencesAndUtilities() {
+        ready()
+        ui.onNode(hasSetTextAction() and hasText("Search")).performTextReplacement("USB port")
+        ui.onNode(hasText("USB port") and !hasSetTextAction()).assertExists()
+        ui.onNodeWithText("Tools").performClick()
+        ui.onNode(hasSetTextAction() and hasText("Search")).performTextReplacement("Ideal transformer")
+        ui.onNode(hasText("Ideal transformer") and !hasSetTextAction()).performClick()
+        ui.onNode(hasSetTextAction() and hasText("Primary turns")).assertExists()
+        ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
+        ui.onNode(hasSetTextAction() and hasText("Search")).performTextReplacement("zzzz-no-match")
+        ui.onNodeWithText("No matches yet").assertExists()
+    }
+    @Test
+    @Config(sdk = [34], qualifiers = "w320dp-h700dp")
+    fun compactLargeTextLaunchersRemainReachable() {
+        org.robolectric.RuntimeEnvironment.setFontScale(2f)
+        ui.activityRule.scenario.recreate()
+        ready()
+        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Converters"))
+        ui.onNodeWithText("Converters").performClick()
+        ui.onNode(hasSetTextAction() and hasText("Value")).assertExists()
+        ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
+        ui.onNodeWithText("Tools").performClick()
+        ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Extra Utilities"))
+        ui.onNodeWithText("Extra Utilities").performClick()
+        ui.onNodeWithText("Ideal transformer").assertExists()
+    }
 }

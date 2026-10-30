@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import com.electrokit.app.ui.components.ElectroPanel as Card
@@ -34,6 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.painterResource
 import com.electrokit.app.R
 import com.electrokit.app.BuildConfig
@@ -132,7 +136,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         DropdownMenuItem(text = { Text("About ELECTRO") }, onClick = { menu = false; info(0) })
                     }
                 }
-                if (tab != 4 && !(tab == 1 && category == "Data")) Search(query, { query = it }, shape = RoundedCornerShape(28.dp))
+                if (tab != 4 && !(tab == 1 && category == "Data" && !hub)) Search(query, { query = it }, shape = RoundedCornerShape(28.dp))
             }
         },
         bottomBar = {
@@ -147,7 +151,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                             Icon(when(i) { 0 -> Icons.Default.Home; 1 -> Icons.Default.Build; 2 -> Icons.Default.Info; 3 -> Icons.Default.Star; else -> Icons.Default.Person }, null, Modifier.size(24.dp))
                         }
                         Text(name, Modifier.fillMaxWidth(), maxLines = 2, minLines = if (LocalDensity.current.fontScale > 1.3f) 2 else 1,
-                            fontSize = if (LocalDensity.current.fontScale > 1.3f) 9.sp else 11.sp, lineHeight = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            fontSize = 11.sp, lineHeight = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
                 }
             }
@@ -156,49 +160,23 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
         val body = Modifier.padding(padding).fillMaxSize()
         when (tab) {
             0 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-                        Row(Modifier.fillMaxWidth()
-                            .background(Brush.linearGradient(listOf(Color(0xFF063A63), Color(0xFF071827), Color(0xFF020D18))))
-                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .78f), RoundedCornerShape(18.dp))
-                            .padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    val heroPulse = neonPulseFactor(true)
-                                    Icon(painterResource(R.drawable.ic_launcher), null, tint = Color.Unspecified,
-                                        modifier = Modifier.size(34.dp).graphicsLayer {
-                                            alpha = .84f + heroPulse * .16f
-                                            scaleX = .96f + heroPulse * .04f
-                                            scaleY = .96f + heroPulse * .04f
-                                        })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("ELECTRO", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-                                }
-                                Text("Electrical & Electronics\nTools for Everyday Use", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(vertical = 8.dp))
-                                Text("CALCULATE  •  DESIGN  •  LEARN", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                                TextButton({ tab = 1; hub = true; category = "Calculators" }) { Text("Explore tools  →", color = Color.White) }
-                            }
-                            publicComponents.firstOrNull { it.id == "axial_resistor" }?.let {
-                                Box(Modifier.width(126.dp).height(156.dp).clip(RoundedCornerShape(12.dp)).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .55f), RoundedCornerShape(12.dp))) {
-                                    ComponentImage(it, Modifier.fillMaxSize().graphicsLayer { scaleX = 1.7f; scaleY = 1.7f })
-                                }
+                if (query.isBlank()) {
+                    item {
+                        WorkbenchHero(publicComponents.firstOrNull { it.id == "digital_multimeter" }) {
+                            tab = 1; hub = true; category = "Calculators"
+                        }
+                    }
+                    item { SectionTitle("Quick Access") }
+                    item {
+                        WorkbenchQuickAccess { target ->
+                            when (target) {
+                                "Components" -> { tab = 2; category = "Components" }
+                                "Learning" -> { tab = 2; category = "Lessons" }
+                                "Converters" -> detail = "unit-converter"
+                                else -> { tab = 1; category = if (target == "Diagrams") "Pin-outs" else target; hub = false }
                             }
                         }
                     }
-                }
-                if (query.isBlank()) {
-                    item { SectionTitle("Quick Access") }
-                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        QuickTile("Calculators", Modifier.weight(1f)) { tab = 1; category = "Calculators"; hub = false }
-                        QuickTile("Components", Modifier.weight(1f)) { tab = 2; category = "Components" }
-                        QuickTile("Diagrams", Modifier.weight(1f)) { tab = 1; category = "Pin-outs"; hub = false }
-                    } }
-                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        QuickTile("Utilities", Modifier.weight(1f)) { tab = 1; category = "Utilities"; hub = false }
-                        QuickTile("Learning", Modifier.weight(1f)) { tab = 2; category = "Lessons" }
-                        QuickTile("Converters", Modifier.weight(1f)) { detail = "unit-converter" }
-                    } }
                     if (prefs.recent.isNotEmpty()) {
                         item { SectionTitle("Recently Used") }
                         items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }.take(4)) {
@@ -207,11 +185,21 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     }
                     item { SectionTitle("Featured calculators") }
                 }
-                items(vm.repository.registry.filter { it.screenType == "calculator" && it.title.contains(query, true) }.take(if (query.isBlank()) 3 else 100), key = { it.id }) {
+                if (query.isNotBlank()) item { SectionTitle(stringResource(R.string.workbench_search_results)) }
+                items(vm.repository.registry.filter { (query.isNotBlank() || it.screenType == "calculator") && it.title.contains(query, true) }.take(if (query.isBlank()) 3 else 200), key = { it.id }) {
                     EntryRow(it, { openEntry(it.id) }, it.id in prefs.favourites) { vm.star(it.id) }
                 }
                 if (query.isNotBlank()) {
-                    items(publicComponents.filter { it.name.contains(query, true) }.take(12), key = { "asset:${it.id}" }) { c ->
+                    if (vm.repository.registry.none { it.title.contains(query, true) } &&
+                        publicComponents.none { it.name.contains(query, true) || it.category.contains(query, true) } &&
+                        learningPages.none { it.title.contains(query, true) } &&
+                        WorkbenchTools.all.none { it.title.contains(query, true) }) item {
+                        WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint))
+                    }
+                    items(WorkbenchTools.all.filter { it.title.contains(query, true) }, key = { "utility:${it.id}" }) { tool ->
+                        QuickCard(tool.title, Modifier.fillMaxWidth()) { detail = "utility:${tool.id}" }
+                    }
+                    items(publicComponents.filter { it.name.contains(query, true) || it.category.contains(query, true) }, key = { "asset:${it.id}" }) { c ->
                         ListItem(headlineContent = { Text(c.name) }, supportingContent = { Text(c.category) }, modifier = Modifier.clickable { detail = "component:${c.id}" })
                     }
                     items(learningPages.filter { it.title.contains(query, true) }) { page ->
@@ -231,6 +219,17 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
             }
             1 -> if (hub && query.isBlank()) ToolsHub(publicComponents, body) { target ->
                 if (target == "Converters") detail = "unit-converter" else { category = target; hub = false }
+            } else if (hub && query.isNotBlank()) {
+                LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    val entries = vm.repository.registry.filter { it.title.contains(query, true) }
+                    val utilities = WorkbenchTools.all.filter { it.title.contains(query, true) }
+                    item { SectionTitle(stringResource(R.string.workbench_search_results)) }
+                    if (entries.isEmpty() && utilities.isEmpty()) item {
+                        WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint))
+                    }
+                    items(entries, key = { it.id }) { entry -> EntryRow(entry, { openEntry(entry.id) }, entry.id in prefs.favourites) { vm.star(entry.id) } }
+                    items(utilities, key = { "utility:${it.id}" }) { tool -> QuickCard(tool.title, Modifier.fillMaxWidth()) { detail = "utility:${tool.id}" } }
+                }
             } else Column(body) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(listOf("Calculators", "Pin-outs", "Reference", "Data", "Utilities")) { name ->
@@ -240,6 +239,9 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                 when (category) {
                     "Utilities" -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         item { QuickCard("Unit converter", Modifier.fillMaxWidth()) { detail = "unit-converter" } }
+                        if (query.isNotBlank() && WorkbenchTools.all.none { it.title.contains(query, true) }) item {
+                            WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint))
+                        }
                         items(WorkbenchTools.all.filter { it.title.contains(query, true) }) { tool ->
                             QuickCard(tool.title, Modifier.fillMaxWidth()) { detail = "utility:${tool.id}" }
                         }
@@ -251,7 +253,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                             .sortedWith(compareByDescending<Entry> { it.id in prefs.favourites }.thenBy { if (prefs.alphabetical) it.title else "" })
                         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(8.dp)) {
                             item { SectionTitle("${entries.size} ${category.lowercase()}") }
-                            if (entries.isEmpty()) item { Text("No matching tools. Try another search.", Modifier.padding(16.dp)) }
+                            if (entries.isEmpty()) item { WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint)) }
                             items(entries, key = { it.id }) { entry -> EntryRow(entry, { openEntry(entry.id) }, entry.id in prefs.favourites) { vm.star(entry.id) } }
                         }
                     }
@@ -261,9 +263,12 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(listOf("Components", "Lessons")) { name -> FilterChip(category == name, { category = name }, label = { Text(name) }) }
                 }
-                if (category == "Lessons") LazyColumn {
+                if (category == "Lessons") LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (learningPages.none { it.title.contains(query, true) }) item {
+                        WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint))
+                    }
                     items(learningPages.filter { it.title.contains(query, true) }) { page ->
-                        QuickCard(page.title, Modifier.fillMaxWidth().padding(12.dp)) { detail = "learn:${page.id}" }
+                        QuickCard(page.title, Modifier.fillMaxWidth()) { detail = "learn:${page.id}" }
                     }
                 } else {
                     val gallery: @Composable () -> Unit = {
@@ -277,11 +282,16 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                             }
                         }
                     }
-                    gallery()
+                    if (publicComponents.none { it.name.contains(query, true) || it.category.contains(query, true) }) {
+                        Box(Modifier.padding(16.dp)) { WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint)) }
+                    } else gallery()
                 }
             }
             3 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item { SectionTitle("Your favorites") }
+                if (prefs.favourites.isEmpty()) item {
+                    WorkbenchEmpty(stringResource(R.string.workbench_no_favorites), stringResource(R.string.workbench_favorites_hint))
+                }
                 items(vm.repository.registry.filter { it.id in prefs.favourites && it.title.contains(query, true) }) {
                     EntryRow(it, { openEntry(it.id) }, true) { vm.star(it.id) }
                 }
@@ -307,7 +317,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
  * @return Unit; displays a heading without modifying state.
  */
 @Composable
-private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical = 4.dp).semantics { heading() }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
 
 /** Native action card; it remains usable with large font sizes instead of using a fixed height.
  * @param title Accessible card caption.
@@ -318,10 +328,11 @@ private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical 
 @Composable
 private fun QuickCard(title: String, modifier: Modifier, click: () -> Unit) {
     Card(onClick = click, modifier = modifier, shape = RoundedCornerShape(10.dp)) {
-        Column(Modifier.fillMaxWidth().padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(14.dp), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CategoryBadge(title, Modifier.size(42.dp))
-            Text(title, Modifier.padding(top = 8.dp), style = MaterialTheme.typography.labelLarge,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

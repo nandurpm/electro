@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.clearAndSetSemantics
 
 /** Bordered instrument panel shared by detail pages and catalogues.
  * @param modifier Caller layout bounds.
@@ -69,7 +70,7 @@ fun CategoryBadge(title: String, modifier: Modifier = Modifier) {
     val (symbol, color) = categoryAccent(title)
     Surface(modifier, shape = RoundedCornerShape(9.dp), border = BorderStroke(1.dp, color.copy(alpha = .8f))) {
         Box(Modifier.background(Brush.linearGradient(listOf(color, color.copy(red = color.red * .5f, green = color.green * .5f, blue = color.blue * .5f)))).padding(6.dp), contentAlignment = Alignment.Center) {
-            Text(symbol, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text(symbol, modifier = Modifier.clearAndSetSemantics { }, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

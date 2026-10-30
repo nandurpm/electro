@@ -111,4 +111,19 @@
     <string name="enlarge_diagram">Enlarge diagram</string>
     <string name="close_diagram">Close diagram</string>
     <string name="share_unavailable">No sharing application is available on this device.</string>
+    <string name="workbench_eyebrow">YOUR OFFLINE WORKBENCH</string>
+    <string name="workbench_intro">Calculate circuits, identify components and learn with confidence.</string>
+    <string name="workbench_explore">Explore tools</string>
+    <string name="workbench_search_results">Search results</string>
+    <string name="workbench_no_matches">No matches yet</string>
+    <string name="workbench_search_hint">Try a tool, component or connector name.</string>
+    <string name="workbench_no_favorites">Your collection starts here</string>
+    <string name="workbench_favorites_hint">Tap the star on a tool or component to keep it here.</string>
+    <string name="workbench_input_heading">Input values</string>
+    <string name="workbench_result_heading">Result</string>
+    <string name="workbench_check_input">Check your input</string>
+    <string name="workbench_result_hint">Enter your values and calculate to see the result.</string>
+    <string name="workbench_converter_hint">Enter a value to convert between the selected units.</string>
+    <string name="workbench_swap">Swap units</string>
+    <string name="workbench_copied">Copied to clipboard</string>
 </resources>
