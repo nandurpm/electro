@@ -8,8 +8,8 @@ Offline-first native Android electronics toolkit. Version **4.2.0**, code **23**
 
 - Material 3 dark-blue, light and system appearance; persistent header/search and visible Android system bars.
 - Interactive multimeter training: seven exercises with diagrams, test steps, examples, common mistakes and safety precautions.
-- In-app GitHub release checks: patch releases offer Update or Later; a higher feature version requires Update to Continue after a verified check. Users of 4.2.0 must install 4.3.0 manually, as older APKs have no update checker.
-- INTERNET permission is used only for update checks; all learning, calculations and saved settings work locally.
+- In-app GitHub release checks: patch releases offer Update or Later; a higher feature version requires Update to Continue after a verified check. From 4.3.2, APKs download privately inside ELECTRO with progress and signature verification before Android’s install approval; no browser redirect. Users of 4.2.0 must install 4.3.0 manually, as older APKs have no update checker.
+- INTERNET permission is used only for update checks and selected official APK downloads; REQUEST_INSTALL_PACKAGES is used for the user-initiated Android install screen (sideload distribution; this permission is restricted on Google Play); all learning, calculations and saved settings work locally.
 - Home, Tools, Learn, Favorites and Profile, with recent public tools, bookmarks, saved calculation snapshots and retained raw inputs.
 - All original **31 calculators, 55 pinout entries, 21 resources and three Parts/AVR/PIC databases** remain reachable.
 - Seven additional utilities: ideal transformer, battery/UPS runtime, explicit-resistivity DC cable voltage-drop sizing, single-phase power factor, energy/cost, temperature and bounded scientific arithmetic.
