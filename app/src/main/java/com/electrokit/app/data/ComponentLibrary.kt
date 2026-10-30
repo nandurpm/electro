@@ -12,7 +12,7 @@ import kotlinx.serialization.json.Json
  * @property advanced Whether the local advanced-reference display gate applies.
  */
 @Serializable
-data class ComponentAsset(val id: String, val name: String, val category: String, val image: String, val advanced: Boolean = category == "Escalator")
+data class ComponentAsset(val id: String, val name: String, val category: String, val image: String, val advanced: Boolean = false)
 
 /** Loads only metadata; bitmaps are decoded separately at display resolution.
  * @param context Android context used only to read bundled metadata.

@@ -32,7 +32,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.res.painterResource
@@ -93,13 +92,11 @@ fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail:
  * @param openEntry Opens an original public registry route.
  * @param info Opens an existing information tab.
  * @param settings Opens the standalone appearance page.
- * @param engineering Existing source-traceable engineering asset owner.
- * @param openEngineering Opens a protected engineering route through its shared session gate.
  * @return Unit after composing the selected destination; storage errors remain visible in the host banner.
  */
 @Composable
 fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) -> Unit,
-    info: (Int) -> Unit, settings: () -> Unit, engineering: EngineeringViewModel, openEngineering: (String) -> Unit) {
+    info: (Int) -> Unit, settings: () -> Unit) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable(tab) { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("Calculators") }
@@ -111,8 +108,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     BackHandler(enabled = detail == null && tab == 1 && !hub) { hub = true; category = "Calculators"; query = "" }
     val context = LocalContext.current
     val components by produceState<List<ComponentAsset>>(emptyList()) { value = withContext(Dispatchers.IO) { loadComponents(context) } }
-    val access: EngineeringAccess = viewModel(requireNotNull(context.componentActivity()))
-    val publicComponents = components.filter { !it.advanced }
+    val publicComponents = components
     val names = listOf("Home", "Tools", "Learn", "Favorites", "Profile")
     val component = components.firstOrNull { detail == "component:${it.id}" }
     val lesson = learningPages.firstOrNull { detail == "learn:${it.id}" }
@@ -120,8 +116,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     if (detail == "unit-converter") { UnitConverterScreen { detail = null }; return }
     if (utility != null) { UtilityScreen(utility, vm, prefs) { detail = null }; return }
     if (component != null) {
-        val screen: @Composable () -> Unit = { ComponentDetail(component, prefs, vm) { detail = null } }
-        if (component.advanced) EngineeringGate({ detail = null }, screen) else screen()
+        ComponentDetail(component, prefs, vm) { detail = null }
         return
     }
     if (lesson != null) { LearningDetail(lesson, prefs, vm) { detail = null }; return }
@@ -137,7 +132,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         DropdownMenuItem(text = { Text("About ELECTRO") }, onClick = { menu = false; info(0) })
                     }
                 }
-                if (tab != 4 && !(tab == 1 && category in listOf("Data", "Engineering"))) Search(query, { query = it }, shape = RoundedCornerShape(28.dp))
+                if (tab != 4 && !(tab == 1 && category == "Data")) Search(query, { query = it }, shape = RoundedCornerShape(28.dp))
             }
         },
         bottomBar = {
@@ -179,12 +174,12 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                                     Spacer(Modifier.width(8.dp))
                                     Text("ELECTRO", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
                                 }
-                                Text("Electrical Engineering\nTools for Real World", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
+                                Text("Electrical & Electronics\nTools for Everyday Use", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(vertical = 8.dp))
                                 Text("CALCULATE  •  DESIGN  •  LEARN", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                 TextButton({ tab = 1; hub = true; category = "Calculators" }) { Text("Explore tools  →", color = Color.White) }
                             }
-                            publicComponents.firstOrNull { it.id == "induction_motor" }?.let {
+                            publicComponents.firstOrNull { it.id == "axial_resistor" }?.let {
                                 Box(Modifier.width(126.dp).height(156.dp).clip(RoundedCornerShape(12.dp)).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .55f), RoundedCornerShape(12.dp))) {
                                     ComponentImage(it, Modifier.fillMaxSize().graphicsLayer { scaleX = 1.7f; scaleY = 1.7f })
                                 }
@@ -200,7 +195,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                         QuickTile("Diagrams", Modifier.weight(1f)) { tab = 1; category = "Pin-outs"; hub = false }
                     } }
                     item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        QuickTile("Escalator", Modifier.weight(1f)) { openEngineering("home") }
+                        QuickTile("Utilities", Modifier.weight(1f)) { tab = 1; category = "Utilities"; hub = false }
                         QuickTile("Learning", Modifier.weight(1f)) { tab = 2; category = "Lessons" }
                         QuickTile("Converters", Modifier.weight(1f)) { detail = "unit-converter" }
                     } }
@@ -238,19 +233,18 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                 if (target == "Converters") detail = "unit-converter" else { category = target; hub = false }
             } else Column(body) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(listOf("Calculators", "Pin-outs", "Reference", "Data", "Engineering", "Utilities")) { name ->
+                    items(listOf("Calculators", "Pin-outs", "Reference", "Data", "Utilities")) { name ->
                         FilterChip(category == name, { category = name }, label = { Text(name) })
                     }
                 }
                 when (category) {
                     "Utilities" -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item { QuickCard("Engineering unit converter", Modifier.fillMaxWidth()) { detail = "unit-converter" } }
+                        item { QuickCard("Unit converter", Modifier.fillMaxWidth()) { detail = "unit-converter" } }
                         items(WorkbenchTools.all.filter { it.title.contains(query, true) }) { tool ->
                             QuickCard(tool.title, Modifier.fillMaxWidth()) { detail = "utility:${tool.id}" }
                         }
                     }
                     "Data" -> Databases(vm, prefs, Modifier.weight(1f), openEntry, { info(1) })
-                    "Engineering" -> EngineeringScreen("home", engineering, vm, prefs, openEngineering, openEntry)
                     else -> {
                         val group = when(category) { "Pin-outs" -> "PIN-OUTS"; "Reference" -> "RESOURCES"; else -> "CALCULATORS" }
                         val entries = vm.repository.registry.filter { (it.tab == group || (group == "CALCULATORS" && it.screenType == "module")) && it.title.contains(query, true) }
@@ -265,7 +259,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
             }
             2 -> Column(body) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(listOf("Components", "Lessons", "Escalator images")) { name -> FilterChip(category == name, { category = name }, label = { Text(name) }) }
+                    items(listOf("Components", "Lessons")) { name -> FilterChip(category == name, { category = name }, label = { Text(name) }) }
                 }
                 if (category == "Lessons") LazyColumn {
                     items(learningPages.filter { it.title.contains(query, true) }) { page ->
@@ -274,7 +268,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                 } else {
                     val gallery: @Composable () -> Unit = {
                         LazyVerticalGrid(GridCells.Adaptive(150.dp), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            gridItems((if (category == "Escalator images") components.filter { it.advanced } else publicComponents)
+                            gridItems(publicComponents
                                 .filter { it.name.contains(query, true) || it.category.contains(query, true) }, key = { it.id }) { c ->
                                 Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
                                     ComponentImage(c, Modifier.fillMaxWidth().aspectRatio(1f))
@@ -283,7 +277,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                             }
                         }
                     }
-                    if (category == "Escalator images") EngineeringGate(content = gallery) else gallery()
+                    gallery()
                 }
             }
             3 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -294,13 +288,9 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                 items(publicComponents.filter { "component:${it.id}" in prefs.favourites && it.name.contains(query, true) }) { c ->
                     QuickCard(c.name, Modifier.fillMaxWidth()) { detail = "component:${c.id}" }
                 }
-                if (access.unlocked) items(components.filter { it.advanced && "component:${it.id}" in prefs.favourites && it.name.contains(query, true) }) { c ->
-                    QuickCard(c.name, Modifier.fillMaxWidth()) { detail = "component:${c.id}" }
-                }
                 items(learningPages.filter { "learn:${it.id}" in prefs.favourites && it.title.contains(query, true) }) { p ->
                     QuickCard(p.title, Modifier.fillMaxWidth()) { detail = "learn:${p.id}" }
                 }
-                item { TextButton({ openEngineering("home") }) { Text(if (access.unlocked) "Engineering bookmarks" else "Unlock engineering bookmarks") } }
                 item { SectionTitle("Saved calculations") }
                 if (prefs.calculations.isEmpty()) item { Text("Save a result from a calculator's menu. Inputs are retained automatically.") }
                 items(prefs.calculations.filter { it.contains(query, true) }) { result ->
@@ -349,7 +339,7 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
         SectionTitle("Profile & settings")
         Card(Modifier.fillMaxWidth()) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             CategoryBadge("Components", Modifier.size(48.dp)); Spacer(Modifier.width(12.dp))
-            Column { Text("ELECTRO", style = MaterialTheme.typography.titleLarge); Text("Your engineering workspace", style = MaterialTheme.typography.bodySmall) }
+            Column { Text("ELECTRO", style = MaterialTheme.typography.titleLarge); Text("Your electronics workspace", style = MaterialTheme.typography.bodySmall) }
         } }
         Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
         Text("Appearance", style = MaterialTheme.typography.titleMedium)
@@ -362,13 +352,12 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
         Text("Language: English")
         Text("Offline by design", style = MaterialTheme.typography.titleMedium)
         Text("No accounts, analytics, ads or network permission. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share.")
-        Text("Engineering access is a basic local restriction. References are bundled, not encrypted.")
         TextButton({ confirm = true }) { Text("Clear saved calculation history") }
         TextButton({ vm.sort() }) { Text(if (prefs.alphabetical) "Use original tool order" else "Sort tools A–Z") }
         } }
         Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("ELECTRO ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", style = MaterialTheme.typography.titleMedium)
-        Text("Electrical • Electronics • Engineering\nAndroid 7.0+ • Native Kotlin & Jetpack Compose")
+        Text("Electrical • Electronics • Offline learning\nAndroid 7.0+ • Native Kotlin & Jetpack Compose")
         Text("Component artwork is illustrative. Confirm exact parts, ratings and wiring against the original manufacturer documentation.")
         } }
     }
