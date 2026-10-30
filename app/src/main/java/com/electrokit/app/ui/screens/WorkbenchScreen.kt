@@ -100,7 +100,7 @@ fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail:
  */
 @Composable
 fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) -> Unit,
-    info: (Int) -> Unit, settings: () -> Unit) {
+    info: (Int) -> Unit, settings: () -> Unit, onCheckUpdates: () -> Unit = {}) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable(tab) { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("Calculators") }
@@ -307,7 +307,7 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     Card { Text(result, Modifier.padding(16.dp)); TextButton({ share(context, result) }) { Text("Share calculation") } }
                 }
             }
-            else -> ProfileScreen(vm, prefs, body, { tab = 3 }, { info(0) })
+            else -> ProfileScreen(vm, prefs, body, { tab = 3 }, { info(0) }, onCheckUpdates)
         }
     }
 }
@@ -420,7 +420,7 @@ private fun componentNotes(asset: ComponentAsset): List<Pair<String, String>> {
         "Symbol, terminals & connection" to "Use the exact device's schematic symbol and numbered terminal drawing. Generated markings and connector geometry are not wiring authority. Consult the Tools → Pin-outs references and Learn → Lessons for generic interface concepts.",
         "Testing procedure" to "1. Identify the exact part. 2. Isolate all energy sources and verify the safe state. 3. Follow the manufacturer's test method with a correctly rated instrument. 4. Compare results with documented limits. This page does not authorize live testing.",
         "Troubleshooting" to "Record the symptom and actual model. Inspect for damage only in a safe isolated state. Check documented connections and supply conditions. Do not bypass interlocks or replace a part solely because it resembles this image.",
-        "Safety & provenance" to "User-supplied AI-generated artwork, optimized for visual learning rather than product verification. Never rely on it for exact geometry or terminal markings. Escalator work requires qualified personnel and the equipment's approved procedures.")
+        "Safety & provenance" to "User-supplied AI-generated artwork, optimized for visual learning rather than product verification. Never rely on it for exact geometry or terminal markings. Confirm the appropriate safe-testing procedure and exact manufacturer documentation before working with real equipment.")
 }
 
 /** Scrollable, bookmarkable lessons use authored text rather than embedding instruction screenshots.

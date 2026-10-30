@@ -246,7 +246,7 @@ private fun ProfileRow(title: String, subtitle: String, symbol: String, accent: 
  * @return Unit; destructive history clearing still requires the confirmation dialog.
  */
 @Composable
-fun ProfileScreen(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier = Modifier, openFavorites: () -> Unit, openAbout: () -> Unit) {
+fun ProfileScreen(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier = Modifier, openFavorites: () -> Unit, openAbout: () -> Unit, onCheckUpdates: () -> Unit = {}) {
     var confirm by remember { mutableStateOf(false) }
     Column(modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Profile & Settings", Modifier.padding(vertical = 4.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -275,9 +275,25 @@ fun ProfileScreen(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier 
             TextButton({ confirm = true }) { Text("Clear saved calculation history") }
             TextButton({ vm.sort() }) { Text(if (prefs.alphabetical) "Use original tool order" else "Sort tools A–Z") }
         })
+        ProfileRow("App Updates", "Installed " + BuildConfig.VERSION_NAME + " • check GitHub", "⟳",
+            Color(0xFF1683BF), onClick = onCheckUpdates, details = {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                var autoCheck by remember { mutableStateOf(com.electrokit.app.update.UpdateSettings.autoCheck(context)) }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Automatic checks for new versions", Modifier.weight(1f))
+                    Switch(autoCheck, onCheckedChange = { enabled ->
+                        autoCheck = enabled
+                        com.electrokit.app.update.UpdateSettings.setAutoCheck(context, enabled)
+                    })
+                }
+                Text("4.3.1 / 4.3.2: Update or Later. 4.4.0 / 5.0.0: Update to Continue.",
+                    style = MaterialTheme.typography.bodySmall)
+                Text("Only GitHub release metadata is checked. Calculators and learning content remain offline.",
+                    style = MaterialTheme.typography.bodySmall)
+            })
         ProfileRow("About ELECTRO", "Version ${BuildConfig.VERSION_NAME}", "i", Color(0xFF007CAD), onClick = openAbout)
-        ProfileRow("Privacy & Help", "Offline by design", "✓", Color(0xFF4C5FD5), details = {
-            Text("No accounts, analytics, ads or network permission. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share.",
+        ProfileRow("Privacy & Help", "Local data • optional GitHub updates", "✓", Color(0xFF4C5FD5), details = {
+            Text("No accounts, advertising or analytics. Your calculators, inputs, favorites and lessons remain local. Optional app-version checks contact GitHub, and Android asks before installing downloaded APKs.",
                 style = MaterialTheme.typography.bodyMedium)
         })
     }
