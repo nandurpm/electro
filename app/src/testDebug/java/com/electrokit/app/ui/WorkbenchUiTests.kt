@@ -245,6 +245,7 @@ class WorkbenchUiTests {
         ui.onNodeWithText("Profile").performClick()
         ui.onNodeWithText("Appearance").performClick()
         ui.onNodeWithText("Light").performClick()
+        ui.waitUntil(10000) { com.electrokit.app.data.StartupTheme.light(ui.activity) }
         ui.onNodeWithText("Learn").performClick()
         capture44("Components-library-light")
     }
