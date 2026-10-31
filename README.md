@@ -2,7 +2,7 @@
 
 **Electrical • Electronics • Offline Reference**
 
-Offline-first native Android electronics toolkit. Version **4.5.1**, code **30**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline-first native Android electronics toolkit. Version **4.5.2**, code **31**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 - **4.3.3 stability patch:** repaired invalid merge artifacts in the updater dialog and fixed UI-thread progress delivery for cached APKs; automated validation now guards against duplicate update-dialog callbacks and browser redirects.
 
@@ -23,7 +23,7 @@ Exact manufacturer ratings, terminal drawings and part-specific test procedures 
 
 ## Installation
 
-For the production release, download `ELECTRO-4.5.1.apk` from [GitHub Releases](https://github.com/nandurpm/electro/releases/tag/v4.5.1) after the signed Android Release workflow succeeds. For development, build `app/build/outputs/apk/debug/app-debug.apk` or extract the debug artifact from GitHub Actions. Android may ask you to allow installation from your browser or Files app.
+For the production release, download `ELECTRO-4.5.2.apk` from [GitHub Releases](https://github.com/nandurpm/electro/releases/tag/v4.5.2) after the signed Android Release workflow succeeds. For development, build `app/build/outputs/apk/debug/app-debug.apk` or extract the debug artifact from GitHub Actions. Android may ask you to allow installation from your browser or Files app.
 
 A debug certificate generally cannot update a release-signed installation. Preserve the same application ID, original release key and increasing versionCode for data-preserving updates. Do not uninstall a valued installation merely to bypass a certificate mismatch.
 
