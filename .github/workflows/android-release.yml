@@ -135,7 +135,11 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk
       - name: Record current signed release evidence
         run: |
-          "$RUNNER_TEMP/electro-python/bin/python" scripts/record_verification.py --apk app/build/outputs/apk/release/app-release.apk --build-log "$RUNNER_TEMP/electro-release-build.log" --variants debug release --require-signed
+          if ! "$RUNNER_TEMP/electro-python/bin/python" scripts/record_verification.py --apk app/build/outputs/apk/release/app-release.apk --build-log "$RUNNER_TEMP/electro-release-build.log" --variants debug release --require-signed > "$RUNNER_TEMP/evidence.log" 2>&1; then
+            python3 -c 'import pathlib,sys; print("::error::" + pathlib.Path(sys.argv[1]).read_text()[-10000:].replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))' "$RUNNER_TEMP/evidence.log"
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/evidence.log"
       - name: Package APK and matching source
         run: |
           set -euo pipefail
