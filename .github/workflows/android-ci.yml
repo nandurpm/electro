@@ -16,6 +16,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+      - name: Reject sideload installer capability
+        run: |
+          set -euo pipefail
+          if grep -RInE 'REQUEST_INSTALL_PACKAGES|FileProvider|application/vnd.android.package-archive|canRequestPackageInstalls|ACTION_MANAGE_UNKNOWN_APP_SOURCES|ApkUpdateDownloader' app/src; then
+            echo 'The app must not request or implement APK sideload installation.' >&2
+            exit 1
+          fi
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
         with:
           distribution: temurin

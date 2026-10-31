@@ -2,7 +2,7 @@
 
 **Electrical • Electronics • Offline Reference**
 
-Offline-first native Android electronics toolkit. Version **4.5.0**, code **29**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline-first native Android electronics toolkit. Version **4.5.1**, code **30**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 - **4.3.3 stability patch:** repaired invalid merge artifacts in the updater dialog and fixed UI-thread progress delivery for cached APKs; automated validation now guards against duplicate update-dialog callbacks and browser redirects.
 
@@ -10,8 +10,8 @@ Offline-first native Android electronics toolkit. Version **4.5.0**, code **29**
 
 - Material 3 dark-blue, light and system appearance; persistent header/search and visible Android system bars.
 - Interactive multimeter training: seven exercises with diagrams, test steps, examples, common mistakes and safety precautions.
-- In-app GitHub release checks: patch releases offer Update or Later; a higher feature version requires Update to Continue after a verified check. From 4.3.2, APKs download privately inside ELECTRO with progress and signature verification before Android’s install approval; no browser redirect. Users of 4.2.0 must install 4.3.0 manually, as older APKs have no update checker.
-- INTERNET permission is used only for update checks and selected official APK downloads; REQUEST_INSTALL_PACKAGES is used for the user-initiated Android install screen (sideload distribution; this permission is restricted on Google Play); all learning, calculations and saved settings work locally.
+- In-app GitHub release checks show verified patch and feature releases and open the official release page for manual review. ELECTRO does not download or install APKs itself, so users can continue using the app offline and choose when to update.
+- INTERNET permission is used only for optional GitHub release metadata checks; all learning, calculations and saved settings work locally.
 - Home, Tools, Learn, Favorites and Profile, with recent public tools, bookmarks, saved calculation snapshots and retained raw inputs.
 - All original **31 calculators, 55 pinout entries, 21 resources and three Parts/AVR/PIC databases** remain reachable.
 - Seven additional utilities: ideal transformer, battery/UPS runtime, explicit-resistivity DC cable voltage-drop sizing, single-phase power factor, energy/cost, temperature and bounded scientific arithmetic.
@@ -23,7 +23,7 @@ Exact manufacturer ratings, terminal drawings and part-specific test procedures 
 
 ## Installation
 
-For the production release, download `ELECTRO-4.0.0.apk` from [GitHub Releases](https://github.com/nandurpm/electro/releases) after the signed Android Release workflow succeeds. For development, build `app/build/outputs/apk/debug/app-debug.apk` or extract the debug artifact from GitHub Actions. Android may ask you to allow installation from your browser or Files app.
+For the production release, download `ELECTRO-4.5.1.apk` from [GitHub Releases](https://github.com/nandurpm/electro/releases/tag/v4.5.1) after the signed Android Release workflow succeeds. For development, build `app/build/outputs/apk/debug/app-debug.apk` or extract the debug artifact from GitHub Actions. Android may ask you to allow installation from your browser or Files app.
 
 A debug certificate generally cannot update a release-signed installation. Preserve the same application ID, original release key and increasing versionCode for data-preserving updates. Do not uninstall a valued installation merely to bypass a certificate mismatch.
 
@@ -55,7 +55,7 @@ cd electro
 ls -lh app/build/outputs/apk/debug/app-debug.apk
 ```
 
-In this cloud workspace first run `source /workspace/toolchains/activate-electro.sh`. The saved environment Install script prepares JDK/SDK and writable caches. Gradle **8.9**, AGP **8.7.3**, Kotlin **2.0.21**, JDK **17**, SDK **35** and Build Tools **35.0.0** are the pinned toolchain. Kotlin needs no separate installation. First-time dependency downloads require network access; Internet access is used for GitHub update checks. The wrapper distribution SHA-256 is pinned; TLS remains enabled.
+In this cloud workspace first run `source /workspace/toolchains/activate-electro.sh`. The saved environment Install script prepares JDK/SDK and writable caches. Gradle **8.9**, AGP **8.7.3**, Kotlin **2.0.21**, JDK **17**, SDK **35** and Build Tools **35.0.0** are the pinned toolchain. Kotlin needs no separate installation. First-time dependency downloads require network access; runtime Internet access is limited to optional GitHub release metadata checks. The wrapper distribution SHA-256 is pinned; TLS remains enabled.
 
 ## Developer checks
 

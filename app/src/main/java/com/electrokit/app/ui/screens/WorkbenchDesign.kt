@@ -313,14 +313,14 @@ fun ProfileScreen(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier 
                     })
                 }
                 TextButton(onClick = onCheckUpdates) { Text("Check now") }
-                Text("Updates can be downloaded now or postponed with Later.",
+                Text("Open the official GitHub release page now or postpone with Later.",
                     style = MaterialTheme.typography.bodySmall)
                 Text("Only GitHub release metadata is checked. Calculators and learning content remain offline.",
                     style = MaterialTheme.typography.bodySmall)
             })
         ProfileRow("About ELECTRO", "Version ${BuildConfig.VERSION_NAME}", "i", Color(0xFF007CAD), onClick = openAbout)
         ProfileRow("Privacy & Help", "Local data • optional GitHub updates", "✓", Color(0xFF4C5FD5), details = {
-            Text("No accounts, advertising or analytics. Your calculators, inputs, favorites and lessons remain local. Optional app-version checks contact GitHub, and Android asks before installing downloaded APKs.",
+            Text("No accounts, advertising or analytics. Your calculators, inputs, favorites and lessons remain local. Optional app-version checks contact GitHub; ELECTRO does not install APKs or request unknown-app installation access.",
                 style = MaterialTheme.typography.bodyMedium)
         })
     }
