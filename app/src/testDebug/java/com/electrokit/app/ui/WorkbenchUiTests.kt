@@ -250,4 +250,18 @@ class WorkbenchUiTests {
         capture44("Components-library-light")
     }
 
+    @Test fun requiredBrowserUpdateCannotBePostponed() {
+        ready()
+        val settings = ui.activity.getSharedPreferences("electro_release_check_settings", android.content.Context.MODE_PRIVATE)
+        settings.edit().putString("verified_required_version", "9.0.0")
+            .putString("verified_required_url", "https://github.com/nandurpm/electro/releases/download/v9.0.0/ELECTRO-9.0.0.apk").commit()
+        ui.activityRule.scenario.recreate()
+        ui.onNodeWithText("ELECTRO update available").assertExists()
+        ui.onNodeWithText("Open Release").assertExists()
+        ui.onNodeWithText("Later").assertDoesNotExist()
+        ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
+        ui.onNodeWithText("ELECTRO update available").assertExists()
+        settings.edit().clear().commit()
+    }
+
 }

@@ -313,7 +313,7 @@ fun ProfileScreen(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier 
                     })
                 }
                 TextButton(onClick = onCheckUpdates) { Text("Check now") }
-                Text("Open the official GitHub release page now or postpone with Later.",
+                Text("Major and feature updates are required. Maintenance patches can be postponed with Later. Downloads open on GitHub.",
                     style = MaterialTheme.typography.bodySmall)
                 Text("Only GitHub release metadata is checked. Calculators and learning content remain offline.",
                     style = MaterialTheme.typography.bodySmall)

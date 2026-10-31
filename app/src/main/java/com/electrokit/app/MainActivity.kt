@@ -130,7 +130,7 @@ class MainActivity : ComponentActivity() {
                         val required = UpdatePolicy.priority(BuildConfig.VERSION_NAME, release.version) ==
                             UpdatePriority.REQUIRED_FEATURE
                         AlertDialog(
-                            onDismissRequest = { pending = null },
+                            onDismissRequest = { if (!required) pending = null },
                             title = { Text("ELECTRO update available") },
                             text = {
                                 Column(verticalArrangement = Arrangement.spacedBy(
@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                                     Text("Installed: " + BuildConfig.VERSION_NAME +
                                         "    New: " + release.version)
                                     Text(if (required)
-                                        "A new feature version is available. You can continue using ELECTRO offline and install it later."
+                                        "A required major or feature update is available. Open the official release page and install the update to continue."
                                     else
                                         "A maintenance patch is available. Update now or choose Later.")
                                     Text("WHAT'S NEW", style = MaterialTheme.typography.titleSmall)
@@ -155,9 +155,9 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             dismissButton = {
-                                TextButton(onClick = { pending = null }) { Text("Later") }
+                                if (!required) TextButton(onClick = { pending = null }) { Text("Later") }
                             },
-                            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
+                            properties = DialogProperties(dismissOnBackPress = !required, dismissOnClickOutside = !required),
                         )
                     }
                     if (checkStatus != null) AlertDialog(
