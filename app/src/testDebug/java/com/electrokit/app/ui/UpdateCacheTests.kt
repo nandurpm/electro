@@ -67,7 +67,10 @@ class UpdateCacheTests {
             .edit()
             .clear()
             .commit()
-        var version = "4.5.5"
+        // Derive later patch versions from the installed build so future releases keep this test valid.
+        val installedParts = com.electrokit.app.BuildConfig.VERSION_NAME.split(".").map { it.toInt() }
+        val sameFeatureLine = "${installedParts[0]}.${installedParts[1]}"
+        var version = "$sameFeatureLine.${installedParts[2] + 1}"
         val fetch: (Context, Boolean) -> com.electrokit.app.update.UpdateRelease = { _, _ ->
             com.electrokit.app.update.UpdateRelease(
                 "v$version",
@@ -105,7 +108,7 @@ class UpdateCacheTests {
         assertEquals(version, restored.updates.value.pending?.version)
         restored.dismissPatch()
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
-        version = "4.5.6"
+        version = "$sameFeatureLine.${installedParts[2] + 2}"
         restored.check(false)
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
         assertEquals(version, restored.updates.value.pending?.version)
