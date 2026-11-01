@@ -67,7 +67,7 @@ class UpdateCacheTests {
             .edit()
             .clear()
             .commit()
-        var version = "4.5.5"
+        var version = "4.6.2"
         val fetch: (Context, Boolean) -> com.electrokit.app.update.UpdateRelease = { _, _ ->
             com.electrokit.app.update.UpdateRelease(
                 "v$version",
@@ -105,7 +105,7 @@ class UpdateCacheTests {
         assertEquals(version, restored.updates.value.pending?.version)
         restored.dismissPatch()
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
-        version = "4.5.6"
+        version = "4.6.3"
         restored.check(false)
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
         assertEquals(version, restored.updates.value.pending?.version)
