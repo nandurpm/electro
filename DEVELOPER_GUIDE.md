@@ -69,7 +69,7 @@ Use an existing asset entry of the same type as a schema example. Every row must
 
 ## Change comments and documentation
 
-Every Kotlin type, function, composable, member and constructor property is checked by `scripts/check_comments.py`; function KDoc must name each parameter and describe its return/error contract. Temporary local values are explained through surrounding block comments, not an individual KDoc for every variable. Add a comment before non-obvious unit conversion, rounding, parser regex, formula, asynchronous state change or error recovery. Python scripts use module docstrings and function comments. Gradle and workflow comments describe each build phase.
+Public Kotlin APIs are checked by `scripts/check_comments.py`; public function KDoc names each parameter and describes its return/error contract. Private/internal implementations and local helpers do not require boilerplate, and there is no comment-density quota. Document non-obvious implementation decisions where useful. Add a comment before non-obvious unit conversion, rounding, parser regex, formula, asynchronous state change or error recovery. Python scripts use module docstrings and function comments. Gradle and workflow comments describe each build phase.
 
 Do not write comments that merely restate an identifier. For example, explain why a newer pending input must not be cleared after an older write, rather than saying “remove input.” Update the comment when changing the behaviour. JSON cannot contain `//` comments; document schema changes here and in the data models.
 
@@ -78,3 +78,11 @@ Do not write comments that merely restate an identifier. For example, explain wh
 Check dependencies quarterly and before changing target SDK. Upgrade Android/Compose/Kotlin together in a separate branch, run the complete regression suite, then check the shrunk APK on a device. Pinned versions currently provide a reproducible baseline; lint freshness warnings are not suppressed.
 
 Before relying on a new release, test API 24 and a recent Android version: install/update with the same certificate, full-screen gestures, light/dark theme, 200% text, rotation, keyboard, copy/share, process recreation, TalkBack and airplane mode. JVM/Robolectric tests do not certify the R8-shrunk APK on a phone. See docs/TESTING_GUIDE.md for exact executed checks and unresolved evidence gaps.
+
+## Formatting
+
+Use ktfmt 0.54 with `--kotlinlang-style` for touched Kotlin files (four-space Kotlin indentation). Keep formatting separate from technical formula changes, and do not reformat unrelated files merely to satisfy a line-count rule. Editor defaults are in `.editorconfig`. UI controls use shared Material shapes/typography; explicit diagram wire colours and the dark brand bar are intentional exceptions.
+
+## Release and service changes
+
+Read [SECURITY.md](SECURITY.md) before signing or changing webhook credentials. The independent webhook-secret code must not be deployed before the coordinated secret migration. A protected Environment declaration alone does not protect copies of credentials left at repository scope.

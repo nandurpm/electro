@@ -10,8 +10,11 @@ ROOT = Path(__file__).resolve().parents[1] / 'app/src/main/assets'
 def validate(root=ROOT):
     """Reject broken links/traversal, duplicate records/images and corrupt image headers."""
     records = json.loads((root / 'components.json').read_text())
+    guides = json.loads((root / 'component_guides.json').read_text()) if (root / 'component_guides.json').exists() else {}
     ids, images, hashes = set(), set(), set()
     for item in records:
+        if guides:
+            assert item.get('family', '') in guides or item.get('family', '') == '', item
         assert all(isinstance(item.get(k), str) and item[k] for k in ('id', 'name', 'category', 'image')), item
         assert item['id'] not in ids, f"Duplicate component ID: {item['id']}"
         ids.add(item['id'])

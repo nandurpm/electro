@@ -24,6 +24,14 @@ class QualityGateTests(unittest.TestCase):
             count,failures=check_comments.audit(path)
             self.assertEqual(3,count)
             self.assertEqual([],failures)
+    def test_local_helpers_do_not_require_public_api_boilerplate(self):
+        with tempfile.TemporaryDirectory(dir=check_comments.ROOT) as directory:
+            path = Path(directory) / 'Fixture.kt'
+            path.write_text('/** Entry. @return Unit. */\nfun entry() { fun local() {} }\n')
+            count, failures = check_comments.audit(path)
+            self.assertEqual(1, count)
+            self.assertEqual([], failures)
+
     def test_source_token_changes_change_contrast_report(self):
         # A hard-coded duplicate colour list would incorrectly leave the report unchanged.
         source=(check_contrast.ROOT/'app/src/main/java/com/electrokit/app/ui/theme/Theme.kt').read_text()

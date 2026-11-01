@@ -1,16 +1,21 @@
 package com.electrokit.app.data
 
+import java.io.File
+import kotlinx.serialization.json.Json
 import org.junit.Assert.*
 import org.junit.Test
-import kotlinx.serialization.json.Json
-import java.io.File
 
 /** Validates offline component integrity and conservative guide classification. */
 class ComponentGuideTests {
-    @Test fun allOriginalAssetsAndStructuredGuidesRemainValid() {
+    @Test
+    fun allOriginalAssetsAndStructuredGuidesRemainValid() {
         val root = File("src/main/assets")
-        val assets = Json.decodeFromString<List<ComponentAsset>>(File(root, "components.json").readText())
-        val guides = Json.decodeFromString<Map<String, ComponentGuide>>(File(root, "component_guides.json").readText())
+        val assets =
+            Json.decodeFromString<List<ComponentAsset>>(File(root, "components.json").readText())
+        val guides =
+            Json.decodeFromString<Map<String, ComponentGuide>>(
+                File(root, "component_guides.json").readText()
+            )
         assertEquals(98, assets.size)
         assertEquals(assets.size, assets.map { it.id }.toSet().size)
         assets.forEach { assertTrue(it.image, File(root, it.image).isFile()) }
@@ -27,5 +32,13 @@ class ComponentGuideTests {
         assertEquals("display", family("red_indicator_lamp"))
         assertEquals("bridge", family("bridge_rectifier"))
         assertEquals("protection", family("thermal_overload_relay_a"))
+    }
+
+    @Test
+    fun renamingArtworkDoesNotChangeItsGuide() {
+        val item =
+            ComponentAsset("not_a_type", "Any name", "Any category", "unused.png", "resistor")
+        assertEquals("resistor", componentFamily(item.copy(id = "mosfet_module")))
+        assertNull(componentFamily(item.copy(family = "")))
     }
 }

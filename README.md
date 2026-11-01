@@ -2,9 +2,8 @@
 
 **Electrical • Electronics • Offline Reference**
 
-Offline-first native Android electronics toolkit. Version **4.5.2**, code **31**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline-first native Android electronics toolkit. Version **4.5.3**, code **32**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
-- **4.3.3 stability patch:** repaired invalid merge artifacts in the updater dialog and fixed UI-thread progress delivery for cached APKs; automated validation now guards against duplicate update-dialog callbacks and browser redirects.
 
 ## Features
 
@@ -23,7 +22,7 @@ Exact manufacturer ratings, terminal drawings and part-specific test procedures 
 
 ## Installation
 
-For the production release, download `ELECTRO-4.5.2.apk` from [GitHub Releases](https://github.com/nandurpm/electro/releases/tag/v4.5.2) after the signed Android Release workflow succeeds. For development, build `app/build/outputs/apk/debug/app-debug.apk` or extract the debug artifact from GitHub Actions. Android may ask you to allow installation from your browser or Files app.
+For the production release, download `ELECTRO-4.5.3.apk` from [GitHub Releases](https://github.com/nandurpm/electro/releases/tag/v4.5.3) after the signed Android Release workflow succeeds. For development, build `app/build/outputs/apk/debug/app-debug.apk` or extract the debug artifact from GitHub Actions. Android may ask you to allow installation from your browser or Files app.
 
 A debug certificate generally cannot update a release-signed installation. Preserve the same application ID, original release key and increasing versionCode for data-preserving updates. Do not uninstall a valued installation merely to bypass a certificate mismatch.
 
@@ -55,7 +54,7 @@ cd electro
 ls -lh app/build/outputs/apk/debug/app-debug.apk
 ```
 
-In this cloud workspace first run `source /workspace/toolchains/activate-electro.sh`. The saved environment Install script prepares JDK/SDK and writable caches. Gradle **8.9**, AGP **8.7.3**, Kotlin **2.0.21**, JDK **17**, SDK **35** and Build Tools **35.0.0** are the pinned toolchain. Kotlin needs no separate installation. First-time dependency downloads require network access; runtime Internet access is limited to optional GitHub release metadata checks. The wrapper distribution SHA-256 is pinned; TLS remains enabled.
+In this cloud workspace first run `source /workspace/toolchains/activate-electro.sh`. The saved environment Install script prepares JDK/SDK and writable caches. Gradle **9.8.2**, AGP **8.7.3**, Kotlin **2.0.21**, JDK **17**, SDK **35** and Build Tools **35.0.0** are the pinned toolchain. Kotlin needs no separate installation. First-time dependency downloads require network access; runtime Internet access is limited to optional GitHub release metadata checks. The wrapper distribution SHA-256 is pinned; TLS remains enabled.
 
 ## Developer checks
 
@@ -106,10 +105,16 @@ The missing nested project files were restored from the existing `FULL_SOURCE.md
 - [Phone-only workflow](docs/ANDROID_PHONE_BUILD_GUIDE.md)
 - [Testing](docs/TESTING_GUIDE.md)
 
-Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the new 3.0.2 private key and all values outside the repository. A release is signed only when valid credentials are supplied.
+Release signing retains `ELECTROKIT_KEYSTORE`, `ELECTROKIT_STORE_PASSWORD`, `ELECTROKIT_KEY_ALIAS` and `ELECTROKIT_KEY_PASSWORD`. Keep the current release key and all values outside the repository; the authoritative certificate fingerprint is `signing/release-certificate.sha256`. A release is signed only when valid credentials are supplied.
 
-ELECTRO 3.0.2 uses a newly authorized signing key. It cannot update older-key installations; uninstalling those installations removes their local data. Keep the separate private signing backup for future updates.
+Historical signing fingerprints are retained for identification only. Android cannot update an installation with an unrelated signing key. Do not uninstall an app containing valuable data to bypass this check; contact the maintainer for a supported migration. Keep the current private signing backup for future updates.
 
 Repository maintenance: runtime artwork lives only in `app/src/main/assets/components/`. Duplicate photo packs, unused catalogue previews and obsolete historical reports were removed; Git history retains earlier copies. See [artwork provenance](docs/ARTWORK_PROVENANCE.md).
 
 Build evidence, the combined source listing and SHA-256 manifest are generated for CI/release archives and are no longer committed. CI builds and tests both debug and release before generating fresh verification. Run `python scripts/package_project.py` locally to regenerate the source listing, or use `--archive PATH.zip` to package it.
+
+## Release and webhook administration
+
+Before merging infrastructure changes, complete the environment/secret migration in [SECURITY.md](SECURITY.md). Stable release dispatches must provide an existing version tag; the workflow checks out that tag and rejects version, commit and main-history mismatches. Published assets are never silently replaced. Review builds do not replace stable. Protected signing Environments and independent webhook secrets are prepared in a separate infrastructure migration; follow SECURITY.md before activating that migration.
+
+Automatic release checks may disclose your connection IP to GitHub. Successful automatic checks are cached for six hours and failures back off for fifteen minutes. Check now and Refresh update status bypass the cache. A successful check showing a withdrawn higher release clears that obsolete requirement; failed/offline checks do not bypass a required update.

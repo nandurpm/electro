@@ -3,588 +3,686 @@
     "id": "axial_resistor",
     "name": "Axial Resistor",
     "category": "Electronics",
-    "image": "components/axial_resistor.png"
+    "image": "components/axial_resistor.png",
+    "family": "resistor"
   },
   {
     "id": "breadboard",
     "name": "Breadboard",
     "category": "Electronics",
-    "image": "components/breadboard.png"
+    "image": "components/breadboard.png",
+    "family": "breadboard"
   },
   {
     "id": "bridge_rectifier",
     "name": "Bridge Rectifier",
     "category": "Electronics",
-    "image": "components/bridge_rectifier.png"
+    "image": "components/bridge_rectifier.png",
+    "family": "bridge"
   },
   {
     "id": "can_bus_module",
     "name": "CAN Bus Module",
     "category": "Communication Modules",
-    "image": "components/can_bus_module.png"
+    "image": "components/can_bus_module.png",
+    "family": "module"
   },
   {
     "id": "can_bus_termination",
     "name": "CAN Bus Termination",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/can_bus_termination.png"
+    "image": "components/can_bus_termination.png",
+    "family": "network"
   },
   {
     "id": "can_twisted_pair",
     "name": "CAN Twisted Pair",
     "category": "Communication Modules",
-    "image": "components/can_twisted_pair.png"
+    "image": "components/can_twisted_pair.png",
+    "family": "network"
   },
   {
     "id": "cat6_cable",
     "name": "CAT6 Cable",
     "category": "Connectors and Communication",
-    "image": "components/cat6_cable.png"
+    "image": "components/cat6_cable.png",
+    "family": "connector"
   },
   {
     "id": "capacitive_proximity_sensor",
     "name": "Capacitive Proximity Sensor",
     "category": "Sensors and Controls",
-    "image": "components/capacitive_proximity_sensor.png"
+    "image": "components/capacitive_proximity_sensor.png",
+    "family": "sensor"
   },
   {
     "id": "cellular_module",
     "name": "Cellular Module",
     "category": "Communication Modules",
-    "image": "components/cellular_module.png"
+    "image": "components/cellular_module.png",
+    "family": "module"
   },
   {
     "id": "ceramic_capacitor",
     "name": "Ceramic Capacitor",
     "category": "Electronics",
-    "image": "components/ceramic_capacitor.png"
+    "image": "components/ceramic_capacitor.png",
+    "family": "capacitor"
   },
   {
     "id": "clamp_meter",
     "name": "Clamp Meter",
     "category": "Sensors and Controls",
-    "image": "components/clamp_meter.png"
+    "image": "components/clamp_meter.png",
+    "family": "instrument"
   },
   {
     "id": "control_transformer",
     "name": "Control Transformer",
     "category": "Electrical",
-    "image": "components/control_transformer.png"
+    "image": "components/control_transformer.png",
+    "family": "transformer"
   },
   {
     "id": "crossover_cable",
     "name": "Crossover Cable",
     "category": "Connectors and Communication",
-    "image": "components/crossover_cable.png"
+    "image": "components/crossover_cable.png",
+    "family": "connector"
   },
   {
     "id": "crystal_oscillator",
     "name": "Crystal Oscillator",
     "category": "Electronics",
-    "image": "components/crystal_oscillator.png"
+    "image": "components/crystal_oscillator.png",
+    "family": "crystal"
   },
   {
     "id": "current_transformer",
     "name": "Current Transformer",
     "category": "Sensors and Controls",
-    "image": "components/current_transformer.png"
+    "image": "components/current_transformer.png",
+    "family": "transformer"
   },
   {
     "id": "db25_connector",
     "name": "DB25 Connector",
     "category": "Connectors and Communication",
-    "image": "components/db25_connector.png"
+    "image": "components/db25_connector.png",
+    "family": "connector"
   },
   {
     "id": "db9_female",
     "name": "DB9 Female",
     "category": "Connectors and Communication",
-    "image": "components/db9_female.png"
+    "image": "components/db9_female.png",
+    "family": "connector"
   },
   {
     "id": "db9_male",
     "name": "DB9 Male",
     "category": "Connectors and Communication",
-    "image": "components/db9_male.png"
+    "image": "components/db9_male.png",
+    "family": "connector"
   },
   {
     "id": "db9_serial_cable",
     "name": "DB9 Serial Cable",
     "category": "Communication Modules",
-    "image": "components/db9_serial_cable.png"
+    "image": "components/db9_serial_cable.png",
+    "family": "connector"
   },
   {
     "id": "dip_integrated_circuit",
     "name": "DIP Integrated Circuit",
     "category": "Electronics",
-    "image": "components/dip_integrated_circuit.png"
+    "image": "components/dip_integrated_circuit.png",
+    "family": "ic"
   },
   {
     "id": "digital_multimeter",
     "name": "Digital Multimeter",
     "category": "Sensors and Controls",
-    "image": "components/digital_multimeter.png"
+    "image": "components/digital_multimeter.png",
+    "family": "instrument"
   },
   {
     "id": "dupont_connector",
     "name": "Dupont Connector",
     "category": "Connectors and Communication",
-    "image": "components/dupont_connector.png"
+    "image": "components/dupont_connector.png",
+    "family": "connector"
   },
   {
     "id": "esp8266_wifi_module",
     "name": "ESP8266 WiFi Module",
     "category": "Communication Modules",
-    "image": "components/esp8266_wifi_module.png"
+    "image": "components/esp8266_wifi_module.png",
+    "family": "module"
   },
   {
     "id": "electrolytic_capacitor",
     "name": "Electrolytic Capacitor",
     "category": "Electronics",
-    "image": "components/electrolytic_capacitor.png"
+    "image": "components/electrolytic_capacitor.png",
+    "family": "capacitor"
   },
   {
     "id": "emergency_stop_button",
     "name": "Emergency Stop Button",
     "category": "Electrical",
-    "image": "components/emergency_stop_button.png"
+    "image": "components/emergency_stop_button.png",
+    "family": "switch"
   },
   {
     "id": "ethernet_patch_cable",
     "name": "Ethernet Patch Cable",
     "category": "Connectors and Communication",
-    "image": "components/ethernet_patch_cable.png"
+    "image": "components/ethernet_patch_cable.png",
+    "family": "connector"
   },
   {
     "id": "ethernet_rs485_gateway",
     "name": "Ethernet RS485 Gateway",
     "category": "Communication Modules",
-    "image": "components/ethernet_rs485_gateway.png"
+    "image": "components/ethernet_rs485_gateway.png",
+    "family": "module"
   },
   {
     "id": "ethernet_switch",
     "name": "Ethernet Switch",
     "category": "Connectors and Communication",
-    "image": "components/ethernet_switch.png"
+    "image": "components/ethernet_switch.png",
+    "family": "module"
   },
   {
     "id": "film_capacitor",
     "name": "Film Capacitor",
     "category": "Electronics",
-    "image": "components/film_capacitor.png"
+    "image": "components/film_capacitor.png",
+    "family": "capacitor"
   },
   {
     "id": "float_switch",
     "name": "Float Switch",
     "category": "Sensors and Controls",
-    "image": "components/float_switch.png"
+    "image": "components/float_switch.png",
+    "family": "switch"
   },
   {
     "id": "green_push_button",
     "name": "Green Push Button",
     "category": "Electrical",
-    "image": "components/green_push_button.png"
+    "image": "components/green_push_button.png",
+    "family": "switch"
   },
   {
     "id": "hdmi",
     "name": "HDMI",
     "category": "Connectors and Communication",
-    "image": "components/hdmi.png"
+    "image": "components/hdmi.png",
+    "family": "connector"
   },
   {
     "id": "hmi_touch_screen",
     "name": "HMI Touch Screen",
     "category": "Sensors and Controls",
-    "image": "components/hmi_touch_screen.png"
+    "image": "components/hmi_touch_screen.png",
+    "family": "display"
   },
   {
     "id": "induction_motor",
     "name": "Induction Motor",
     "category": "Electrical",
-    "image": "components/induction_motor.png"
+    "image": "components/induction_motor.png",
+    "family": "motor"
   },
   {
     "id": "inductive_proximity_sensor",
     "name": "Inductive Proximity Sensor",
     "category": "Sensors and Controls",
-    "image": "components/inductive_proximity_sensor.png"
+    "image": "components/inductive_proximity_sensor.png",
+    "family": "sensor"
   },
   {
     "id": "inductor",
     "name": "Inductor",
     "category": "Electronics",
-    "image": "components/inductor.png"
+    "image": "components/inductor.png",
+    "family": "inductor"
   },
   {
     "id": "insulation_tester",
     "name": "Insulation Tester",
     "category": "Sensors and Controls",
-    "image": "components/insulation_tester.png"
+    "image": "components/insulation_tester.png",
+    "family": "instrument"
   },
   {
     "id": "jst_connector",
     "name": "JST Connector",
     "category": "Connectors and Communication",
-    "image": "components/jst_connector.png"
+    "image": "components/jst_connector.png",
+    "family": "connector"
   },
   {
     "id": "led",
     "name": "LED",
     "category": "Electronics",
-    "image": "components/led.png"
+    "image": "components/led.png",
+    "family": "led"
   },
   {
     "id": "lvdt_displacement_sensor",
     "name": "LVDT Displacement Sensor",
     "category": "Sensors and Controls",
-    "image": "components/lvdt_displacement_sensor.png"
+    "image": "components/lvdt_displacement_sensor.png",
+    "family": "sensor"
   },
   {
     "id": "lever_connector",
     "name": "Lever Connector",
     "category": "Connectors and Communication",
-    "image": "components/lever_connector.png"
+    "image": "components/lever_connector.png",
+    "family": "connector"
   },
   {
     "id": "lora_module",
     "name": "LoRa Module",
     "category": "Communication Modules",
-    "image": "components/lora_module.png"
+    "image": "components/lora_module.png",
+    "family": "module"
   },
   {
     "id": "m12_4pin_sensor_generic",
     "name": "M12 4Pin Sensor Generic",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/m12_4pin_sensor_generic.png"
+    "image": "components/m12_4pin_sensor_generic.png",
+    "family": "sensor"
   },
   {
     "id": "m12_connector",
     "name": "M12 Connector",
     "category": "Connectors and Communication",
-    "image": "components/m12_connector.png"
+    "image": "components/m12_connector.png",
+    "family": "connector"
   },
   {
     "id": "max485_transceiver_module",
     "name": "MAX485 Transceiver Module",
     "category": "Communication Modules",
-    "image": "components/max485_transceiver_module.png"
+    "image": "components/max485_transceiver_module.png",
+    "family": "module"
   },
   {
     "id": "max485_uart_concept",
     "name": "MAX485 UART Concept",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/max485_uart_concept.png"
+    "image": "components/max485_uart_concept.png",
+    "family": "network"
   },
   {
     "id": "mccb",
     "name": "MCCB",
     "category": "Electrical",
-    "image": "components/mccb.png"
+    "image": "components/mccb.png",
+    "family": "protection"
   },
   {
     "id": "magnetic_contactor",
     "name": "Magnetic Contactor",
     "category": "Electrical",
-    "image": "components/magnetic_contactor.png"
+    "image": "components/magnetic_contactor.png",
+    "family": "relay"
   },
   {
     "id": "micro_usb",
     "name": "Micro USB",
     "category": "Connectors and Communication",
-    "image": "components/micro_usb.png"
+    "image": "components/micro_usb.png",
+    "family": "connector"
   },
   {
     "id": "modbus_gateway",
     "name": "Modbus Gateway",
     "category": "Communication Modules",
-    "image": "components/modbus_gateway.png"
+    "image": "components/modbus_gateway.png",
+    "family": "module"
   },
   {
     "id": "modbus_rtu_daisy_chain",
     "name": "Modbus RTU Daisy Chain",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/modbus_rtu_daisy_chain.png"
+    "image": "components/modbus_rtu_daisy_chain.png",
+    "family": "network"
   },
   {
     "id": "npn_pnp_3wire_sensors",
     "name": "NPN PNP 3Wire Sensors",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/npn_pnp_3wire_sensors.png"
+    "image": "components/npn_pnp_3wire_sensors.png",
+    "family": "sensor"
   },
   {
     "id": "plc_controller",
     "name": "PLC Controller",
     "category": "Sensors and Controls",
-    "image": "components/plc_controller.png"
+    "image": "components/plc_controller.png",
+    "family": "module"
   },
   {
     "id": "photoelectric_sensor",
     "name": "Photoelectric Sensor",
     "category": "Sensors and Controls",
-    "image": "components/photoelectric_sensor.png"
+    "image": "components/photoelectric_sensor.png",
+    "family": "sensor"
   },
   {
     "id": "plug_in_relay",
     "name": "Plug In Relay",
     "category": "Electrical",
-    "image": "components/plug_in_relay.png"
+    "image": "components/plug_in_relay.png",
+    "family": "relay"
   },
   {
     "id": "pluggable_terminal",
     "name": "Pluggable Terminal",
     "category": "Connectors and Communication",
-    "image": "components/pluggable_terminal.png"
+    "image": "components/pluggable_terminal.png",
+    "family": "connector"
   },
   {
     "id": "plunger_limit_switch",
     "name": "Plunger Limit Switch",
     "category": "Sensors and Controls",
-    "image": "components/plunger_limit_switch.png"
+    "image": "components/plunger_limit_switch.png",
+    "family": "switch"
   },
   {
     "id": "power_transistor",
     "name": "Power Transistor",
     "category": "Electronics",
-    "image": "components/power_transistor.png"
+    "image": "components/power_transistor.png",
+    "family": "bjt"
   },
   {
     "id": "rj45_keystone_jack",
     "name": "RJ45 Keystone Jack",
     "category": "Connectors and Communication",
-    "image": "components/rj45_keystone_jack.png"
+    "image": "components/rj45_keystone_jack.png",
+    "family": "connector"
   },
   {
     "id": "rj45_plug",
     "name": "RJ45 Plug",
     "category": "Connectors and Communication",
-    "image": "components/rj45_plug.png"
+    "image": "components/rj45_plug.png",
+    "family": "connector"
   },
   {
     "id": "rj45_screw_terminal_breakout",
     "name": "RJ45 Screw Terminal Breakout",
     "category": "Connectors and Communication",
-    "image": "components/rj45_screw_terminal_breakout.png"
+    "image": "components/rj45_screw_terminal_breakout.png",
+    "family": "connector"
   },
   {
     "id": "rj45_socket",
     "name": "RJ45 Socket",
     "category": "Connectors and Communication",
-    "image": "components/rj45_socket.png"
+    "image": "components/rj45_socket.png",
+    "family": "connector"
   },
   {
     "id": "rj45_t568a_pinout",
     "name": "RJ45 T568A Pinout",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/rj45_t568a_pinout.png"
+    "image": "components/rj45_t568a_pinout.png",
+    "family": "connector"
   },
   {
     "id": "rj45_t568b_pinout",
     "name": "RJ45 T568B Pinout",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/rj45_t568b_pinout.png"
+    "image": "components/rj45_t568b_pinout.png",
+    "family": "connector"
   },
   {
     "id": "rs232_db9_dte_pinout",
     "name": "RS232 DB9 DTE Pinout",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/rs232_db9_dte_pinout.png"
+    "image": "components/rs232_db9_dte_pinout.png",
+    "family": "connector"
   },
   {
     "id": "rs232_ttl_converter",
     "name": "RS232 TTL Converter",
     "category": "Communication Modules",
-    "image": "components/rs232_ttl_converter.png"
+    "image": "components/rs232_ttl_converter.png",
+    "family": "module"
   },
   {
     "id": "rs485_four_wire_concept",
     "name": "RS485 Four Wire Concept",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/rs485_four_wire_concept.png"
+    "image": "components/rs485_four_wire_concept.png",
+    "family": "network"
   },
   {
     "id": "rs485_isolator",
     "name": "RS485 Isolator",
     "category": "Communication Modules",
-    "image": "components/rs485_isolator.png"
+    "image": "components/rs485_isolator.png",
+    "family": "module"
   },
   {
     "id": "rs485_termination_and_bias",
     "name": "RS485 Termination and Bias",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/rs485_termination_and_bias.png"
+    "image": "components/rs485_termination_and_bias.png",
+    "family": "network"
   },
   {
     "id": "rs485_two_wire_bus",
     "name": "RS485 Two Wire Bus",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/rs485_two_wire_bus.png"
+    "image": "components/rs485_two_wire_bus.png",
+    "family": "network"
   },
   {
     "id": "rtd_temperature_probe",
     "name": "RTD Temperature Probe",
     "category": "Sensors and Controls",
-    "image": "components/rtd_temperature_probe.png"
+    "image": "components/rtd_temperature_probe.png",
+    "family": "sensor"
   },
   {
     "id": "rectifier_diode",
     "name": "Rectifier Diode",
     "category": "Electronics",
-    "image": "components/rectifier_diode.png"
+    "image": "components/rectifier_diode.png",
+    "family": "diode"
   },
   {
     "id": "red_indicator_lamp",
     "name": "Red Indicator Lamp",
     "category": "Electrical",
-    "image": "components/red_indicator_lamp.png"
+    "image": "components/red_indicator_lamp.png",
+    "family": "display"
   },
   {
     "id": "ribbon_cable",
     "name": "Ribbon Cable",
     "category": "Connectors and Communication",
-    "image": "components/ribbon_cable.png"
+    "image": "components/ribbon_cable.png",
+    "family": "connector"
   },
   {
     "id": "roller_lever_limit_switch",
     "name": "Roller Lever Limit Switch",
     "category": "Sensors and Controls",
-    "image": "components/roller_lever_limit_switch.png"
+    "image": "components/roller_lever_limit_switch.png",
+    "family": "switch"
   },
   {
     "id": "rotary_encoder",
     "name": "Rotary Encoder",
     "category": "Sensors and Controls",
-    "image": "components/rotary_encoder.png"
+    "image": "components/rotary_encoder.png",
+    "family": "switch"
   },
   {
     "id": "smps_power_supply",
     "name": "SMPS Power Supply",
     "category": "Electrical",
-    "image": "components/smps_power_supply.png"
+    "image": "components/smps_power_supply.png",
+    "family": "supply"
   },
   {
     "id": "screw_terminal",
     "name": "Screw Terminal",
     "category": "Connectors and Communication",
-    "image": "components/screw_terminal.png"
+    "image": "components/screw_terminal.png",
+    "family": "connector"
   },
   {
     "id": "selector_switch",
     "name": "Selector Switch",
     "category": "Electrical",
-    "image": "components/selector_switch.png"
+    "image": "components/selector_switch.png",
+    "family": "switch"
   },
   {
     "id": "shielded_rs485_cable",
     "name": "Shielded RS485 Cable",
     "category": "Communication Modules",
-    "image": "components/shielded_rs485_cable.png"
+    "image": "components/shielded_rs485_cable.png",
+    "family": "connector"
   },
   {
     "id": "single_pole_mcb",
     "name": "Single Pole MCB",
     "category": "Electrical",
-    "image": "components/single_pole_mcb.png"
+    "image": "components/single_pole_mcb.png",
+    "family": "protection"
   },
   {
     "id": "start_stop_station",
     "name": "Start Stop Station",
     "category": "Electrical",
-    "image": "components/start_stop_station.png"
+    "image": "components/start_stop_station.png",
+    "family": "switch"
   },
   {
     "id": "to220_mosfet",
     "name": "TO220 MOSFET",
     "category": "Electronics",
-    "image": "components/to220_mosfet.png"
+    "image": "components/to220_mosfet.png",
+    "family": "mosfet"
   },
   {
     "id": "to92_transistor",
     "name": "TO92 Transistor",
     "category": "Electronics",
-    "image": "components/to92_transistor.png"
+    "image": "components/to92_transistor.png",
+    "family": "bjt"
   },
   {
     "id": "temperature_sensor",
     "name": "Temperature Sensor",
     "category": "Sensors and Controls",
-    "image": "components/temperature_sensor.png"
+    "image": "components/temperature_sensor.png",
+    "family": "sensor"
   },
   {
     "id": "terminal_block",
     "name": "Terminal Block",
     "category": "Electrical",
-    "image": "components/terminal_block.png"
+    "image": "components/terminal_block.png",
+    "family": "connector"
   },
   {
     "id": "thermal_overload_relay_a",
     "name": "Thermal Overload Relay A",
     "category": "Electrical",
-    "image": "components/thermal_overload_relay_a.png"
+    "image": "components/thermal_overload_relay_a.png",
+    "family": "protection"
   },
   {
     "id": "thermal_overload_relay_b",
     "name": "Thermal Overload Relay B",
     "category": "Electrical",
-    "image": "components/thermal_overload_relay_b.png"
+    "image": "components/thermal_overload_relay_b.png",
+    "family": "protection"
   },
   {
     "id": "three_pole_mcb",
     "name": "Three Pole MCB",
     "category": "Electrical",
-    "image": "components/three_pole_mcb.png"
+    "image": "components/three_pole_mcb.png",
+    "family": "protection"
   },
   {
     "id": "trimmer_potentiometer",
     "name": "Trimmer Potentiometer",
     "category": "Electronics",
-    "image": "components/trimmer_potentiometer.png"
+    "image": "components/trimmer_potentiometer.png",
+    "family": "potentiometer"
   },
   {
     "id": "usb_rs232_converter",
     "name": "USB RS232 Converter",
     "category": "Communication Modules",
-    "image": "components/usb_rs232_converter.png"
+    "image": "components/usb_rs232_converter.png",
+    "family": "module"
   },
   {
     "id": "usb_rs485_converter",
     "name": "USB RS485 Converter",
     "category": "Communication Modules",
-    "image": "components/usb_rs485_converter.png"
+    "image": "components/usb_rs485_converter.png",
+    "family": "module"
   },
   {
     "id": "usb_type_a",
     "name": "USB Type A",
     "category": "Connectors and Communication",
-    "image": "components/usb_type_a.png"
+    "image": "components/usb_type_a.png",
+    "family": "connector"
   },
   {
     "id": "usb_type_b",
     "name": "USB Type B",
     "category": "Connectors and Communication",
-    "image": "components/usb_type_b.png"
+    "image": "components/usb_type_b.png",
+    "family": "connector"
   },
   {
     "id": "usb_type_c",
     "name": "USB Type C",
     "category": "Connectors and Communication",
-    "image": "components/usb_type_c.png"
+    "image": "components/usb_type_c.png",
+    "family": "connector"
   },
   {
     "id": "usb_to_rs485_generic",
     "name": "USB to RS485 Generic",
     "category": "Verified Generic Pinout Diagrams",
-    "image": "components/usb_to_rs485_generic.png"
+    "image": "components/usb_to_rs485_generic.png",
+    "family": "connector"
   },
   {
     "id": "vga_db15",
     "name": "VGA DB15",
     "category": "Connectors and Communication",
-    "image": "components/vga_db15.png"
+    "image": "components/vga_db15.png",
+    "family": "connector"
   },
   {
     "id": "zener_diode",
     "name": "Zener Diode",
     "category": "Electronics",
-    "image": "components/zener_diode.png"
+    "image": "components/zener_diode.png",
+    "family": "diode"
   }
 ]

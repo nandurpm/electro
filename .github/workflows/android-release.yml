@@ -44,7 +44,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          ref: ${{ github.event_name == 'push' && github.ref || github.sha }}
+          ref: ${{ inputs.release_tag || github.event.client_payload.release_tag || (github.event_name == 'push' && github.ref) || github.sha }}
+          fetch-depth: 0
+      - name: Verify immutable release source
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.client_payload.release_tag || (github.event_name == 'push' && github.ref_name) }}
+          REVIEW_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == false }}
+        run: |
+          set -euo pipefail
+          if [ "$REVIEW_ONLY" = true ]; then exit 0; fi
+          python3 scripts/verify_release_source.py "$RELEASE_TAG"
       - name: Check release signing secrets
         env:
           ELECTROKIT_KEYSTORE_BASE64: ${{ secrets.ELECTROKIT_KEYSTORE_BASE64 }}
@@ -160,14 +169,16 @@ jobs:
         run: |
           set -euo pipefail
           version=$(python3 -c 'import re; print(re.search(r"versionName\s*=\s*\"([^\"]+)\"", open("app/build.gradle.kts").read()).group(1))')
+          test "$RELEASE_TAG" = "v$version"
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [ "$GITHUB_EVENT_NAME" = repository_dispatch ]; then
             if [ -z "$RELEASE_TAG" ] || [ "$RELEASE_TAG" = "main" ]; then
               RELEASE_TAG="v$version"
             fi
             if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-              gh release upload "$RELEASE_TAG" app/build/outputs/distribution/* --clobber
+              echo "Release already exists; refusing to replace published assets." >&2
+              exit 1
             else
-              gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --target "$GITHUB_SHA" --title "ELECTRO $version" --generate-notes
+              gh release create "$RELEASE_TAG" app/build/outputs/distribution/* --verify-tag --title "ELECTRO $version" --generate-notes
             fi
           else
             test "$RELEASE_TAG" = "v$version"
