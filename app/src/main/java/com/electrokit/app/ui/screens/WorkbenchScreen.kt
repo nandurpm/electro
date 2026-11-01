@@ -1,66 +1,69 @@
-@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+)
+
 package com.electrokit.app.ui.screens
 
 import android.graphics.BitmapFactory
 import android.util.LruCache
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items as gridItems
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.res.painterResource
-import com.electrokit.app.R
 import com.electrokit.app.BuildConfig
+import com.electrokit.app.R
 import com.electrokit.app.data.*
-import com.electrokit.app.viewmodel.*
 import com.electrokit.app.domain.WorkbenchTools
 import com.electrokit.app.ui.components.CategoryBadge
+import com.electrokit.app.ui.components.ElectroPanel as Card
 import com.electrokit.app.ui.components.MultimeterLesson
+import com.electrokit.app.viewmodel.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Shared bitmap budget; large reference sheets never load into the scrolling catalogue. */
-private val imageCache = object : LruCache<String, android.graphics.Bitmap>(8 * 1024 * 1024) {
-    /** Counts actual decoded memory rather than compressed asset bytes.
-     * @param key Asset-and-resolution cache key.
-     * @param value Decoded bitmap.
-     * @return Decoded allocation size in bytes.
-     */
-    override fun sizeOf(key: String, value: android.graphics.Bitmap): Int = value.byteCount
-}
+private val imageCache =
+    object : LruCache<String, android.graphics.Bitmap>(8 * 1024 * 1024) {
+        /**
+         * Counts actual decoded memory rather than compressed asset bytes.
+         *
+         * @param key Asset-and-resolution cache key.
+         * @param value Decoded bitmap.
+         * @return Decoded allocation size in bytes.
+         */
+        override fun sizeOf(key: String, value: android.graphics.Bitmap): Int = value.byteCount
+    }
 
-/** Decodes local component art on IO at bounded resolution; a failed asset has a visible fallback.
+/**
+ * Decodes local component art on IO at bounded resolution; a failed asset has a visible fallback.
+ *
  * @param asset Bundled image metadata; not a verified manufacturer photograph.
  * @param modifier Caller-owned image bounds.
  * @param detail True permits a larger sampled decode for a detail page.
@@ -68,42 +71,85 @@ private val imageCache = object : LruCache<String, android.graphics.Bitmap>(8 * 
  * @return Unit; failed image decoding produces a readable fallback and never triggers network I/O.
  */
 @Composable
-fun ComponentImage(asset: ComponentAsset, modifier: Modifier = Modifier, detail: Boolean = false, framed: Boolean = true) {
+fun ComponentImage(
+    asset: ComponentAsset,
+    modifier: Modifier = Modifier,
+    detail: Boolean = false,
+    framed: Boolean = true,
+) {
     val context = LocalContext.current
     val target = if (detail) 1024 else 256
     val key = "${asset.image}:$target"
     var bitmap by remember(key) { mutableStateOf(imageCache.get(key)) }
     LaunchedEffect(key) {
-        bitmap = withContext(Dispatchers.IO) {
-            imageCache.get(key) ?: runCatching {
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                context.assets.open(asset.image).use { BitmapFactory.decodeStream(it, null, bounds) }
-                val options = BitmapFactory.Options().apply {
-                    inSampleSize = 1
-                    while (bounds.outWidth / inSampleSize > target * 2 || bounds.outHeight / inSampleSize > target * 2) inSampleSize *= 2
-                }
-                context.assets.open(asset.image).use { BitmapFactory.decodeStream(it, null, options) }
-            }.getOrNull()?.also { imageCache.put(key, it) }
-        }
+        bitmap =
+            withContext(Dispatchers.IO) {
+                imageCache.get(key)
+                    ?: runCatching {
+                            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            context.assets.open(asset.image).use {
+                                BitmapFactory.decodeStream(it, null, bounds)
+                            }
+                            val options =
+                                BitmapFactory.Options().apply {
+                                    inSampleSize = 1
+                                    while (
+                                        bounds.outWidth / inSampleSize > target * 2 ||
+                                            bounds.outHeight / inSampleSize > target * 2
+                                    ) inSampleSize *= 2
+                                }
+                            context.assets.open(asset.image).use {
+                                BitmapFactory.decodeStream(it, null, options)
+                            }
+                        }
+                        .getOrNull()
+                        ?.also { imageCache.put(key, it) }
+            }
     }
-    Box(modifier.background(if (framed) MaterialTheme.colorScheme.surfaceContainerLowest else Color.Transparent), contentAlignment = Alignment.Center) {
-        bitmap?.let { Image(it.asImageBitmap(), asset.name, Modifier.fillMaxSize().padding(8.dp), contentScale = ContentScale.Fit) }
-            ?: Text(asset.name, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(12.dp))
+    Box(
+        modifier.background(
+            if (framed) MaterialTheme.colorScheme.surfaceContainerLowest else Color.Transparent
+        ),
+        contentAlignment = Alignment.Center,
+    ) {
+        bitmap?.let {
+            Image(
+                it.asImageBitmap(),
+                asset.name,
+                Modifier.fillMaxSize().padding(8.dp),
+                contentScale = ContentScale.Fit,
+            )
+        }
+            ?: Text(
+                asset.name,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(12.dp),
+            )
     }
 }
 
-/** Five stable destinations wrap the original registry, calculators, databases and engineering routes.
+/**
+ * Five stable destinations wrap the original registry, calculators, databases and engineering
+ * routes.
+ *
  * @param vm Existing catalogue, preferences and input-persistence owner.
  * @param prefs Latest immutable committed preference snapshot.
  * @param openEntry Opens an original public registry route.
  * @param info Opens an existing information tab.
  * @param settings Opens the standalone appearance page.
  * @param onCheckUpdates Requests a user-triggered release check.
- * @return Unit after composing the selected destination; storage errors remain visible in the host banner.
+ * @return Unit after composing the selected destination; storage errors remain visible in the host
+ *   banner.
  */
 @Composable
-fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) -> Unit,
-    info: (Int) -> Unit, settings: () -> Unit, onCheckUpdates: () -> Unit = {}) {
+fun MainScreen(
+    vm: AppViewModel,
+    prefs: PreferencesState,
+    openEntry: (String) -> Unit,
+    info: (Int) -> Unit,
+    settings: () -> Unit,
+    onCheckUpdates: () -> Unit = {},
+) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable(tab) { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("Calculators") }
@@ -111,24 +157,72 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
     var hub by rememberSaveable { mutableStateOf(true) }
     var menu by remember { mutableStateOf(false) }
     BackHandler(enabled = detail != null) { detail = null }
-    BackHandler(enabled = detail == null && tab != 0) { tab = 0; query = "" }
-    BackHandler(enabled = detail == null && tab == 1 && !hub) { hub = true; category = "Calculators"; query = "" }
+    BackHandler(enabled = detail == null && tab != 0) {
+        tab = 0
+        query = ""
+    }
+    BackHandler(enabled = detail == null && tab == 1 && !hub) {
+        hub = true
+        category = "Calculators"
+        query = ""
+    }
     val context = LocalContext.current
-    val components by produceState<List<ComponentAsset>>(emptyList()) { value = withContext(Dispatchers.IO) { loadComponents(context) } }
-    val guides by produceState<Map<String, ComponentGuide>>(emptyMap()) { value = withContext(Dispatchers.IO) { loadComponentGuides(context) } }
+    var componentLoadAttempt by remember { mutableIntStateOf(0) }
+    var componentLoadError by remember { mutableStateOf(false) }
+    var componentData by remember {
+        mutableStateOf<Pair<List<ComponentAsset>, Map<String, ComponentGuide>>?>(null)
+    }
+    LaunchedEffect(componentLoadAttempt) {
+        componentLoadError = false
+        componentData = null
+        try {
+            componentData =
+                withContext(Dispatchers.IO) {
+                    loadComponents(context) to loadComponentGuides(context)
+                }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            componentLoadError = true
+        }
+    }
+    val components = componentData?.first.orEmpty()
+    val guides = componentData?.second.orEmpty()
     val componentStateHolder = rememberSaveableStateHolder()
+    /** Opens a component through every entry point and updates the shared recent list. */
+    fun openComponent(asset: ComponentAsset) {
+        vm.visited("component:${asset.id}")
+        detail = "component:${asset.id}"
+    }
     val publicComponents = components
     val names = listOf("Home", "Tools", "Learn", "Favorites", "Profile")
     val component = components.firstOrNull { detail == "component:${it.id}" }
     val lesson = learningPages.firstOrNull { detail == "learn:${it.id}" }
     val utility = WorkbenchTools.all.firstOrNull { detail == "utility:${it.id}" }
-    if (detail == "unit-converter") { UnitConverterScreen(vm, prefs) { detail = null }; return }
-    if (utility != null) { UtilityScreen(utility, vm, prefs) { detail = null }; return }
-    if (component != null) {
-        ComponentReferenceDetail(component, guides[componentFamily(component).orEmpty()], componentNotes(component), prefs, vm, { detail = null }, openEntry)
+    if (detail == "unit-converter") {
+        UnitConverterScreen(vm, prefs) { detail = null }
         return
     }
-    if (lesson != null) { LearningDetail(lesson, prefs, vm) { detail = null }; return }
+    if (utility != null) {
+        UtilityScreen(utility, vm, prefs) { detail = null }
+        return
+    }
+    if (component != null) {
+        ComponentReferenceDetail(
+            component,
+            guides[componentFamily(component).orEmpty()],
+            componentNotes(component),
+            prefs,
+            vm,
+            { detail = null },
+            openEntry,
+        )
+        return
+    }
+    if (lesson != null) {
+        LearningDetail(lesson, prefs, vm) { detail = null }
+        return
+    }
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
@@ -137,202 +231,573 @@ fun MainScreen(vm: AppViewModel, prefs: PreferencesState, openEntry: (String) ->
                     IconButton(onClick = { info(0) }) { Icon(Icons.Default.Info, "Info") }
                     IconButton(onClick = { menu = true }) { Icon(Icons.Default.Settings, "Menu") }
                     DropdownMenu(menu, { menu = false }) {
-                        DropdownMenuItem(text = { Text("Settings") }, onClick = { menu = false; settings() })
-                        DropdownMenuItem(text = { Text("About ELECTRO") }, onClick = { menu = false; info(0) })
+                        DropdownMenuItem(
+                            text = { Text("Settings") },
+                            onClick = {
+                                menu = false
+                                settings()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("About ELECTRO") },
+                            onClick = {
+                                menu = false
+                                info(0)
+                            },
+                        )
                     }
                 }
-                if (tab != 4 && !(tab == 1 && category == "Data" && !hub)) Search(query, { query = it }, shape = RoundedCornerShape(28.dp))
+                if (tab != 4 && !(tab == 1 && category == "Data" && !hub))
+                    Search(query, { query = it }, shape = RoundedCornerShape(28.dp))
             }
         },
         bottomBar = {
-            NavigationBar(Modifier.testTag("main_navigation").height((64f + 64f * (LocalDensity.current.fontScale - 1f).coerceAtLeast(0f)).dp), windowInsets = WindowInsets(0, 0, 0, 0)) {
+            NavigationBar(
+                Modifier.testTag("main_navigation")
+                    .height(
+                        (64f + 64f * (LocalDensity.current.fontScale - 1f).coerceAtLeast(0f)).dp
+                    ),
+                windowInsets = WindowInsets(0, 0, 0, 0),
+            ) {
                 names.forEachIndexed { i, name ->
-                    Column(Modifier.weight(1f).fillMaxHeight().selectable(selected = tab == i, role = Role.Tab,
-                        onClick = { tab = i; query = ""; if (i == 1) { category = "Calculators"; hub = true }; if (i == 2) category = "Components" })
-                        .padding(horizontal = 2.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center) {
-                        Box(Modifier.clip(RoundedCornerShape(10.dp)).background(if (tab == i) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                            .padding(horizontal = 16.dp, vertical = 4.dp)) {
-                            if (i == 2) Icon(painterResource(R.drawable.ic_home_book), null, Modifier.size(24.dp))
-                            else Icon(when(i) { 0 -> Icons.Default.Home; 1 -> Icons.Default.Build; 3 -> Icons.Default.Star; else -> Icons.Default.Person }, null, Modifier.size(24.dp))
+                    Column(
+                        Modifier.weight(1f)
+                            .fillMaxHeight()
+                            .selectable(
+                                selected = tab == i,
+                                role = Role.Tab,
+                                onClick = {
+                                    tab = i
+                                    query = ""
+                                    if (i == 1) {
+                                        category = "Calculators"
+                                        hub = true
+                                    }
+                                    if (i == 2) category = "Components"
+                                },
+                            )
+                            .padding(horizontal = 2.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Box(
+                            Modifier.clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    if (tab == i) MaterialTheme.colorScheme.primaryContainer
+                                    else Color.Transparent
+                                )
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                        ) {
+                            if (i == 2)
+                                Icon(
+                                    painterResource(R.drawable.ic_home_book),
+                                    null,
+                                    Modifier.size(24.dp),
+                                )
+                            else
+                                Icon(
+                                    when (i) {
+                                        0 -> Icons.Default.Home
+                                        1 -> Icons.Default.Build
+                                        3 -> Icons.Default.Star
+                                        else -> Icons.Default.Person
+                                    },
+                                    null,
+                                    Modifier.size(24.dp),
+                                )
                         }
-                        Text(name, Modifier.fillMaxWidth(), maxLines = 2, minLines = if (LocalDensity.current.fontScale > 1.3f) 2 else 1,
-                            fontSize = 11.sp, lineHeight = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        Text(
+                            name,
+                            Modifier.fillMaxWidth(),
+                            maxLines = 2,
+                            minLines = if (LocalDensity.current.fontScale > 1.3f) 2 else 1,
+                            fontSize = 11.sp,
+                            lineHeight = 14.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        )
                     }
                 }
             }
-        }
+        },
     ) { padding ->
         val body = Modifier.padding(padding).fillMaxSize()
         when (tab) {
-            0 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (query.isBlank()) {
-                    item {
-                        WorkbenchHero(publicComponents.firstOrNull { it.id == "digital_multimeter" },
-                            calculatorCount = vm.repository.registry.count { it.screenType == "calculator" }, componentCount = publicComponents.size) {
-                            tab = 1; hub = true; category = "Calculators"
+            0 ->
+                LazyColumn(
+                    body,
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (query.isBlank()) {
+                        item {
+                            WorkbenchHero(
+                                publicComponents.firstOrNull { it.id == "digital_multimeter" },
+                                calculatorCount =
+                                    vm.repository.registry.count { it.screenType == "calculator" },
+                                componentCount = publicComponents.size,
+                            ) {
+                                tab = 1
+                                hub = true
+                                category = "Calculators"
+                            }
+                        }
+                        item { SectionTitle("Quick Access") }
+                        item {
+                            WorkbenchQuickAccess { target ->
+                                when (target) {
+                                    "Components" -> {
+                                        tab = 2
+                                        category = "Components"
+                                    }
+                                    "Learning" -> {
+                                        tab = 2
+                                        category = "Lessons"
+                                    }
+                                    "Converters" -> detail = "unit-converter"
+                                    else -> {
+                                        tab = 1
+                                        category = if (target == "Diagrams") "Pin-outs" else target
+                                        hub = false
+                                    }
+                                }
+                            }
+                        }
+                        if (prefs.recent.isNotEmpty()) {
+                            item { SectionTitle("Recently Used") }
+                            items(
+                                prefs.recent
+                                    .mapNotNull { id ->
+                                        vm.repository.registry.find { it.id == id }
+                                    }
+                                    .take(5)
+                            ) {
+                                RecentRow(it) { openEntry(it.id) }
+                            }
+                        }
+                        item { SectionTitle("Featured calculators") }
+                    }
+                    if (query.isNotBlank())
+                        item { SectionTitle(stringResource(R.string.workbench_search_results)) }
+                    items(
+                        vm.repository.registry
+                            .filter {
+                                (query.isNotBlank() || it.screenType == "calculator") &&
+                                    it.title.contains(query, true)
+                            }
+                            .take(if (query.isBlank()) 3 else 200),
+                        key = { it.id },
+                    ) {
+                        EntryRow(it, { openEntry(it.id) }, it.id in prefs.favourites) {
+                            vm.star(it.id)
                         }
                     }
-                    item { SectionTitle("Quick Access") }
-                    item {
-                        WorkbenchQuickAccess { target ->
-                            when (target) {
-                                "Components" -> { tab = 2; category = "Components" }
-                                "Learning" -> { tab = 2; category = "Lessons" }
-                                "Converters" -> detail = "unit-converter"
-                                else -> { tab = 1; category = if (target == "Diagrams") "Pin-outs" else target; hub = false }
+                    if (query.isNotBlank()) {
+                        if (
+                            vm.repository.registry.none { it.title.contains(query, true) } &&
+                                publicComponents.none {
+                                    it.name.contains(query, true) ||
+                                        it.category.contains(query, true)
+                                } &&
+                                learningPages.none { it.title.contains(query, true) } &&
+                                WorkbenchTools.all.none { it.title.contains(query, true) }
+                        )
+                            item {
+                                WorkbenchEmpty(
+                                    stringResource(R.string.workbench_no_matches),
+                                    stringResource(R.string.workbench_search_hint),
+                                )
+                            }
+                        items(
+                            WorkbenchTools.all.filter { it.title.contains(query, true) },
+                            key = { "utility:${it.id}" },
+                        ) { tool ->
+                            QuickCard(tool.title, Modifier.fillMaxWidth()) {
+                                detail = "utility:${tool.id}"
+                            }
+                        }
+                        items(
+                            publicComponents.filter {
+                                it.name.contains(query, true) || it.category.contains(query, true)
+                            },
+                            key = { "asset:${it.id}" },
+                        ) { c ->
+                            ListItem(
+                                headlineContent = { Text(c.name) },
+                                supportingContent = { Text(c.category) },
+                                modifier = Modifier.clickable { openComponent(c) },
+                            )
+                        }
+                        items(learningPages.filter { it.title.contains(query, true) }) { page ->
+                            Card(
+                                onClick = { detail = "learn:${page.id}" },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(18.dp),
+                            ) {
+                                Column(
+                                    Modifier.padding(18.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(page.title, style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        "${page.sections.size} sections  •  English / தமிழ்",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                    Text(
+                                        "Open guide →",
+                                        style = MaterialTheme.typography.labelLarge,
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        item { SectionTitle("Component discovery") }
+                        items(
+                            publicComponents.filter {
+                                it.id in
+                                    listOf(
+                                        "digital_multimeter",
+                                        "magnetic_contactor",
+                                        "axial_resistor",
+                                    )
+                            }
+                        ) { c ->
+                            Card(
+                                onClick = { openComponent(c) },
+                                shape = RoundedCornerShape(10.dp),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    ComponentImage(c, Modifier.size(104.dp))
+                                    Column(Modifier.padding(16.dp)) {
+                                        Text(c.name, style = MaterialTheme.typography.titleMedium)
+                                        Text(c.category, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
                             }
                         }
                     }
-                    if (prefs.recent.isNotEmpty()) {
-                        item { SectionTitle("Recently Used") }
-                        items(prefs.recent.mapNotNull { id -> vm.repository.registry.find { it.id == id } }.take(5)) {
-                            RecentRow(it) { openEntry(it.id) }
+                }
+            1 ->
+                if (hub && query.isBlank())
+                    ToolsHub(publicComponents, body) { target ->
+                        if (target == "Converters") detail = "unit-converter"
+                        else {
+                            category = target
+                            hub = false
                         }
                     }
-                    item { SectionTitle("Featured calculators") }
-                }
-                if (query.isNotBlank()) item { SectionTitle(stringResource(R.string.workbench_search_results)) }
-                items(vm.repository.registry.filter { (query.isNotBlank() || it.screenType == "calculator") && it.title.contains(query, true) }.take(if (query.isBlank()) 3 else 200), key = { it.id }) {
-                    EntryRow(it, { openEntry(it.id) }, it.id in prefs.favourites) { vm.star(it.id) }
-                }
-                if (query.isNotBlank()) {
-                    if (vm.repository.registry.none { it.title.contains(query, true) } &&
-                        publicComponents.none { it.name.contains(query, true) || it.category.contains(query, true) } &&
-                        learningPages.none { it.title.contains(query, true) } &&
-                        WorkbenchTools.all.none { it.title.contains(query, true) }) item {
-                        WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint))
-                    }
-                    items(WorkbenchTools.all.filter { it.title.contains(query, true) }, key = { "utility:${it.id}" }) { tool ->
-                        QuickCard(tool.title, Modifier.fillMaxWidth()) { detail = "utility:${tool.id}" }
-                    }
-                    items(publicComponents.filter { it.name.contains(query, true) || it.category.contains(query, true) }, key = { "asset:${it.id}" }) { c ->
-                        ListItem(headlineContent = { Text(c.name) }, supportingContent = { Text(c.category) }, modifier = Modifier.clickable { detail = "component:${c.id}" })
-                    }
-                    items(learningPages.filter { it.title.contains(query, true) }) { page ->
-                        Card(onClick = { detail = "learn:${page.id}" }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-                            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(page.title, style = MaterialTheme.typography.titleMedium)
-                                Text("${page.sections.size} sections  •  English / தமிழ்", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                Text("Open guide →", style = MaterialTheme.typography.labelLarge)
+                else if (hub && query.isNotBlank()) {
+                    LazyColumn(
+                        body,
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        val entries =
+                            vm.repository.registry.filter { it.title.contains(query, true) }
+                        val utilities = WorkbenchTools.all.filter { it.title.contains(query, true) }
+                        item { SectionTitle(stringResource(R.string.workbench_search_results)) }
+                        if (entries.isEmpty() && utilities.isEmpty())
+                            item {
+                                WorkbenchEmpty(
+                                    stringResource(R.string.workbench_no_matches),
+                                    stringResource(R.string.workbench_search_hint),
+                                )
+                            }
+                        items(entries, key = { it.id }) { entry ->
+                            EntryRow(entry, { openEntry(entry.id) }, entry.id in prefs.favourites) {
+                                vm.star(entry.id)
+                            }
+                        }
+                        items(utilities, key = { "utility:${it.id}" }) { tool ->
+                            QuickCard(tool.title, Modifier.fillMaxWidth()) {
+                                detail = "utility:${tool.id}"
                             }
                         }
                     }
-                } else {
-                    item { SectionTitle("Component discovery") }
-                    items(publicComponents.filter { it.id in listOf("digital_multimeter", "magnetic_contactor", "axial_resistor") }) { c ->
-                        Card(onClick = { detail = "component:${c.id}" }, shape = RoundedCornerShape(10.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                ComponentImage(c, Modifier.size(104.dp))
-                                Column(Modifier.padding(16.dp)) { Text(c.name, style = MaterialTheme.typography.titleMedium); Text(c.category, style = MaterialTheme.typography.bodySmall) }
+                } else
+                    Column(body) {
+                        FlowRow(
+                            Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            listOf("Calculators", "Pin-outs", "Reference", "Data", "Utilities")
+                                .forEach { name ->
+                                    FilterChip(
+                                        category == name,
+                                        { category = name },
+                                        label = { Text(name) },
+                                    )
+                                }
+                        }
+                        when (category) {
+                            "Utilities" ->
+                                LazyColumn(
+                                    contentPadding = PaddingValues(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    item {
+                                        QuickCard("Unit converter", Modifier.fillMaxWidth()) {
+                                            detail = "unit-converter"
+                                        }
+                                    }
+                                    if (
+                                        query.isNotBlank() &&
+                                            WorkbenchTools.all.none {
+                                                it.title.contains(query, true)
+                                            }
+                                    )
+                                        item {
+                                            WorkbenchEmpty(
+                                                stringResource(R.string.workbench_no_matches),
+                                                stringResource(R.string.workbench_search_hint),
+                                            )
+                                        }
+                                    items(
+                                        WorkbenchTools.all.filter { it.title.contains(query, true) }
+                                    ) { tool ->
+                                        QuickCard(tool.title, Modifier.fillMaxWidth()) {
+                                            detail = "utility:${tool.id}"
+                                        }
+                                    }
+                                }
+                            "Data" ->
+                                Databases(vm, prefs, Modifier.weight(1f), openEntry, { info(1) })
+                            else -> {
+                                val group =
+                                    when (category) {
+                                        "Pin-outs" -> "PIN-OUTS"
+                                        "Reference" -> "RESOURCES"
+                                        else -> "CALCULATORS"
+                                    }
+                                val entries =
+                                    vm.repository.registry
+                                        .filter {
+                                            (it.tab == group ||
+                                                (group == "CALCULATORS" &&
+                                                    it.screenType == "module")) &&
+                                                it.title.contains(query, true)
+                                        }
+                                        .sortedWith(
+                                            compareByDescending<Entry> { it.id in prefs.favourites }
+                                                .thenBy { if (prefs.alphabetical) it.title else "" }
+                                        )
+                                LazyColumn(
+                                    Modifier.weight(1f),
+                                    contentPadding = PaddingValues(8.dp),
+                                ) {
+                                    item { SectionTitle("${entries.size} ${category.lowercase()}") }
+                                    if (entries.isEmpty())
+                                        item {
+                                            WorkbenchEmpty(
+                                                stringResource(R.string.workbench_no_matches),
+                                                stringResource(R.string.workbench_search_hint),
+                                            )
+                                        }
+                                    items(entries, key = { it.id }) { entry ->
+                                        EntryRow(
+                                            entry,
+                                            { openEntry(entry.id) },
+                                            entry.id in prefs.favourites,
+                                        ) {
+                                            vm.star(entry.id)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
-            1 -> if (hub && query.isBlank()) ToolsHub(publicComponents, body) { target ->
-                if (target == "Converters") detail = "unit-converter" else { category = target; hub = false }
-            } else if (hub && query.isNotBlank()) {
-                LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    val entries = vm.repository.registry.filter { it.title.contains(query, true) }
-                    val utilities = WorkbenchTools.all.filter { it.title.contains(query, true) }
-                    item { SectionTitle(stringResource(R.string.workbench_search_results)) }
-                    if (entries.isEmpty() && utilities.isEmpty()) item {
-                        WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint))
-                    }
-                    items(entries, key = { it.id }) { entry -> EntryRow(entry, { openEntry(entry.id) }, entry.id in prefs.favourites) { vm.star(entry.id) } }
-                    items(utilities, key = { "utility:${it.id}" }) { tool -> QuickCard(tool.title, Modifier.fillMaxWidth()) { detail = "utility:${tool.id}" } }
-                }
-            } else Column(body) {
-                FlowRow(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("Calculators", "Pin-outs", "Reference", "Data", "Utilities").forEach { name ->
-                        FilterChip(category == name, { category = name }, label = { Text(name) })
-                    }
-                }
-                when (category) {
-                    "Utilities" -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item { QuickCard("Unit converter", Modifier.fillMaxWidth()) { detail = "unit-converter" } }
-                        if (query.isNotBlank() && WorkbenchTools.all.none { it.title.contains(query, true) }) item {
-                            WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint))
+            2 ->
+                Column(body) {
+                    if (category == "Lessons") LearnLanguageSelector(prefs, vm)
+                    if (category == "Lessons")
+                        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            Text(
+                                if (category == "Lessons") "Learn by topic"
+                                else "Component Library",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                if (category == "Lessons")
+                                    "Choose a guide. Understand the concept, then explore the details."
+                                else
+                                    "Identify parts, understand their purpose and explore connections.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
-                        items(WorkbenchTools.all.filter { it.title.contains(query, true) }) { tool ->
-                            QuickCard(tool.title, Modifier.fillMaxWidth()) { detail = "utility:${tool.id}" }
-                        }
-                    }
-                    "Data" -> Databases(vm, prefs, Modifier.weight(1f), openEntry, { info(1) })
-                    else -> {
-                        val group = when(category) { "Pin-outs" -> "PIN-OUTS"; "Reference" -> "RESOURCES"; else -> "CALCULATORS" }
-                        val entries = vm.repository.registry.filter { (it.tab == group || (group == "CALCULATORS" && it.screenType == "module")) && it.title.contains(query, true) }
-                            .sortedWith(compareByDescending<Entry> { it.id in prefs.favourites }.thenBy { if (prefs.alphabetical) it.title else "" })
-                        LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(8.dp)) {
-                            item { SectionTitle("${entries.size} ${category.lowercase()}") }
-                            if (entries.isEmpty()) item { WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint)) }
-                            items(entries, key = { it.id }) { entry -> EntryRow(entry, { openEntry(entry.id) }, entry.id in prefs.favourites) { vm.star(entry.id) } }
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(listOf("Components", "Lessons")) { name ->
+                            FilterChip(
+                                category == name,
+                                { category = name },
+                                label = { Text(name) },
+                            )
                         }
                     }
-                }
-            }
-            2 -> Column(body) {
-                if (category == "Lessons") LearnLanguageSelector(prefs, vm)
-                if (category == "Lessons") Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Text(if (category == "Lessons") "Learn by topic" else "Component Library", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(if (category == "Lessons") "Choose a guide. Understand the concept, then explore the details." else "Identify parts, understand their purpose and explore connections.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(listOf("Components", "Lessons")) { name -> FilterChip(category == name, { category = name }, label = { Text(name) }) }
-                }
-                if (category == "Lessons") LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (learningPages.none { it.title.contains(query, true) }) item {
-                        WorkbenchEmpty(stringResource(R.string.workbench_no_matches), stringResource(R.string.workbench_search_hint))
-                    }
-                    items(learningPages.filter { it.title.contains(query, true) }) { page ->
-                        Card(onClick = { detail = "learn:${page.id}" }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-                            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(page.title, style = MaterialTheme.typography.titleMedium)
-                                Text("${page.sections.size} sections  •  English / தமிழ்", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                Text("Open guide →", style = MaterialTheme.typography.labelLarge)
+                    if (category == "Lessons")
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            if (learningPages.none { it.title.contains(query, true) })
+                                item {
+                                    WorkbenchEmpty(
+                                        stringResource(R.string.workbench_no_matches),
+                                        stringResource(R.string.workbench_search_hint),
+                                    )
+                                }
+                            items(learningPages.filter { it.title.contains(query, true) }) { page ->
+                                Card(
+                                    onClick = { detail = "learn:${page.id}" },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(18.dp),
+                                ) {
+                                    Column(
+                                        Modifier.padding(18.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text(
+                                            page.title,
+                                            style = MaterialTheme.typography.titleMedium,
+                                        )
+                                        Text(
+                                            "${page.sections.size} sections  •  English / தமிழ்",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                        Text(
+                                            "Open guide →",
+                                            style = MaterialTheme.typography.labelLarge,
+                                        )
+                                    }
+                                }
                             }
                         }
+                    else {
+                        if (componentLoadError) {
+                            WorkbenchEmpty(
+                                stringResource(R.string.components_load_failed),
+                                stringResource(R.string.components_retry_help),
+                            )
+                            TextButton({ componentLoadAttempt++ }) {
+                                Text(stringResource(R.string.components_retry))
+                            }
+                        } else if (componentData == null) {
+                            CircularProgressIndicator(Modifier.padding(16.dp))
+                        } else
+                            componentStateHolder.SaveableStateProvider("component-library") {
+                                ComponentReferenceLibrary(
+                                    publicComponents,
+                                    guides,
+                                    query,
+                                    prefs,
+                                    vm,
+                                    Modifier.weight(1f),
+                                ) { asset ->
+                                    openComponent(asset)
+                                }
+                            }
                     }
-                } else {
-                    componentStateHolder.SaveableStateProvider("component-library") {
-                        ComponentReferenceLibrary(publicComponents, guides, query, prefs, vm, Modifier.weight(1f)) { asset -> detail = "component:${asset.id}" }
+                }
+            3 ->
+                LazyColumn(
+                    body,
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    item { SectionTitle("Your favorites") }
+                    if (prefs.favourites.isEmpty())
+                        item {
+                            WorkbenchEmpty(
+                                stringResource(R.string.workbench_no_favorites),
+                                stringResource(R.string.workbench_favorites_hint),
+                            )
+                        }
+                    if (
+                        query.isNotBlank() &&
+                            prefs.favourites.isNotEmpty() &&
+                            vm.repository.registry.none {
+                                it.id in prefs.favourites && it.title.contains(query, true)
+                            } &&
+                            publicComponents.none {
+                                "component:${it.id}" in prefs.favourites &&
+                                    it.name.contains(query, true)
+                            } &&
+                            learningPages.none {
+                                "learn:${it.id}" in prefs.favourites &&
+                                    it.title.contains(query, true)
+                            }
+                    )
+                        item {
+                            WorkbenchEmpty(
+                                stringResource(R.string.workbench_no_matches),
+                                stringResource(R.string.workbench_search_hint),
+                            )
+                        }
+                    items(
+                        vm.repository.registry.filter {
+                            it.id in prefs.favourites && it.title.contains(query, true)
+                        }
+                    ) {
+                        EntryRow(it, { openEntry(it.id) }, true) { vm.star(it.id) }
+                    }
+                    items(
+                        publicComponents.filter {
+                            "component:${it.id}" in prefs.favourites &&
+                                it.name.contains(query, true)
+                        }
+                    ) { c ->
+                        QuickCard(c.name, Modifier.fillMaxWidth()) { openComponent(c) }
+                    }
+                    items(
+                        learningPages.filter {
+                            "learn:${it.id}" in prefs.favourites && it.title.contains(query, true)
+                        }
+                    ) { p ->
+                        QuickCard(p.title, Modifier.fillMaxWidth()) { detail = "learn:${p.id}" }
+                    }
+                    item { SectionTitle("Saved calculations") }
+                    if (prefs.calculations.isEmpty())
+                        item {
+                            Text(
+                                "Save a result from a calculator's menu. Inputs are retained automatically."
+                            )
+                        }
+                    items(prefs.calculations.filter { it.contains(query, true) }) { result ->
+                        Card {
+                            Text(result, Modifier.padding(16.dp))
+                            TextButton({ share(context, result) }) { Text("Share calculation") }
+                        }
                     }
                 }
-            }
-            3 -> LazyColumn(body, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item { SectionTitle("Your favorites") }
-                if (prefs.favourites.isEmpty()) item {
-                    WorkbenchEmpty(stringResource(R.string.workbench_no_favorites), stringResource(R.string.workbench_favorites_hint))
-                }
-                items(vm.repository.registry.filter { it.id in prefs.favourites && it.title.contains(query, true) }) {
-                    EntryRow(it, { openEntry(it.id) }, true) { vm.star(it.id) }
-                }
-                items(publicComponents.filter { "component:${it.id}" in prefs.favourites && it.name.contains(query, true) }) { c ->
-                    QuickCard(c.name, Modifier.fillMaxWidth()) { detail = "component:${c.id}" }
-                }
-                items(learningPages.filter { "learn:${it.id}" in prefs.favourites && it.title.contains(query, true) }) { p ->
-                    QuickCard(p.title, Modifier.fillMaxWidth()) { detail = "learn:${p.id}" }
-                }
-                item { SectionTitle("Saved calculations") }
-                if (prefs.calculations.isEmpty()) item { Text("Save a result from a calculator's menu. Inputs are retained automatically.") }
-                items(prefs.calculations.filter { it.contains(query, true) }) { result ->
-                    Card { Text(result, Modifier.padding(16.dp)); TextButton({ share(context, result) }) { Text("Share calculation") } }
-                }
-            }
             else -> ProfileScreen(vm, prefs, body, { tab = 3 }, { info(0) }, onCheckUpdates)
         }
     }
 }
 
-/** Shared section typography gives catalogue and dashboard a consistent visual hierarchy.
+/**
+ * Shared section typography gives catalogue and dashboard a consistent visual hierarchy.
+ *
  * @param title Visible section heading.
  * @return Unit; displays a heading without modifying state.
  */
 @Composable
-private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical = 4.dp).semantics { heading() }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+private fun SectionTitle(title: String) {
+    Text(
+        title,
+        Modifier.padding(vertical = 4.dp).semantics { heading() },
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+    )
+}
 
-/** Native action card; it remains usable with large font sizes instead of using a fixed height.
+/**
+ * Native action card; it remains usable with large font sizes instead of using a fixed height.
+ *
  * @param title Accessible card caption.
  * @param modifier Caller-owned size and spacing.
  * @param click Explicit navigation or action callback.
@@ -341,16 +806,26 @@ private fun SectionTitle(title: String) { Text(title, Modifier.padding(vertical 
 @Composable
 private fun QuickCard(title: String, modifier: Modifier, click: () -> Unit) {
     Card(onClick = click, modifier = modifier, shape = RoundedCornerShape(10.dp)) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(14.dp), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             CategoryBadge(title, Modifier.size(42.dp))
             Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
 
-/** Existing DataStore owns appearance, favorites and calculator history; clearing requires confirmation.
+/**
+ * Existing DataStore owns appearance, favorites and calculator history; clearing requires
+ * confirmation.
+ *
  * @param vm Existing DataStore mutation owner.
  * @param prefs Current committed appearance and history state.
  * @param modifier Host-provided insets and layout bounds.
@@ -359,38 +834,85 @@ private fun QuickCard(title: String, modifier: Modifier, click: () -> Unit) {
 @Composable
 fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifier = Modifier) {
     var confirm by remember { mutableStateOf(false) }
-    Column(modifier.verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier.verticalScroll(rememberScrollState()).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         SectionTitle("Profile & settings")
-        Card(Modifier.fillMaxWidth()) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            CategoryBadge("Components", Modifier.size(48.dp)); Spacer(Modifier.width(12.dp))
-            Column { Text("ELECTRO", style = MaterialTheme.typography.titleLarge); Text("Your electronics workspace", style = MaterialTheme.typography.bodySmall) }
-        } }
-        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-        Text("Appearance", style = MaterialTheme.typography.titleMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("dark", "light", "system").forEach { mode -> FilterChip((prefs.themeMode.ifBlank { if (prefs.light) "light" else "dark" }) == mode,
-                { vm.appearance(mode) }, label = { Text(mode.replaceFirstChar { it.uppercase() }) }) }
+        Card(Modifier.fillMaxWidth()) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                CategoryBadge("Components", Modifier.size(48.dp))
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("ELECTRO", style = MaterialTheme.typography.titleLarge)
+                    Text("Your electronics workspace", style = MaterialTheme.typography.bodySmall)
+                }
+            }
         }
-        } }
-        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Language: English")
-        Text("Offline by design", style = MaterialTheme.typography.titleMedium)
-        Text("No accounts, analytics or ads. Internet access is used for GitHub update checks. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share.")
-        TextButton({ confirm = true }) { Text("Clear saved calculation history") }
-        TextButton({ vm.sort() }) { Text(if (prefs.alphabetical) "Use original tool order" else "Sort tools A–Z") }
-        } }
-        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("ELECTRO ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", style = MaterialTheme.typography.titleMedium)
-        Text("Electrical • Electronics • Offline learning\nAndroid 7.0+ • Native Kotlin & Jetpack Compose")
-        Text("Component artwork is illustrative. Confirm exact parts, ratings and wiring against the original manufacturer documentation.")
-        } }
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Appearance", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("dark", "light", "system").forEach { mode ->
+                        FilterChip(
+                            (prefs.themeMode.ifBlank { if (prefs.light) "light" else "dark" }) ==
+                                mode,
+                            { vm.appearance(mode) },
+                            label = { Text(mode.replaceFirstChar { it.uppercase() }) },
+                        )
+                    }
+                }
+            }
+        }
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Language: English")
+                Text("Offline by design", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "No accounts, analytics or ads. Internet access is used for GitHub update checks. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share."
+                )
+                TextButton({ confirm = true }) { Text("Clear saved calculation history") }
+                TextButton({ vm.sort() }) {
+                    Text(if (prefs.alphabetical) "Use original tool order" else "Sort tools A–Z")
+                }
+            }
+        }
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "ELECTRO ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    "Electrical • Electronics • Offline learning\nAndroid 7.0+ • Native Kotlin & Jetpack Compose"
+                )
+                Text(
+                    "Component artwork is illustrative. Confirm exact parts, ratings and wiring against the original manufacturer documentation."
+                )
+            }
+        }
     }
-    if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Clear saved results?") }, text = { Text("Your favorites and calculator inputs will be retained.") },
-        confirmButton = { TextButton({ vm.clearCalculations(); confirm = false }) { Text("Clear history") } },
-        dismissButton = { TextButton({ confirm = false }) { Text("Cancel") } })
+    if (confirm)
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text("Clear saved results?") },
+            text = { Text("Your favorites and calculator inputs will be retained.") },
+            confirmButton = {
+                TextButton({
+                    vm.clearCalculations()
+                    confirm = false
+                }) {
+                    Text("Clear history")
+                }
+            },
+            dismissButton = { TextButton({ confirm = false }) { Text("Cancel") } },
+        )
 }
 
-/** Component pages distinguish generic educational material from unverified part-specific information.
+/**
+ * Component pages distinguish generic educational material from unverified part-specific
+ * information.
+ *
  * @param asset Selected local illustrative image.
  * @param prefs Current favorite keys.
  * @param vm Existing favorite-persistence owner.
@@ -398,50 +920,127 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
  * @return Unit; all part-specific ratings remain explicitly unverified.
  */
 @Composable
-private fun ComponentDetail(asset: ComponentAsset, prefs: PreferencesState, vm: AppViewModel, back: () -> Unit) {
+private fun ComponentDetail(
+    asset: ComponentAsset,
+    prefs: PreferencesState,
+    vm: AppViewModel,
+    back: () -> Unit,
+) {
     val id = "component:${asset.id}"
-    Scaffold(topBar = { Bar(asset.name, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite component") } } }) { padding ->
-        LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item { ComponentImage(asset, Modifier.fillMaxWidth().heightIn(max = 420.dp).aspectRatio(1f).clip(RoundedCornerShape(10.dp)), detail = true) }
+    Scaffold(
+        topBar = {
+            Bar(asset.name, back) {
+                IconButton({ vm.star(id) }) {
+                    Icon(
+                        painterResource(
+                            if (id in prefs.favourites) R.drawable.ic_star_filled
+                            else R.drawable.ic_star_outline
+                        ),
+                        "Favorite component",
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        LazyColumn(
+            Modifier.padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item {
+                ComponentImage(
+                    asset,
+                    Modifier.fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(10.dp)),
+                    detail = true,
+                )
+            }
             if (asset.id == "digital_multimeter") item { MultimeterLesson() }
-            item { Text(asset.category.uppercase(), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium); SectionTitle(asset.name) }
+            item {
+                Text(
+                    asset.category.uppercase(),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                SectionTitle(asset.name)
+            }
             val info = componentNotes(asset)
-            items(info) { (title, body) -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text(title, style = MaterialTheme.typography.titleMedium); Text(body, Modifier.padding(top = 8.dp)) } } }
+            items(info) { (title, body) ->
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(title, style = MaterialTheme.typography.titleMedium)
+                        Text(body, Modifier.padding(top = 8.dp))
+                    }
+                }
+            }
         }
     }
 }
 
-/** Generic operating principles do not assign a manufacturer rating or terminal layout to artwork.
+/**
+ * Generic operating principles do not assign a manufacturer rating or terminal layout to artwork.
+ *
  * @param asset Component family inferred from its supplied descriptive filename.
- * @return Generic educational sections, without invented manufacturer ratings or contact assignments.
+ * @return Generic educational sections, without invented manufacturer ratings or contact
+ *   assignments.
  */
 private fun componentNotes(asset: ComponentAsset): List<Pair<String, String>> {
-    val principle = when {
-        asset.id == "digital_multimeter" -> "A digital multimeter measures electrical quantities using selectable functions. Study the guided tests above before any real measurement, then follow your meter’s actual jack and CAT ratings."
-        asset.id == "breadboard" -> "A breadboard lets you build temporary circuits without soldering. Contacts are joined in groups beneath the holes; power rails may be split. Verify the board's connections before use."
-        asset.id == "can_bus_module" -> "A CAN interface module connects compatible controller logic to a CAN network. The exact module determines supply voltage, logic levels, termination and connector pin assignments; check its datasheet."
-        asset.id == "bridge_rectifier" -> "A bridge rectifier uses four diodes to convert an AC input into a pulsating DC output. Identify the two AC terminals and the +/− output from the exact part's markings and datasheet."
-        "resistor" in asset.id -> "A resistor opposes current: V = I × R for an ohmic element. Power is dissipated as heat. Value, tolerance, temperature coefficient and power rating depend on the actual part."
-        "capacitor" in asset.id -> "A capacitor stores energy in an electric field. Capacitance, working voltage, polarity, leakage and ESR depend on construction and the exact part. Stored charge may remain after disconnection."
-        "inductor" in asset.id -> "An inductor stores energy in a magnetic field and opposes changes in current. Saturation current, winding resistance and insulation limits must come from its datasheet."
-        "diode" in asset.id || asset.id == "led" || "rectifier" in asset.id -> "A semiconductor junction conducts asymmetrically. Rectifier, Zener and light-emitting parts have different operating requirements. Verify polarity, current limits and reverse-voltage limits for the specific device."
-        "motor" in asset.id -> "An electric motor converts electrical energy into mechanical motion. Induction, DC and geared assemblies differ in supply, starting, control and protection. The nameplate and original manual define the applicable limits."
-        "relay" in asset.id || "contactor" in asset.id -> "A control signal operates a switching mechanism. Coil supply and contact load are separate ratings. Contact arrangements and overload/reset behavior vary; verify the exact circuit diagram."
-        "sensor" in asset.id || "probe" in asset.id || "switch" in asset.id || "encoder" in asset.id -> "The device detects a physical state or position and produces a contact or electrical output. Detection range, output type, polarity, supply and environmental rating depend on the exact model."
-        "transformer" in asset.id -> "Magnetically coupled windings transfer AC energy. Primary/secondary ratings, insulation, earthing and protective devices are determined by the original design; a photograph cannot establish them."
-        "mcb" in asset.id || "mccb" in asset.id -> "A circuit breaker interrupts specified overcurrent conditions. Rated current, trip curve, interrupting capacity and installation conditions must match the circuit design. It is not a substitute for all forms of shock protection."
-        else -> "This illustration identifies the general component family. Electrical behavior, compatible interfaces, terminal arrangement and operating limits require the exact part number and original technical documentation."
-    }
-    return listOf("Description & operating principle" to principle,
-        "Applications" to "Use this ${asset.category.lowercase()} reference for visual identification and learning. Select a real part only after checking the circuit requirements, environmental conditions and approved documentation.",
-        "Specifications" to "No manufacturer-specific ratings have been verified for this generated illustration. Do not infer a voltage, current, safety rating or model from its appearance.",
-        "Symbol, terminals & connection" to "Use the exact device's schematic symbol and numbered terminal drawing. Generated markings and connector geometry are not wiring authority. Consult the Tools → Pin-outs references and Learn → Lessons for generic interface concepts.",
-        "Testing procedure" to "1. Identify the exact part. 2. Isolate all energy sources and verify the safe state. 3. Follow the manufacturer's test method with a correctly rated instrument. 4. Compare results with documented limits. This page does not authorize live testing.",
-        "Troubleshooting" to "Record the symptom and actual model. Inspect for damage only in a safe isolated state. Check documented connections and supply conditions. Do not bypass interlocks or replace a part solely because it resembles this image.",
-        "Safety & provenance" to "User-supplied AI-generated artwork, optimized for visual learning rather than product verification. Never rely on it for exact geometry or terminal markings. Confirm the appropriate safe-testing procedure and exact manufacturer documentation before working with real equipment.")
+    val principle =
+        when {
+            asset.id == "digital_multimeter" ->
+                "A digital multimeter measures electrical quantities using selectable functions. Study the guided tests above before any real measurement, then follow your meter’s actual jack and CAT ratings."
+            asset.id == "breadboard" ->
+                "A breadboard lets you build temporary circuits without soldering. Contacts are joined in groups beneath the holes; power rails may be split. Verify the board's connections before use."
+            asset.id == "can_bus_module" ->
+                "A CAN interface module connects compatible controller logic to a CAN network. The exact module determines supply voltage, logic levels, termination and connector pin assignments; check its datasheet."
+            asset.id == "bridge_rectifier" ->
+                "A bridge rectifier uses four diodes to convert an AC input into a pulsating DC output. Identify the two AC terminals and the +/− output from the exact part's markings and datasheet."
+            "resistor" in asset.id ->
+                "A resistor opposes current: V = I × R for an ohmic element. Power is dissipated as heat. Value, tolerance, temperature coefficient and power rating depend on the actual part."
+            "capacitor" in asset.id ->
+                "A capacitor stores energy in an electric field. Capacitance, working voltage, polarity, leakage and ESR depend on construction and the exact part. Stored charge may remain after disconnection."
+            "inductor" in asset.id ->
+                "An inductor stores energy in a magnetic field and opposes changes in current. Saturation current, winding resistance and insulation limits must come from its datasheet."
+            "diode" in asset.id || asset.id == "led" || "rectifier" in asset.id ->
+                "A semiconductor junction conducts asymmetrically. Rectifier, Zener and light-emitting parts have different operating requirements. Verify polarity, current limits and reverse-voltage limits for the specific device."
+            "motor" in asset.id ->
+                "An electric motor converts electrical energy into mechanical motion. Induction, DC and geared assemblies differ in supply, starting, control and protection. The nameplate and original manual define the applicable limits."
+            "relay" in asset.id || "contactor" in asset.id ->
+                "A control signal operates a switching mechanism. Coil supply and contact load are separate ratings. Contact arrangements and overload/reset behavior vary; verify the exact circuit diagram."
+            "sensor" in asset.id ||
+                "probe" in asset.id ||
+                "switch" in asset.id ||
+                "encoder" in asset.id ->
+                "The device detects a physical state or position and produces a contact or electrical output. Detection range, output type, polarity, supply and environmental rating depend on the exact model."
+            "transformer" in asset.id ->
+                "Magnetically coupled windings transfer AC energy. Primary/secondary ratings, insulation, earthing and protective devices are determined by the original design; a photograph cannot establish them."
+            "mcb" in asset.id || "mccb" in asset.id ->
+                "A circuit breaker interrupts specified overcurrent conditions. Rated current, trip curve, interrupting capacity and installation conditions must match the circuit design. It is not a substitute for all forms of shock protection."
+            else ->
+                "This illustration identifies the general component family. Electrical behavior, compatible interfaces, terminal arrangement and operating limits require the exact part number and original technical documentation."
+        }
+    return listOf(
+        "Description & operating principle" to principle,
+        "Applications" to
+            "Use this ${asset.category.lowercase()} reference for visual identification and learning. Select a real part only after checking the circuit requirements, environmental conditions and approved documentation.",
+        "Specifications" to
+            "No manufacturer-specific ratings have been verified for this generated illustration. Do not infer a voltage, current, safety rating or model from its appearance.",
+        "Symbol, terminals & connection" to
+            "Use the exact device's schematic symbol and numbered terminal drawing. Generated markings and connector geometry are not wiring authority. Consult the Tools → Pin-outs references and Learn → Lessons for generic interface concepts.",
+        "Testing procedure" to
+            "1. Identify the exact part. 2. Isolate all energy sources and verify the safe state. 3. Follow the manufacturer's test method with a correctly rated instrument. 4. Compare results with documented limits. This page does not authorize live testing.",
+        "Troubleshooting" to
+            "Record the symptom and actual model. Inspect for damage only in a safe isolated state. Check documented connections and supply conditions. Do not bypass interlocks or replace a part solely because it resembles this image.",
+        "Safety & provenance" to
+            "User-supplied AI-generated artwork, optimized for visual learning rather than product verification. Never rely on it for exact geometry or terminal markings. Confirm the appropriate safe-testing procedure and exact manufacturer documentation before working with real equipment.",
+    )
 }
 
-/** Scrollable, bookmarkable lessons use authored text rather than embedding instruction screenshots.
+/**
+ * Scrollable, bookmarkable lessons use authored text rather than embedding instruction screenshots.
+ *
  * @param page Authored educational content and citation URLs.
  * @param prefs Current lesson bookmarks.
  * @param vm Existing bookmark-persistence owner.
@@ -449,19 +1048,48 @@ private fun componentNotes(asset: ComponentAsset): List<Pair<String, String>> {
  * @return Unit; citations are shared only after explicit user action.
  */
 @Composable
-private fun LearningDetail(page: LearningPage, prefs: PreferencesState, vm: AppViewModel, back: () -> Unit) {
+private fun LearningDetail(
+    page: LearningPage,
+    prefs: PreferencesState,
+    vm: AppViewModel,
+    back: () -> Unit,
+) {
     val id = "learn:${page.id}"
-    Scaffold(topBar = { Bar(page.title, back) { IconButton({ vm.star(id) }) { Icon(painterResource(if (id in prefs.favourites) R.drawable.ic_star_filled else R.drawable.ic_star_outline), "Favorite lesson") } } }) { padding ->
-        LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Scaffold(
+        topBar = {
+            Bar(page.title, back) {
+                IconButton({ vm.star(id) }) {
+                    Icon(
+                        painterResource(
+                            if (id in prefs.favourites) R.drawable.ic_star_filled
+                            else R.drawable.ic_star_outline
+                        ),
+                        "Favorite lesson",
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        LazyColumn(
+            Modifier.padding(padding),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             item { LearnLanguageSelector(prefs, vm) }
             item { LessonVisual(page, prefs.values["learn:preferences"]?.get("language") == "ta") }
             if (page.id == "multimeter") item { MultimeterLesson() }
-            itemsIndexed(learningSections(page, prefs.values["learn:preferences"]?.get("language") ?: "en")) { index, (title, body) -> LessonSection(index + 1, title, body) }
+            itemsIndexed(
+                learningSections(page, prefs.values["learn:preferences"]?.get("language") ?: "en")
+            ) { index, (title, body) ->
+                LessonSection(index + 1, title, body)
+            }
         }
     }
 }
 
-/** Learn-only language preference uses existing offline persistence.
+/**
+ * Learn-only language preference uses existing offline persistence.
+ *
  * @param prefs Current preference snapshot.
  * @param vm Existing persistence owner.
  * @return English/Tamil controls; technical labels remain English.
@@ -472,9 +1100,17 @@ private fun LearnLanguageSelector(prefs: PreferencesState, vm: AppViewModel) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("en" to "English", "ta" to "தமிழ்").forEach { (code, label) ->
-                FilterChip(language == code, { vm.values("learn:preferences", mapOf("language" to code)) }, label = { Text(label) })
+                FilterChip(
+                    language == code,
+                    { vm.values("learn:preferences", mapOf("language" to code)) },
+                    label = { Text(label) },
+                )
             }
         }
-        Text(if (language == "ta") "பாட விளக்கங்கள் தமிழில் • Technical terms in English" else "Lesson language • Technical terms stay in English", style = MaterialTheme.typography.bodySmall)
+        Text(
+            if (language == "ta") "பாட விளக்கங்கள் தமிழில் • Technical terms in English"
+            else "Lesson language • Technical terms stay in English",
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }

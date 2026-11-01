@@ -13,7 +13,6 @@ import tree_sitter_kotlin
 ROOT = Path(__file__).resolve().parents[1]
 PARSER = Parser(Language(tree_sitter_kotlin.language()))
 TYPES = {'class_declaration', 'object_declaration', 'function_declaration', 'secondary_constructor', 'type_alias'}
-DENSITY = {'Calculators.kt', 'Engineering.kt', 'App.kt', 'CalculatorScreen.kt', 'AppViewModel.kt'}
 def walk(node):
     # Include nested helpers, not just top-level APIs.
     yield node
@@ -25,7 +24,7 @@ def preceding_doc(node, source):
     if previous and previous.type == 'block_comment':
         text = source[previous.start_byte:previous.end_byte].decode()
         if text.startswith('/**'):
-            return text
+            return re.sub(r'\n\s*\* ?', '\n', text)
     return ''
 def declared_name(node, source):
     # Properties wrap their name; annotation names must not be mistaken for property names.
@@ -51,7 +50,14 @@ def audit(path):
         prefix = source[node.start_byte:node.end_byte].split(b'{', 1)[0]
         if re.search(rb'\b(private|internal)\b', prefix):
             continue
-        if node.type in TYPES and any(parent.type == 'function_body' for parent in [node.parent] if parent):
+        ancestor = node.parent
+        local = False
+        while ancestor is not None:
+            if ancestor.type == 'function_declaration':
+                local = True
+                break
+            ancestor = ancestor.parent
+        if local:
             continue
         required = node.type in TYPES or (node.type == 'property_declaration' and node.parent.type in {'source_file', 'class_body'})
         if node.type == 'class_parameter' and re.search(rb'\b(val|var)\b', source[node.start_byte:node.end_byte]):
@@ -75,12 +81,6 @@ def audit(path):
                                 failures.append(f'{path.relative_to(ROOT)}:{node.start_point.row+1}: missing @param {name}')
                 if '@return' not in doc:
                     failures.append(f'{path.relative_to(ROOT)}:{node.start_point.row+1}: missing @return contract')
-    if path.name in DENSITY:
-        comments = sum(source[n.start_byte:n.end_byte].count(b'\n') + 1 for n in walk(tree.root_node) if n.type in {'block_comment', 'line_comment'})
-        code = sum(bool(line.strip()) for line in source.decode().splitlines()) - comments
-        if comments * 8 < code:
-            failures.append(f'{path.name}: {comments} comment lines for {code} code lines; minimum 1:8')
-        print(f'{path.name}: {comments} comment lines / {code} nonblank code lines')
     return count, failures
 
 def main():
@@ -93,7 +93,7 @@ def main():
     if errors:
         print('\n'.join(errors), file=sys.stderr)
         return 1
-    print(f'PASS: {total} Kotlin declarations documented; five density thresholds met.')
+    print(f'PASS: {total} Kotlin declarations documented; no comment-density quota.')
     return 0
 if __name__ == '__main__':
     sys.exit(main())

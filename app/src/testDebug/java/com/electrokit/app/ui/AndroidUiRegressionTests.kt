@@ -31,9 +31,7 @@ class AndroidUiRegressionTests {
      *   while enabled.
      */
     private fun ready() {
-        ui.waitUntil(30_000) {
-            ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty()
-        }
+        ui.waitUntil(30_000) { ui.onAllNodesWithText("Tools").fetchSemanticsNodes().isNotEmpty() }
         ui.onNodeWithText("Tools").performClick()
     }
 
@@ -67,10 +65,13 @@ class AndroidUiRegressionTests {
         ui.onNode(hasSetTextAction() and hasText(label)).performTextReplacement(value)
     }
 
-    /** A cached explicit result must not survive a mode change with different physical behavior.
+    /**
+     * A cached explicit result must not survive a mode change with different physical behavior.
+     *
      * @return Unit; at t=0 a 5 V capacitor model changes from 0 V charge to 5 V discharge.
      */
-    @Test fun calculationModeChangeInvalidatesExplicitResult() {
+    @Test
+    fun calculationModeChangeInvalidatesExplicitResult() {
         openCalculator("Capacitor charge")
         ui.onNode(hasText("Mode:", substring = true)).performClick()
         ui.onNodeWithText("Charge").performClick()
@@ -97,8 +98,7 @@ class AndroidUiRegressionTests {
         ui.onNodeWithText("Pin-outs").performClick()
         ui.onNodeWithText("USB port").performClick()
         ui.onNodeWithText("Universal Serial Bus").assertExists()
-        ui.onNode(verticalList())
-            .performScrollToNode(hasText("USB 3.x", substring = true))
+        ui.onNode(verticalList()).performScrollToNode(hasText("USB 3.x", substring = true))
         ui.onNodeWithText("USB 3.x Standard-A").assertIsDisplayed()
         ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
         ui.onNodeWithText("Reference").performClick()
@@ -136,6 +136,10 @@ class AndroidUiRegressionTests {
     @Test
     fun selectedKiloUnitDoesNotMultiplyASuffixedValueTwice() {
         openCalculator("Ohm’s Law")
+        // Seed independent values: persisted inputs from another workflow are not this fixture.
+        input("Voltage", "12")
+        input("Current", "")
+        input("Power", "")
         // Resistance has the only unit selector initially labelled Ω.
         ui.onNodeWithText("Ω", substring = false).performClick()
         ui.onNodeWithText("kΩ", substring = false).performClick()
@@ -160,15 +164,25 @@ class AndroidUiRegressionTests {
         ui.onNodeWithText("500 m%", substring = true).assertDoesNotExist()
     }
 
-    /** Reset restores both band renderers and the result used by Copy, without a prior cached tolerance.
+    /**
+     * Reset restores both band renderers and the result used by Copy, without a prior cached
+     * tolerance.
+     *
      * @return Unit; resistor and inductor copies must contain default five-percent tolerance.
      */
-    @Test fun bandResetRestoresDisplayAndCopiedResult() {
-        for ((title, expected) in listOf("Resistor Colour Code" to "1.1 kΩ ±5%", "Inductor Colour Code" to "1.1 mH ±5%")) {
+    @Test
+    fun bandResetRestoresDisplayAndCopiedResult() {
+        for ((title, expected) in
+            listOf(
+                "Resistor Colour Code" to "1.1 kΩ ±5%",
+                "Inductor Colour Code" to "1.1 mH ±5%",
+            )) {
             openCalculator(title)
             ui.onNodeWithContentDescription("Calculator menu").performClick()
             ui.onNodeWithText("Reset").performClick()
-            ui.onNodeWithContentDescription("Green tol ±0.5 percent").performScrollTo().performClick()
+            ui.onNodeWithContentDescription("Green tol ±0.5 percent")
+                .performScrollTo()
+                .performClick()
             ui.onNodeWithText("±0.5%", substring = true).assertExists()
             ui.onNodeWithContentDescription("Calculator menu").performClick()
             ui.onNodeWithText("Reset").performClick()
@@ -176,7 +190,9 @@ class AndroidUiRegressionTests {
             ui.onNodeWithContentDescription("Calculator menu").performClick()
             ui.onNodeWithText("Copy result").performClick()
             ui.runOnIdle {
-                val clipboard = ui.activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val clipboard =
+                    ui.activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                        as android.content.ClipboardManager
                 val text = clipboard.primaryClip!!.getItemAt(0).coerceToText(ui.activity).toString()
                 assertTrue(text, text.contains(expected))
                 assertFalse(text, text.contains("±0.5%"))
@@ -216,11 +232,20 @@ class AndroidUiRegressionTests {
     fun lightThemePersistsAcrossActivityRecreation() {
         ready()
         ui.onNodeWithContentDescription("Menu").performClick()
-        ui.onNode(hasText("Settings") and hasClickAction() and !hasAnyAncestor(hasTestTag("main_navigation"))).performClick()
+        ui.onNode(
+                hasText("Settings") and
+                    hasClickAction() and
+                    !hasAnyAncestor(hasTestTag("main_navigation"))
+            )
+            .performClick()
         ui.onNodeWithText("Dark").performClick()
-        ui.waitUntil(10000) { ui.onAllNodes(hasText("Dark") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
+        ui.waitUntil(10000) {
+            ui.onAllNodes(hasText("Dark") and isSelected()).fetchSemanticsNodes().isNotEmpty()
+        }
         ui.onNodeWithText("Light").performClick()
-        ui.waitUntil(10000) { ui.onAllNodes(hasText("Light") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
+        ui.waitUntil(10000) {
+            ui.onAllNodes(hasText("Light") and isSelected()).fetchSemanticsNodes().isNotEmpty()
+        }
         ui.activityRule.scenario.recreate()
         ui.waitForIdle()
         ui.onNodeWithText("Light").assertIsSelected()
@@ -243,7 +268,15 @@ class AndroidUiRegressionTests {
         var opened = 0
         for (tab in listOf("CALCULATORS", "PIN-OUTS", "RESOURCES")) {
             ui.onNodeWithText("Tools").performClick()
-            ui.onNodeWithText(mapOf("CALCULATORS" to "Electrical Calculators", "PIN-OUTS" to "Pin-outs", "RESOURCES" to "Reference").getValue(tab)).performClick()
+            ui.onNodeWithText(
+                    mapOf(
+                            "CALCULATORS" to "Electrical Calculators",
+                            "PIN-OUTS" to "Pin-outs",
+                            "RESOURCES" to "Reference",
+                        )
+                        .getValue(tab)
+                )
+                .performClick()
             ui.waitForIdle()
             for (entry in repository.registry.filter { it.tab == tab }) {
                 ui.onNode(hasSetTextAction() and hasText("Search"))
@@ -341,7 +374,11 @@ class AndroidUiRegressionTests {
                     it.boundsInRoot.center.x > 0 && it.boundsInRoot.center.x < rootBounds.width
                 }
                 .boundsInRoot
-        val navigation = ui.onNodeWithTag("main_navigation").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val navigation =
+            ui.onNodeWithTag("main_navigation")
+                .assertIsDisplayed()
+                .fetchSemanticsNode()
+                .boundsInRoot
         val density = ui.activity.resources.displayMetrics.density
         // Visible navigation is functional UI; separate blank strips remain regressions.
         val listGap = kotlin.math.abs(navigation.top - listBounds.bottom) / density

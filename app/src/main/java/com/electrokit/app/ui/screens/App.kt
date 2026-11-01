@@ -11,30 +11,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.pager.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
 import androidx.compose.ui.*
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -50,7 +45,6 @@ import com.electrokit.app.domain.*
 import com.electrokit.app.ui.components.*
 import com.electrokit.app.ui.theme.*
 import com.electrokit.app.viewmodel.AppViewModel
-import kotlinx.coroutines.launch
 
 /**
  * Uses the Android plain-text chooser so the user decides which external application receives a
@@ -65,21 +59,31 @@ import kotlinx.coroutines.launch
  */
 fun share(context: Context, text: String) {
     if (text.toByteArray(Charsets.UTF_8).size > 128 * 1024 || text.length > 64 * 1024) {
-        android.widget.Toast.makeText(context, "Too much text to share. Narrow your selection and try again.", android.widget.Toast.LENGTH_LONG).show()
+        android.widget.Toast.makeText(
+                context,
+                "Too much text to share. Narrow your selection and try again.",
+                android.widget.Toast.LENGTH_LONG,
+            )
+            .show()
         return
     }
     try {
-    context.startActivity(
-        Intent.createChooser(
-            Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, text)
-            },
-            context.getString(R.string.share_chooser),
+        context.startActivity(
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                },
+                context.getString(R.string.share_chooser),
+            )
         )
-    )
     } catch (_: android.content.ActivityNotFoundException) {
-        android.widget.Toast.makeText(context, R.string.share_unavailable, android.widget.Toast.LENGTH_LONG).show()
+        android.widget.Toast.makeText(
+                context,
+                R.string.share_unavailable,
+                android.widget.Toast.LENGTH_LONG,
+            )
+            .show()
     }
 }
 
@@ -101,7 +105,11 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState, onCheckUpdates: () -> 
     val err by vm.error.collectAsStateWithLifecycle()
     // A neutral brand loading surface avoids flashing the wrong persisted theme during migration.
     var confirmReset by remember { mutableStateOf(false) }
-    Surface(Modifier.fillMaxSize(), contentColor = MaterialTheme.colorScheme.onBackground, color = MaterialTheme.colorScheme.background) {
+    Surface(
+        Modifier.fillMaxSize(),
+        contentColor = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.background,
+    ) {
         if (!loaded) {
             Column(
                 Modifier.fillMaxSize().padding(24.dp),
@@ -121,13 +129,25 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState, onCheckUpdates: () -> 
                     }
                 }
             }
-            if (confirmReset) AlertDialog(
-                onDismissRequest = { confirmReset = false },
-                title = { Text("Reset damaged preferences?") },
-                text = { Text("This deletes favorites, saved calculations and inputs. This cannot be undone.") },
-                confirmButton = { TextButton({ confirmReset = false; vm.resetPreferences() }) { Text("Reset") } },
-                dismissButton = { TextButton({ confirmReset = false }) { Text("Cancel") } },
-            )
+            if (confirmReset)
+                AlertDialog(
+                    onDismissRequest = { confirmReset = false },
+                    title = { Text("Reset damaged preferences?") },
+                    text = {
+                        Text(
+                            "This deletes favorites, saved calculations and inputs. This cannot be undone."
+                        )
+                    },
+                    confirmButton = {
+                        TextButton({
+                            confirmReset = false
+                            vm.resetPreferences()
+                        }) {
+                            Text("Reset")
+                        }
+                    },
+                    dismissButton = { TextButton({ confirmReset = false }) { Text("Cancel") } },
+                )
             return@Surface
         }
         Column(
@@ -153,7 +173,10 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState, onCheckUpdates: () -> 
                     MainScreen(
                         vm,
                         prefs,
-                        { vm.visited(it); nav.navigate("entry/$it") },
+                        {
+                            vm.visited(it)
+                            nav.navigate("entry/$it")
+                        },
                         { nav.navigate("info/$it") },
                         { nav.navigate("settings") },
                         onCheckUpdates,
@@ -196,21 +219,19 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState, onCheckUpdates: () -> 
                             it.id == back.arguments?.getString("id")
                         }
                     val page = entry?.let { vm.repository.pages[it.contentId] }
-                    if (entry == null || (entry.screenType !in setOf("calculator", "module") && page == null)) {
-                        // Unknown or damaged registry route: return instead of showing a dead blank screen.
+                    if (
+                        entry == null ||
+                            (entry.screenType !in setOf("calculator", "module") && page == null)
+                    ) {
+                        // Unknown or damaged registry route: return instead of showing a dead blank
+                        // screen.
                         LaunchedEffect(Unit) { nav.popBackStack() }
                     } else
                         when (entry.screenType) {
                             "calculator" ->
                                 CalculatorScreen(entry, vm, prefs) { nav.popBackStack() }
                             "module" -> ModuleScreen(entry, vm) { nav.popBackStack() }
-                            else ->
-                                ReferenceScreen(
-                                    entry,
-                                    page!!,
-                                ) {
-                                    nav.popBackStack()
-                                }
+                            else -> ReferenceScreen(entry, page!!) { nav.popBackStack() }
                         }
                 }
             }
@@ -264,10 +285,20 @@ fun Bar(
                             Spacer(Modifier.width(6.dp))
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(title, modifier = Modifier.semantics { heading() }, color = TopBarText,
-                                style = if (brand) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium)
-                            if (brand) Text("Electronics Toolkit", color = TopBarText,
-                                style = MaterialTheme.typography.labelSmall)
+                            Text(
+                                title,
+                                modifier = Modifier.semantics { heading() },
+                                color = TopBarText,
+                                style =
+                                    if (brand) MaterialTheme.typography.titleLarge
+                                    else MaterialTheme.typography.titleMedium,
+                            )
+                            if (brand)
+                                Text(
+                                    "Electronics Toolkit",
+                                    color = TopBarText,
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
                         }
                     }
                     if (!split)
@@ -304,7 +335,8 @@ fun Bar(
  * @param value Input scalar in the operation’s documented units.
  * @param onChange Receives edited text; persistence remains with the caller.
  * @param label Visible field/cell caption used for accessible presentation.
- * @param shape Field outline; the dashboard uses a fully rounded pill, nested pages keep the compact corner.
+ * @param shape Field outline; the dashboard uses a fully rounded pill, nested pages keep the
+ *   compact corner.
  * @return Unit; rendering effects and state changes are delivered through callbacks or observable
  *   state. Rendering/callback failures propagate; recoverable persistence failures belong to the
  *   ViewModel.
@@ -357,11 +389,7 @@ fun EntryRow(entry: Entry, openEntry: () -> Unit, star: Boolean? = null, onStar:
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant,
-                RoundedCornerShape(10.dp),
-            )
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
             .heightIn(min = 68.dp)
             .clickable(onClick = openEntry)
             .padding(start = 16.dp, end = 8.dp),
@@ -520,11 +548,7 @@ fun Info(vm: AppViewModel, initial: Int, back: () -> Unit, openEntry: (String) -
         topBar = {
             Column {
                 Bar(stringResource(R.string.app_name), back)
-                ScrollableTabRow(
-                    tab,
-                    containerColor = BrandNavy,
-                    contentColor = TopBarText,
-                ) {
+                ScrollableTabRow(tab, containerColor = BrandNavy, contentColor = TopBarText) {
                     labels.forEachIndexed { i, s -> Tab(tab == i, { tab = i }, text = { Text(s) }) }
                 }
             }
@@ -656,7 +680,14 @@ fun ReferenceScreen(entry: Entry, page: Page, back: () -> Unit) {
                     val headers = if (usbTable) usbHeaders else s.headers
                     val rows =
                         if (usbTable)
-                            sourceRows.map { listOf(it.getOrElse(0) { "" } + " / " + it.getOrElse(1) { "" }, it.getOrElse(2) { "" }, it.getOrElse(3) { "" }, it.getOrElse(4) { "" }) }
+                            sourceRows.map {
+                                listOf(
+                                    it.getOrElse(0) { "" } + " / " + it.getOrElse(1) { "" },
+                                    it.getOrElse(2) { "" },
+                                    it.getOrElse(3) { "" },
+                                    it.getOrElse(4) { "" },
+                                )
+                            }
                         else sourceRows
                     if (rows.isNotEmpty() || query.isBlank()) {
                         item(key = "section$index") {
@@ -810,7 +841,8 @@ private fun TableCell(
     val colour =
         when (value.lowercase().substringBefore(':').trim()) {
             "red" -> Color(0xFFC62828)
-            "clear", "white" -> Color.White
+            "clear",
+            "white" -> Color.White
             "green" -> Color(0xFF008000)
             "black" -> Color.Black
             "blue" -> Color(0xFF1565C0)
@@ -822,7 +854,8 @@ private fun TableCell(
             "grey",
             "slate" -> Color.Gray
             "tan" -> Color(0xFFD2B48C)
-            "pink", "rose" -> Color(0xFFFFC0CB)
+            "pink",
+            "rose" -> Color(0xFFFFC0CB)
             "aqua" -> Color(0xFF00FFFF)
             else -> null
         }
@@ -837,24 +870,52 @@ private fun TableCell(
             .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (!header && wireParts.size > 1 && wireParts.all { it in setOf("red", "blue", "green", "yellow", "black", "white", "grey", "gray", "pink", "rose", "brown", "violet", "purple", "orange", "tan", "aqua") }) {
-            wireParts.forEach { part ->
-                val wire = when (part) {
-                    "red" -> Color(0xFFC62828)
-                    "blue" -> Color(0xFF1565C0)
-                    "green" -> Color(0xFF008000)
-                    "yellow" -> Color.Yellow
-                    "black" -> Color.Black
-                    "white" -> Color.White
-                    "grey", "gray" -> Color.Gray
-                    "pink", "rose" -> Color(0xFFFFC0CB)
-                    "brown" -> Color(0xFF754123)
-                    "orange" -> Color(0xFFFF9800)
-                    "tan" -> Color(0xFFD2B48C)
-                    "aqua" -> Color(0xFF00FFFF)
-                    "violet", "purple" -> Color(0xFF8E24AA)
-                    else -> Color.Transparent
+        if (
+            !header &&
+                wireParts.size > 1 &&
+                wireParts.all {
+                    it in
+                        setOf(
+                            "red",
+                            "blue",
+                            "green",
+                            "yellow",
+                            "black",
+                            "white",
+                            "grey",
+                            "gray",
+                            "pink",
+                            "rose",
+                            "brown",
+                            "violet",
+                            "purple",
+                            "orange",
+                            "tan",
+                            "aqua",
+                        )
                 }
+        ) {
+            wireParts.forEach { part ->
+                val wire =
+                    when (part) {
+                        "red" -> Color(0xFFC62828)
+                        "blue" -> Color(0xFF1565C0)
+                        "green" -> Color(0xFF008000)
+                        "yellow" -> Color.Yellow
+                        "black" -> Color.Black
+                        "white" -> Color.White
+                        "grey",
+                        "gray" -> Color.Gray
+                        "pink",
+                        "rose" -> Color(0xFFFFC0CB)
+                        "brown" -> Color(0xFF754123)
+                        "orange" -> Color(0xFFFF9800)
+                        "tan" -> Color(0xFFD2B48C)
+                        "aqua" -> Color(0xFF00FFFF)
+                        "violet",
+                        "purple" -> Color(0xFF8E24AA)
+                        else -> Color.Transparent
+                    }
                 Box(Modifier.size(12.dp, 24.dp).background(wire))
             }
             Spacer(Modifier.width(8.dp))
@@ -972,29 +1033,39 @@ fun ModuleScreen(entry: Entry, vm: AppViewModel, back: () -> Unit) {
                 Modifier.padding(8.dp),
                 color = Heading,
             )
-            TextButton({ comparison = true }, enabled = selected.size >= 2) { Text("Compare selected (${selected.size}/3)") }
-            if (comparison) AlertDialog(onDismissRequest = { comparison = false },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-                title = { Text("Compare components") },
-                text = { Column(Modifier.verticalScroll(rememberScrollState())) {
-                    val parts = data.filter { it.name in selected }
-                    Text("Swipe sideways for additional columns", style = MaterialTheme.typography.labelSmall)
-                    Column(Modifier.horizontalScroll(rememberScrollState())) {
-                        Row {
-                            Text("Specification", Modifier.width(100.dp), fontWeight = FontWeight.Bold)
-                            parts.forEach { Text(it.name, Modifier.width(112.dp), fontWeight = FontWeight.Bold) }
+            TextButton({ comparison = true }, enabled = selected.size >= 2) {
+                Text("Compare selected (${selected.size}/3)")
+            }
+            if (comparison)
+                AlertDialog(
+                    onDismissRequest = { comparison = false },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                    properties =
+                        androidx.compose.ui.window.DialogProperties(
+                            usePlatformDefaultWidth = false
+                        ),
+                    title = { Text("Compare components") },
+                    text = {
+                        Column(Modifier.verticalScroll(rememberScrollState())) {
+                            val parts = data.filter { it.name in selected }
+                            com.electrokit.app.ui.components.ComparisonTable(
+                                parts.map { it.name },
+                                (parts.flatMap { it.specs.keys }.distinct() + "Source").map { label
+                                    ->
+                                    label to
+                                        parts.map {
+                                            if (label == "Source") it.source
+                                            else it.specs[label] ?: "Not supplied"
+                                        }
+                                },
+                            )
+                            Text(
+                                "Only bundled specifications are shown. Missing fields are not inferred; verify the exact manufacturer/package."
+                            )
                         }
-                        (parts.flatMap { it.specs.keys }.distinct() + "Source").forEach { label ->
-                            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                            Row {
-                                Text(label, Modifier.width(100.dp))
-                                parts.forEach { part -> Text(if (label == "Source") part.source else part.specs[label] ?: "Not supplied", Modifier.width(112.dp).padding(end = 12.dp)) }
-                            }
-                        }
-                    }
-                    Text("Only bundled specifications are shown. Missing fields are not inferred; verify the exact manufacturer/package.")
-                } }, confirmButton = { TextButton({ comparison = false }) { Text("Close") } })
+                    },
+                    confirmButton = { TextButton({ comparison = false }) { Text("Close") } },
+                )
             LazyColumn(Modifier.weight(1f)) {
                 items(filtered, key = { it.name }) { part ->
                     var expanded by rememberSaveable(part.name) { mutableStateOf(false) }
@@ -1002,10 +1073,24 @@ fun ModuleScreen(entry: Entry, vm: AppViewModel, back: () -> Unit) {
                         Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(16.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(part.name in selected, { checked ->
-                                selected = if (!checked) selected - part.name else if (selected.size < 3) selected + part.name else selected
-                            }, modifier = Modifier.semantics { contentDescription = "Compare ${part.name}" }, enabled = part.name in selected || selected.size < 3)
-                            Text("Select for comparison", style = MaterialTheme.typography.labelMedium)
+                            Checkbox(
+                                part.name in selected,
+                                { checked ->
+                                    selected =
+                                        if (!checked) selected - part.name
+                                        else if (selected.size < 3) selected + part.name
+                                        else selected
+                                },
+                                modifier =
+                                    Modifier.semantics {
+                                        contentDescription = "Compare ${part.name}"
+                                    },
+                                enabled = part.name in selected || selected.size < 3,
+                            )
+                            Text(
+                                "Select for comparison",
+                                style = MaterialTheme.typography.labelMedium,
+                            )
                         }
                         Text(part.name, fontWeight = FontWeight.Bold, color = Heading)
                         Text(part.category)

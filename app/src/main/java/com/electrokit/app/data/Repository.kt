@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
  * titles.
  *
  * @param id Stable calculator or registry identifier; independent of the visible title.
- * @param title Visible calculator title used to select the intended test route.
+ * @param title Visible catalogue or reference title.
  * @param icon Unique original vector motif key, independent of the visible title.
  * @param tab Stable catalogue group used for filtering, ordering and feature counts.
  * @param screenType Renderer discriminator selecting calculator, reference or module content.
@@ -46,9 +46,7 @@ data class Entry(
  *
  * @param label Visible field/cell caption used for accessible presentation.
  * @param x Coordinate in this renderer’s documented canvas space.
- * @param y Coordinate in this renderer’s documented canvas space. Construction holds
- *   metadata/helpers; physical validation is performed by the named operations, not by field
- *   assignment.
+ * @param y Coordinate in this renderer’s documented canvas space.
  */
 @Serializable
 data class Pin(
@@ -66,8 +64,6 @@ data class Pin(
  * @param caption Connector variant/view explanation shown beside its original vector drawing.
  * @param shape Vector renderer key; it does not establish certified mechanical geometry.
  * @param pins Ordered contact labels and normalised coordinates used by the diagram renderer.
- *   Construction holds metadata/helpers; physical validation is performed by the named operations,
- *   not by field assignment.
  */
 @Serializable
 data class Diagram(
@@ -82,13 +78,11 @@ data class Diagram(
 /**
  * Groups a searchable reference table, its explanatory notes and identification drawings.
  *
- * @param title Visible calculator title used to select the intended test route.
+ * @param title Visible catalogue or reference title.
  * @param headers Ordered column captions whose count must match each data row.
  * @param rows Offline reference cells validated against the header width.
  * @param notes Scope and assumptions retained with the displayed reference.
  * @param diagrams Original vector identification drawings belonging to this reference section.
- *   Construction holds metadata/helpers; physical validation is performed by the named operations,
- *   not by field assignment.
  */
 @Serializable
 data class Section(
@@ -107,12 +101,10 @@ data class Section(
 /**
  * Holds offline reference groups and optional source URLs without performing network lookups.
  *
- * @param title Visible calculator title used to select the intended test route.
+ * @param title Visible catalogue or reference title.
  * @param sections Ordered searchable groups of tables, diagrams and explanatory text.
  * @param notes Scope and assumptions retained with the displayed reference.
- * @param sources Reference URLs shown as text; the app never fetches them. Construction holds
- *   metadata/helpers; physical validation is performed by the named operations, not by field
- *   assignment.
+ * @param sources Reference URLs shown as text; the app never fetches them.
  */
 @Serializable
 data class Page(
@@ -132,13 +124,11 @@ data class Page(
  * Keeps numeric filter keys explicit so descriptions containing numbers are never inferred to be
  * scalar specifications.
  *
- * @param name Asset filename or preview output name, as stated by the operation.
+ * @param name Part identifier used for local search and display.
  * @param category Local browsing category, separate from prose specification fields.
  * @param specs Named specification strings that preserve units and qualifications.
  * @param source Product/family reference behind the component summary.
  * @param numericKeys Explicit scalar keys eligible for numeric filters; descriptions are excluded.
- *   Construction holds metadata/helpers; physical validation is performed by the named operations,
- *   not by field assignment.
  */
 @Serializable
 data class Part(
@@ -307,7 +297,7 @@ class Repository(context: Context) : AppRepository {
      * Decodes a bundled asset without swallowing I/O/schema failures needed by the loading error
      * handler.
      *
-     * @param name Asset filename or preview output name, as stated by the operation.
+     * @param name Part identifier used for local search and display.
      * @return The requested decoded asset model. I/O and serialization failures propagate to the
      *   owner; cancellation remains cooperative.
      */

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
  <string name="app_name">ELECTRO</string>
  <string name="settings">Settings</string>
  <string name="light_theme">Light theme</string>
@@ -131,4 +131,118 @@
     <string name="home_library_counts">%1$s  ·  %2$s  ·  Offline ready</string>
     <plurals name="home_calculator_count"><item quantity="one">%d calculator</item><item quantity="other">%d calculators</item></plurals>
     <plurals name="home_component_count"><item quantity="one">%d component</item><item quantity="other">%d components</item></plurals>
+    <string name="list_decimal_help">Use a decimal point; commas, semicolons or newlines separate entries. Maximum 4096 characters.</string>
+    <string name="error_history_size">This calculation is too large to save. Shorten the input list and try again.</string>
+    <string name="error_input_size">Input is too long. Use at most 4096 characters per field.</string>
+    <string name="components_load_failed">Component library could not load</string>
+    <string name="components_retry_help">Your saved data is retained. Retry loading the offline library.</string>
+    <string name="components_retry">Retry</string>
+    <string name="components_heading">Components</string>
+    <string name="compare_scroll_help">Swipe sideways to read all columns</string>
+    <string name="compare_parameter">Specification</string>
+    <string name="compare_remove">Remove %1$s from comparison</string>
+    <string name="compare_clear">Clear selection</string>
+    <string name="component_principle">Operating principle</string>
+    <string name="component_parameters">Parameters to verify</string>
+    <string name="component_application">Educational application</string>
+    <string name="component_add_favorite">Favorite %1$s</string>
+    <string name="component_remove_favorite">Remove %1$s from favorites</string>
+    <string name="pinout_top_view">TOP VIEW · notch at top · pins count counterclockwise</string>
+    <string name="update_refresh">Refresh update status</string>
+    <string name="component_explore_identify_understand_and_test_electronic_components" formatted="false">Explore, identify, understand and test electronic components.</string>
+    <string name="component_favorites_only" formatted="false">Favorites only</string>
+    <string name="component_view_reference" formatted="false">View reference</string>
+    <string name="component_compare_component_types" formatted="false">Compare component types</string>
+    <string name="component_family_characteristics_only_no_device_ratings_inferred_swipe_side" formatted="false">Family characteristics only; no device ratings inferred. Swipe sideways for both columns.</string>
+    <string name="component_close" formatted="false">Close</string>
+    <string name="component_general_family_reference_illustration_does_not_identify_an_exact_" formatted="false">General family reference. Illustration does not identify an exact part, rating or pin order.</string>
+    <string name="component_how_it_works" formatted="false">How it works</string>
+    <string name="component_open_schematic_symbol_reference" formatted="false">Open schematic symbol reference</string>
+    <string name="component_electrical_specifications" formatted="false">Electrical specifications</string>
+    <string name="component_parameters_to_verify_in_the_exact_part_datasheet_these_are_not_ra" formatted="false">Parameters to verify in the exact part datasheet — these are not ratings assigned to the image.</string>
+    <string name="component_identification_markings" formatted="false">Identification &amp; markings</string>
+    <string name="component_open_resistor_band_calculator" formatted="false">Open resistor band calculator</string>
+    <string name="component_open_smd_marking_decoder" formatted="false">Open SMD marking decoder</string>
+    <string name="component_three_digit_capacitor_code" formatted="false">Three-digit capacitor code</string>
+    <string name="component_pin_configuration" formatted="false">Pin configuration</string>
+    <string name="component_no_exact_part_package_is_selected_terminal_numbers_are_deliberate" formatted="false">No exact part/package is selected. Terminal numbers are deliberately not inferred from appearance. Consult the exact drawing and defined view; existing connector Pin-outs remain available in Tools.</string>
+    <string name="component_how_to_test_using_a_digital_multimeter" formatted="false">How to test using a digital multimeter</string>
+    <string name="component_reading_checklist_not_a_pass_fail_measurement_or_safety_certifica" formatted="false">Reading checklist, not a pass/fail measurement or safety certification.</string>
+    <string name="component_open_ohm_s_law_calculator" formatted="false">Open Ohm\'s Law calculator</string>
+    <string name="component_educational_circuit_application" formatted="false">Educational circuit application</string>
+    <string name="component_educational_model_only_verify_real_parts_limits_protection_and_co" formatted="false">Educational model only. Verify real parts, limits, protection and construction before use.</string>
+    <string name="component_open_related_calculator" formatted="false">Open related calculator</string>
+    <string name="component_manufacturer_reference_stored_offline_as_a_citation_no_new_device" formatted="false">Manufacturer reference stored offline as a citation. No new device ratings are claimed without the exact datasheet.</string>
+    <string name="component_original_component_reference" formatted="false">Original component reference</string>
+    <string name="component_select_a_verified_part_package_before_showing_numbered_terminals" formatted="false">Select a verified part/package before showing numbered terminals.</string>
+    <string name="component_ti_ne555_pdip_8_top_view" formatted="false">TI NE555 • PDIP-8 • top view</string>
+    <string name="component_top_view_notch_at_top_pins_count_counterclockwise_generic_library" formatted="false">TOP VIEW • notch at top • pins count counterclockwise. Generic library artwork is not device identification.</string>
+    <string name="component_enlarge_pinout" formatted="false">Enlarge pinout</string>
+    <!-- Preserve the manufacturer table identifier, including its hyphen. -->
+    <string name="component_source_ti_slfs022k_revised_march_2026_p_pdip_package_table_4_1_ht" formatted="false" tools:ignore="TypographyDashes">Source: TI SLFS022K, revised March 2026, P (PDIP) package, Table 4-1. https://www.ti.com/lit/ds/symlink/ne555.pdf</string>
+    <string name="component_ne555_pdip_8_top_view" formatted="false">NE555 PDIP-8 • TOP VIEW</string>
+    <string name="workbench_profile_settings" formatted="false">Profile &amp; Settings</string>
+    <string name="workbench_your_electronics_workspace" formatted="false">Your electronics workspace</string>
+    <string name="workbench_clear_saved_calculation_history" formatted="false">Clear saved calculation history</string>
+    <string name="workbench_automatic_checks_for_new_versions" formatted="false">Automatic checks for new versions</string>
+    <string name="workbench_check_now" formatted="false">Check now</string>
+    <string name="workbench_major_and_feature_updates_are_required_maintenance_patches_can_be" formatted="false">Major and feature updates are required. Maintenance patches can be postponed with Later. Downloads open on GitHub.</string>
+    <string name="workbench_github_receives_your_connection_ip_during_update_checks_automatic" formatted="false">GitHub receives your connection IP during update checks. Automatic checks are cached for six hours. Calculators and learning content remain offline.</string>
+    <string name="workbench_no_accounts_advertising_or_analytics_your_calculators_inputs_favo" formatted="false">No accounts, advertising or analytics. Your calculators, inputs, favorites and lessons remain local. Optional app-version checks contact GitHub; ELECTRO does not install APKs or request unknown-app installation access.</string>
+    <string name="workbench_clear_saved_results" formatted="false">Clear saved results?</string>
+    <string name="workbench_your_favorites_and_calculator_inputs_will_be_retained" formatted="false">Your favorites and calculator inputs will be retained.</string>
+    <string name="workbench_clear_history" formatted="false">Clear history</string>
+    <string name="workbench_cancel" formatted="false">Cancel</string>
+    <string name="workbench_unit_converter" formatted="false">UNIT CONVERTER</string>
+    <string name="workbench_value" formatted="false">Value</string>
+    <string name="workbench_copy_conversion" formatted="false">Copy conversion</string>
+    <string name="workbench_save_conversion" formatted="false">Save conversion</string>
+    <string name="workbench_calculation" formatted="false">Calculation</string>
+    <string name="workbench_si_scales_are_exact_values_use_the_selected_units_without_an_extr" formatted="false">SI scales are exact. Values use the selected units without an extra suffix. Temperature is absolute, not a temperature difference; offsets apply and values below absolute zero are rejected.</string>
+    <string name="workbench_wire_diameter_and_cross_sectional_area_are_in_the_awg_reference_n" formatted="false">Wire diameter and cross-sectional area are in the AWG reference. Neither alone determines ampacity; use the applicable installation standard.</string>
+    <string name="workbench_saved_conversions" formatted="false">Saved conversions</string>
+    <string name="workbench_electrical_utility" formatted="false">ELECTRICAL UTILITY</string>
+    <string name="workbench_formula" formatted="false">Formula</string>
+    <string name="workbench_calculate" formatted="false">Calculate</string>
+    <string name="workbench_save_calculation" formatted="false">Save calculation</string>
+    <string name="workbench_substitution" formatted="false">Substitution</string>
+    <string name="workbench_model_limitations" formatted="false">Model &amp; limitations</string>
+    <string name="meter_practical_digital_multimeter_lab" formatted="false">PRACTICAL DIGITAL MULTIMETER LAB</string>
+    <string name="meter_choose_a_function_practise_with_disconnected_components_or_isolat" formatted="false">Choose a function. Practise with disconnected components or isolated low-voltage sources only.</string>
+    <string name="meter_function" formatted="false">Function: </string>
+    <string name="meter_black_com_red" formatted="false">Black → COM   |   Red → </string>
+    <string name="meter_connect_the_test_leads" formatted="false">CONNECT THE TEST LEADS</string>
+    <string name="meter_guided_procedure" formatted="false">GUIDED PROCEDURE</string>
+    <string name="meter_step" formatted="false">Step </string>
+    <string name="meter_previous" formatted="false">Previous</string>
+    <string name="meter_next_step" formatted="false">Next step</string>
+    <string name="meter_restart" formatted="false">Restart</string>
+    <string name="meter_example_reading" formatted="false">EXAMPLE READING</string>
+    <string name="meter_how_to_read_the_result" formatted="false">HOW TO READ THE RESULT</string>
+    <string name="meter_if_the_result_looks_wrong" formatted="false">IF THE RESULT LOOKS WRONG</string>
+    <string name="meter_safety_do_not_skip" formatted="false">SAFETY — DO NOT SKIP</string>
+    <string name="meter_illustrative_meter_only_actual_jack_assignments_maximum_current_d" formatted="false">Illustrative meter only. Actual jack assignments, maximum current duration, CAT ratings and supported functions depend on your meter\'s manual.</string>
+    <string name="update_electro_update_available" formatted="false">ELECTRO update available</string>
+    <string name="update_installed" formatted="false">Installed: </string>
+    <string name="update_what_s_new" formatted="false">WHAT\'S NEW</string>
+    <string name="update_open_the_official_github_release_page_to_review_the_signed_apk_an" formatted="false">Open the official GitHub release page to review the signed APK and install it manually.</string>
+    <string name="update_open_release" formatted="false">Open Release</string>
+    <string name="update_later" formatted="false">Later</string>
+    <string name="update_check_for_updates" formatted="false">Check for Updates</string>
+    <string name="update_ok" formatted="false">OK</string>
+    <string name="component_sort_name">Name</string>
+    <string name="component_sort_category">Category</string>
+    <string name="component_sort_recent">Recently viewed</string>
+    <string name="component_sort_selected">Sort: %1$s</string>
+    <string name="component_compare_count">Compare (%1$d/2)</string>
+    <plurals name="component_count_hint">
+        <item quantity="one">%1$d component · Swipe categories →</item>
+        <item quantity="other">%1$d components · Swipe categories →</item>
+    </plurals>
+    <string name="component_not_supplied">Not supplied</string>
+    <string name="update_required_message">A required major or feature update is available. Open the official release page and install the update to continue.</string>
+    <string name="update_optional_message">A maintenance patch is available. Update now or choose Later.</string>
+    <string name="update_current_version">ELECTRO %1$s is up to date.</string>
+    <string name="update_browser_failed">Unable to open the official ELECTRO release page.</string>
+    <string name="update_network_failed">Unable to check GitHub releases. Connect to the internet and retry.</string>
 </resources>

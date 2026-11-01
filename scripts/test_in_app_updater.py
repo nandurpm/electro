@@ -1,5 +1,6 @@
 """Regression checks for the safe browser-based Android updater."""
 import unittest
+import re
 from pathlib import Path
 from tree_sitter import Language, Parser
 import tree_sitter_kotlin
@@ -21,12 +22,13 @@ class InAppUpdaterRegressionTests(unittest.TestCase):
     def test_single_update_dialog_preserves_both_update_policies(self):
         source = MAIN.read_text()
         dialog = source[source.index('val release = pending'):source.index('if (checkStatus != null)')]
+        dialog = re.sub(r'\s+', ' ', dialog)
         self.assertEqual(dialog.count('onDismissRequest = '), 1)
         self.assertEqual(dialog.count('confirmButton = '), 1)
         self.assertEqual(dialog.count('dismissButton = '), 1)
         self.assertIn('UpdatePriority.REQUIRED_FEATURE', dialog)
         self.assertIn('openReleasePage(release)', dialog)
-        self.assertIn('Open Release', dialog)
+        self.assertIn('R.string.update_open_release', dialog)
         self.assertIn('if (!required) TextButton', dialog)
         self.assertIn('onDismissRequest = { if (!required) pending = null }', dialog)
         self.assertIn('dismissOnBackPress = !required, dismissOnClickOutside = !required', dialog)

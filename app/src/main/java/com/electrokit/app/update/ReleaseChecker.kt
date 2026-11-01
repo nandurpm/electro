@@ -1,13 +1,23 @@
 package com.electrokit.app.update
 
 import android.content.Context
-import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import org.json.JSONObject
 
-/** Verified release. @property tag Stable release tag. @property version Numeric release version. @property apkUrl Canonical release download. @property notes Published change notes. @property size APK bytes. */
-data class UpdateRelease(val tag: String, val version: String, val apkUrl: String, val notes: String, val size: Long)
+/**
+ * Verified release. @property tag Stable release tag. @property version Numeric release
+ * version. @property apkUrl Canonical release download. @property notes Published change
+ * notes. @property size APK bytes.
+ */
+data class UpdateRelease(
+    val tag: String,
+    val version: String,
+    val apkUrl: String,
+    val notes: String,
+    val size: Long,
+)
 
 /** Only requests release metadata; the calculator, bookmark and personal data remain local. */
 object ReleaseChecker {
@@ -16,8 +26,31 @@ object ReleaseChecker {
     private const val MAX_REPLY = 512 * 1024
     private const val MAX_APK = 50L * 1024L * 1024L
 
-    /** @return Official, stable GitHub release or throws when metadata cannot be validated. */
-    fun fetchLatest(): UpdateRelease {
+    /**
+     * Loads bounded release metadata, caching automatic checks for six hours.
+     *
+     * @param context Optional private cache owner; null performs an uncached check.
+     * @param force True for a user-requested refresh, bypassing cache and failure backoff.
+     * @return Valid official stable-release metadata, not a certificate or malware verdict.
+     */
+    fun fetchLatest(context: Context? = null, force: Boolean = false): UpdateRelease {
+        val settings =
+            context?.getSharedPreferences("electro_release_check_settings", Context.MODE_PRIVATE)
+        val now = System.currentTimeMillis()
+        if (!force && settings != null) {
+            val age = now - settings.getLong("last_success", 0)
+            val cached = settings.getString("cached_release", null)
+            if (age in 0..21_600_000 && cached != null) {
+                runCatching { decode(JSONObject(cached)) }
+                    .getOrNull()
+                    ?.let {
+                        return it
+                    }
+            }
+            val failedAge = now - settings.getLong("last_failure", 0)
+            if (failedAge in 0..900_000)
+                error("Update checks are temporarily paused; use Check now to retry.")
+        }
         val conn = URL(ENDPOINT).openConnection() as HttpURLConnection
         try {
             conn.connectTimeout = 9000
@@ -36,8 +69,21 @@ object ReleaseChecker {
                     out.write(buffer, 0, n)
                 }
             }
-            return decode(JSONObject(out.toString("UTF-8"))) ?: error("No signed ELECTRO APK asset found")
-        } finally { conn.disconnect() }
+            val text = out.toString("UTF-8")
+            val release = decode(JSONObject(text)) ?: error("No valid ELECTRO APK asset found")
+            settings
+                ?.edit()
+                ?.putString("cached_release", text)
+                ?.putLong("last_success", now)
+                ?.remove("last_failure")
+                ?.apply()
+            return release
+        } catch (failure: Exception) {
+            settings?.edit()?.putLong("last_failure", now)?.apply()
+            throw failure
+        } finally {
+            conn.disconnect()
+        }
     }
 
     /** Enforces a published non-prerelease and an official version-matched GitHub asset. */
@@ -55,9 +101,15 @@ object ReleaseChecker {
             val asset = assets.optJSONObject(i) ?: continue
             val size = asset.optLong("size", -1)
             if (asset.optString("name") != filename) continue
-            if (asset.optString("browser_download_url") != base + filename || size !in 1..MAX_APK) continue
-            return UpdateRelease(tag, exact, base + filename,
-                data.optString("body").take(1100).ifBlank { "See the GitHub release notes." }, size)
+            if (asset.optString("browser_download_url") != base + filename || size !in 1..MAX_APK)
+                continue
+            return UpdateRelease(
+                tag,
+                exact,
+                base + filename,
+                data.optString("body").take(1100).ifBlank { "See the GitHub release notes." },
+                size,
+            )
         }
         return null
     }
@@ -66,32 +118,79 @@ object ReleaseChecker {
 /** Preserve previous verified mandatory updates across restarts and offline use. */
 object UpdateSettings {
     private const val NAME = "electro_release_check_settings"
+
     private fun store(context: Context) = context.getSharedPreferences(NAME, Context.MODE_PRIVATE)
+
     /** @param context Private application context. @return Whether to check on launch. */
     fun autoCheck(context: Context): Boolean = store(context).getBoolean("auto_check", true)
+
     /** @param context App context. @param value Desired checking preference. @return Unit. */
     fun setAutoCheck(context: Context, value: Boolean) {
         store(context).edit().putBoolean("auto_check", value).apply()
     }
-    /** @param context App context. @param installed Current installed version. @return Previously verified requirement or null. */
+
+    /**
+     * @param context App context. @param installed Current installed version. @return Previously
+     *   verified requirement or null.
+     */
     fun requiredRelease(context: Context, installed: String): UpdateRelease? {
         val s = store(context)
         val version = s.getString("verified_required_version", null) ?: return null
         val address = s.getString("verified_required_url", null) ?: return null
         if (UpdatePolicy.priority(installed, version) != UpdatePriority.REQUIRED_FEATURE) {
-            s.edit().remove("verified_required_version").remove("verified_required_url")
-                .remove("verified_required_notes").apply()
+            s.edit()
+                .remove("verified_required_version")
+                .remove("verified_required_url")
+                .remove("verified_required_notes")
+                .apply()
             return null
         }
-        val expected = "https://github.com/nandurpm/electro/releases/download/v" +
-            version + "/ELECTRO-" + version + ".apk"
+        val expected =
+            "https://github.com/nandurpm/electro/releases/download/v" +
+                version +
+                "/ELECTRO-" +
+                version +
+                ".apk"
         if (address != expected) return null
-        return UpdateRelease("v" + version, version, address,
-            s.getString("verified_required_notes", "") ?: "", 0)
+        return UpdateRelease(
+            "v" + version,
+            version,
+            address,
+            s.getString("verified_required_notes", "") ?: "",
+            0,
+        )
     }
-    /** @param context App context. @param release Verified required release. @return Unit after persistence. */
+
+    /**
+     * Removes a requirement withdrawn by a successfully fetched official release.
+     *
+     * @param context Private update-settings owner.
+     * @return Unit after clearing only the requirement record.
+     */
+    fun clearRequired(context: Context) {
+        store(context)
+            .edit()
+            .remove("verified_required_version")
+            .remove("verified_required_url")
+            .remove("verified_required_notes")
+            .apply()
+    }
+
+    /**
+     * Returns the latest completed network check, excluding cached reads.
+     *
+     * @param context Private update-settings owner.
+     * @return Epoch milliseconds, or zero before the first successful check.
+     */
+    fun lastSuccess(context: Context): Long = store(context).getLong("last_success", 0)
+
+    /**
+     * @param context App context. @param release Verified required release. @return Unit after
+     *   persistence.
+     */
     fun rememberRequired(context: Context, release: UpdateRelease) {
-        store(context).edit()
+        store(context)
+            .edit()
             .putString("verified_required_version", release.version)
             .putString("verified_required_url", release.apkUrl)
             .putString("verified_required_notes", release.notes)

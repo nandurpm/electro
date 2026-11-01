@@ -20,3 +20,12 @@ __pycache__/
 /PROJECT_TREE.txt
 /SHA256SUMS.txt
 /verification/
+
+# Private keys and local configuration; public certificate examples stay explicit.
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.pem
+!signing/*.public.pem

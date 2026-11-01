@@ -8,7 +8,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import com.electrokit.app.ui.components.ElectroPanel as Card
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
 import androidx.compose.ui.*
@@ -28,6 +27,7 @@ import com.electrokit.app.R
 import com.electrokit.app.data.*
 import com.electrokit.app.domain.*
 import com.electrokit.app.ui.components.*
+import com.electrokit.app.ui.components.ElectroPanel as Card
 import com.electrokit.app.ui.theme.*
 import com.electrokit.app.viewmodel.AppViewModel
 import kotlin.math.*
@@ -68,11 +68,18 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
             else v
         }
     var bandResult by rememberSaveable(entry.id) { mutableStateOf("") }
+    var bandValid by rememberSaveable(entry.id) { mutableStateOf(false) }
     var calculated by remember(entry.id) { mutableStateOf<Calculation?>(null) }
-    val result = remember(id, scaled, mode, bandResult, calculated) {
-        calculated ?: if (id in listOf(1, 3)) Calculation.Value(bandResult)
-        else Calculators.calculate(id, scaled, mode)
-    }
+    val result =
+        remember(id, scaled, mode, bandResult, bandValid, calculated) {
+            calculated
+                ?: if (id in listOf(1, 3)) {
+                    if (bandValid || bandResult.isBlank()) Calculation.Value(bandResult)
+                    else Calculation.Error(bandResult)
+                } else Calculators.calculate(id, scaled, mode)
+        }
+    var inputLimitError by remember { mutableStateOf<String?>(null) }
+    val validResult = result is Calculation.Value && result.text.isNotBlank()
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     /**
@@ -104,7 +111,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
     Scaffold(
         topBar = {
             Bar(entry.title, back) {
-                TextButton({ share(context, shareText) }) {
+                TextButton({ share(context, shareText) }, enabled = validResult) {
                     Icon(
                         Icons.Default.Share,
                         stringResource(R.string.share_results_description),
@@ -113,7 +120,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     Text(
                         stringResource(R.string.share_results),
                         color = Color.White,
-                        fontSize = 12.sp,
+                        fontSize = MaterialTheme.typography.labelMedium.fontSize,
                     )
                 }
                 IconButton({ more = true }) {
@@ -122,7 +129,11 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                 DropdownMenu(more, { more = false }) {
                     DropdownMenuItem(
                         text = { Text("Save calculation") },
-                        onClick = { more = false; vm.saveCalculation(shareText) },
+                        enabled = validResult,
+                        onClick = {
+                            more = false
+                            vm.saveCalculation(shareText)
+                        },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.ui_reset)) },
@@ -137,6 +148,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.ui_copy_result)) },
+                        enabled = validResult,
                         onClick = {
                             more = false
                             clipboard.setText(AnnotatedString(shareText))
@@ -152,15 +164,26 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     id == 3,
                     raw,
                     { update(it) },
-                    { bandResult = it },
+                    { text, valid ->
+                        bandResult = text
+                        bandValid = valid
+                    },
                     Modifier.padding(padding),
                 )
             }
             return@Scaffold
         }
         Column(Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(12.dp)) {
-            Text("ENGINEERING WORKBENCH", style = MaterialTheme.typography.labelSmall, color = Heading)
-            Text(entry.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 12.dp))
+            Text(
+                "ENGINEERING WORKBENCH",
+                style = MaterialTheme.typography.labelSmall,
+                color = Heading,
+            )
+            Text(
+                entry.title,
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(vertical = 12.dp),
+            )
             if (spec.modes.size > 1)
                 Choice(
                     stringResource(R.string.mode),
@@ -201,13 +224,28 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             raw[field.key].orEmpty(),
-                            { update(raw + (field.key to it)) },
+                            {
+                                if (
+                                    it.length >
+                                        com.electrokit.app.data.ContentLimits.INPUT_CHARACTERS
+                                )
+                                    inputLimitError = field.key
+                                else {
+                                    inputLimitError = null
+                                    update(raw + (field.key to it))
+                                }
+                            },
                             Modifier.weight(1f).padding(vertical = 5.dp),
                             shape = RoundedCornerShape(14.dp),
                             label = { Text(field.label) },
+                            isError = inputLimitError == field.key,
                             supportingText = {
                                 Text(
-                                    if (
+                                    if (inputLimitError == field.key)
+                                        stringResource(R.string.error_input_size)
+                                    else if (field.text && field.key == "values")
+                                        stringResource(R.string.list_decimal_help)
+                                    else if (
                                         Engineering.ignoresSelector(
                                             raw[field.key].orEmpty(),
                                             raw["unit_${field.key}"]?.toIntOrNull() ?: 0,
@@ -246,11 +284,24 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     }
                 }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(modifier = Modifier.weight(1f), onClick = { calculated = Calculators.calculate(id, scaled, mode) }) { Text("Calculate") }
-                OutlinedButton(onClick = {
-                    mode = 0; calculated = null; bandResult = ""; resetKey++; vm.mode(entry.id, 0)
-                    update(spec.fields.associate { it.key to it.initial })
-                }) { Text("Reset") }
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = { calculated = Calculators.calculate(id, scaled, mode) },
+                ) {
+                    Text("Calculate")
+                }
+                OutlinedButton(
+                    onClick = {
+                        mode = 0
+                        calculated = null
+                        bandResult = ""
+                        resetKey++
+                        vm.mode(entry.id, 0)
+                        update(spec.fields.associate { it.key to it.initial })
+                    }
+                ) {
+                    Text("Reset")
+                }
             }
             Card(
                 Modifier.fillMaxWidth().padding(vertical = 16.dp),
@@ -304,11 +355,21 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
             Text(spec.formula, Modifier.padding(vertical = 8.dp))
             Text("Substitution", style = MaterialTheme.typography.titleMedium)
             spec.fields.forEach { field ->
-                Text("${field.label} = ${raw[field.key].orEmpty().ifBlank { "not entered" }} ${field.unit}", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "${field.label} = ${raw[field.key].orEmpty().ifBlank { "not entered" }} ${field.unit}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton({ clipboard.setText(AnnotatedString(shareText)) }) { Text("Copy result") }
-                TextButton({ vm.saveCalculation(shareText) }) { Text("Save result") }
+                TextButton(
+                    { clipboard.setText(AnnotatedString(shareText)) },
+                    enabled = validResult,
+                ) {
+                    Text("Copy result")
+                }
+                TextButton({ vm.saveCalculation(shareText) }, enabled = validResult) {
+                    Text("Save result")
+                }
             }
             Text(
                 stringResource(R.string.input_convention),
@@ -327,7 +388,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
  * @param raw Saved/raw text; null represents an absent record.
  * @param save Supplied (Map<String, String>) -> Unit value consumed by the operation described
  *   above.
- * @param onResult Receives current band-result text for copying and sharing.
+ * @param onResult Receives current band-result text and validity for guarded result actions.
  * @param modifier Caller-owned layout and semantics constraints.
  * @return Unit; rendering effects and state changes are delivered through callbacks or observable
  *   state. Rendering/callback failures propagate; recoverable persistence failures belong to the
@@ -338,7 +399,7 @@ fun BandScreen(
     inductor: Boolean,
     raw: Map<String, String>,
     save: (Map<String, String>) -> Unit,
-    onResult: (String) -> Unit,
+    onResult: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val bandDescriptionTemplate = stringResource(R.string.band_description)
@@ -384,7 +445,7 @@ fun BandScreen(
             Engineering.format(if (inductor) value * 1e-6 else value, if (inductor) "H" else "Ω") +
                 " ±${Engineering.percent(Resistors.tolerance[tol]?:5.0)}"
         else stringResource(R.string.invalid_bands)
-    LaunchedEffect(text) { onResult(text) }
+    LaunchedEffect(text, value) { onResult(text, value != null) }
     /**
      * Sends a new immutable band snapshot rather than mutating a map shared with persistence.
      *
@@ -520,7 +581,7 @@ fun BandScreen(
                                     if (key == "tol")
                                         Engineering.percent(Resistors.tolerance.getValue(colour))
                                     else Resistors.names[colour],
-                                    fontSize = 12.sp,
+                                    fontSize = MaterialTheme.typography.labelMedium.fontSize,
                                     maxLines = 2,
                                 )
                             }
