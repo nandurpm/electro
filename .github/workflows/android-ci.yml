@@ -37,7 +37,7 @@ jobs:
           test -x "$sdkmanager_path"
           "$sdkmanager_path" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
           test -f "$ANDROID_HOME/platforms/android-35/android.jar"
-      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
       - name: Verify wrapper JAR
         run: echo '3b8a25775a69158b5ad2b1d17a80a88dc7b40a352a73eb27d06c612a7ce68e98  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
       - name: Python validation
@@ -103,7 +103,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: '24'
       - name: Test webhook without live credentials or messages
