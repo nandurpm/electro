@@ -27,6 +27,11 @@ class ReleaseSourceTests(unittest.TestCase):
     def test_exact_tagged_main_commit_passes(self):
         self.assertEqual(self.git('rev-parse', 'HEAD'), verify(self.root, 'v4.5.3'))
 
+    def test_noncanonical_tags_are_rejected(self):
+        for tag in ('main', 'v04.5.3', 'v4.5.3-preview', '--all'):
+            with self.assertRaises(ValueError):
+                verify(self.root, tag)
+
     def test_mismatched_app_version_is_rejected(self):
         with self.assertRaises(ValueError):
             verify(self.root, 'v4.5.2')
