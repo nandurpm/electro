@@ -24,7 +24,15 @@ while [ "$SECONDS" -lt "$boot_deadline" ]; do
     exit 1
   fi
   if [ "$(timeout 5 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; then
-    adb shell input keyevent 82
+    # Pixel Launcher can show a transient ANR immediately after boot and block
+    # the first activity launch. Stop both common launcher package names; the
+    # app under test can then start directly without a launcher dialog.
+    timeout 10 adb shell am force-stop com.google.android.apps.nexuslauncher 2>/dev/null || true
+    timeout 10 adb shell am force-stop com.android.launcher3 2>/dev/null || true
+    timeout 10 adb shell input keyevent 4 2>/dev/null || true
+    timeout 10 adb shell input keyevent 82 2>/dev/null || true
+    timeout 10 adb shell input keyevent 82
+    sleep 5
     exit 0
   fi
   sleep 2
