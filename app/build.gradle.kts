@@ -8,8 +8,7 @@ plugins {
 // Keep package identity and SDK bounds explicit for API 24+ offline execution.
 android {
     namespace = "com.electrokit.app"
-    compileSdk = 35
-    buildToolsVersion = "35.0.0"
+    compileSdk = 37
     defaultConfig {
         applicationId = "com.electrokit.app"
         minSdk = 24
