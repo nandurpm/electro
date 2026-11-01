@@ -1,7 +1,7 @@
 [versions]
 agp = "9.5.0"
 kotlin = "2.0.21"
-compose = "2024.12.01"
+compose = "2026.09.00"
 [libraries]
 androidx-core = { module = "androidx.core:core-ktx", version = "1.15.0" }
 activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
