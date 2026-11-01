@@ -11,7 +11,7 @@ def main():
         text = path.read_text(errors="replace")[-10000:] if path.is_file() else "No log was created."
         # ASCII quoting avoids control characters invalidating the workflow command.
         escaped = json.dumps(text, ensure_ascii=True).replace("%", "%25")
-        print("::error title=Android emulator startup::" + path.name + " " + escaped)
+        print("::error title=Android CI diagnostics::" + path.name + " " + escaped)
 
 
 if __name__ == "__main__":

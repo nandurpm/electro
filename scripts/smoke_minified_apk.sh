@@ -14,6 +14,10 @@ adb install "$smoke_root/smoke.apk"
 adb shell svc wifi disable
 adb shell svc data disable
 adb logcat -c
+# Stabilize accessibility snapshots; production animations remain enabled in the APK.
+for setting in window_animation_scale transition_animation_scale animator_duration_scale; do
+  adb shell settings put global "$setting" 0
+done
 for configuration in compact large-font; do
   if [ "$configuration" = compact ]; then
     adb shell wm size 720x1280
@@ -29,8 +33,14 @@ for configuration in compact large-font; do
   # Wait for the bundled offline content, not an arbitrary fixed startup delay.
   ready=false
   for attempt in $(seq 1 30); do
-    adb shell uiautomator dump /sdcard/electro-window.xml >/dev/null
-    adb pull /sdcard/electro-window.xml "$smoke_root/$configuration.xml" >/dev/null
+    if ! adb shell uiautomator dump /sdcard/electro-window.xml >/dev/null; then
+      sleep 1
+      continue
+    fi
+    if ! adb pull /sdcard/electro-window.xml "$smoke_root/$configuration.xml" >/dev/null; then
+      sleep 1
+      continue
+    fi
     if python3 - "$smoke_root/$configuration.xml" <<'PY'
 import sys, xml.etree.ElementTree as ET
 nodes = ET.parse(sys.argv[1]).getroot().iter('node')
