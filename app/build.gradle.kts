@@ -1,7 +1,6 @@
 // Pin build plugins through the catalogue so developers use the tested toolchain.
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -9,8 +8,7 @@ plugins {
 // Keep package identity and SDK bounds explicit for API 24+ offline execution.
 android {
     namespace = "com.electrokit.app"
-    compileSdk = 35
-    buildToolsVersion = "35.0.0"
+    compileSdk = 37
     defaultConfig {
         applicationId = "com.electrokit.app"
         minSdk = 24
@@ -104,5 +102,4 @@ dependencies {
     "testDebugImplementation"(libs.test.core)
 }
 
-// JVM 17 matches the Android Java compilation target.
-kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
+// AGP 9 built-in Kotlin inherits the Java 17 target from compileOptions above.

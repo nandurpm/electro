@@ -85,8 +85,8 @@ jobs:
           set -euo pipefail
           sdkmanager_path="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           test -x "$sdkmanager_path"
-          "$sdkmanager_path" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
-          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          "$sdkmanager_path" 'platforms;android-35' 'platforms;android-37.0' 'build-tools;36.0.0' 'platform-tools'
+          test -f "$ANDROID_HOME/platforms/android-37.0/android.jar"
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
       - name: Verify wrapper JAR
         run: echo '3b8a25775a69158b5ad2b1d17a80a88dc7b40a352a73eb27d06c612a7ce68e98  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
@@ -142,12 +142,12 @@ jobs:
           fi
           cat "$RUNNER_TEMP/electro-release-build.log"
           test -f app/build/outputs/apk/release/app-release.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk | tee "$RUNNER_TEMP/electro-signature.txt"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk | tee "$RUNNER_TEMP/electro-signature.txt"
           expected=$(cat signing/release-certificate.sha256)
           actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/electro-signature.txt")
           test -n "$expected"
           if [ "$actual" != "$expected" ]; then echo 'Signing certificate does not match the active ELECTRO release identity.' >&2; exit 1; fi
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk
       - name: Record current signed release evidence
         run: |
           "$RUNNER_TEMP/electro-python/bin/python" scripts/record_verification.py --apk app/build/outputs/apk/release/app-release.apk --build-log "$RUNNER_TEMP/electro-release-build.log" --variants debug release --require-signed
