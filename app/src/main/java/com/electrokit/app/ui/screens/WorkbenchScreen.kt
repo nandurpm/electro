@@ -169,24 +169,23 @@ fun MainScreen(
     val context = LocalContext.current
     var componentLoadAttempt by remember { mutableIntStateOf(0) }
     var componentLoadError by remember { mutableStateOf(false) }
-    val componentData by
-        produceState<Pair<List<ComponentAsset>, Map<String, ComponentGuide>>?>(
-            null,
-            componentLoadAttempt,
-        ) {
-            componentLoadError = false
-            value =
-                try {
-                    withContext(Dispatchers.IO) {
-                        loadComponents(context) to loadComponentGuides(context)
-                    }
-                } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    componentLoadError = true
-                    null
+    var componentData by remember {
+        mutableStateOf<Pair<List<ComponentAsset>, Map<String, ComponentGuide>>?>(null)
+    }
+    LaunchedEffect(componentLoadAttempt) {
+        componentLoadError = false
+        componentData = null
+        try {
+            componentData =
+                withContext(Dispatchers.IO) {
+                    loadComponents(context) to loadComponentGuides(context)
                 }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            componentLoadError = true
         }
+    }
     val components = componentData?.first.orEmpty()
     val guides = componentData?.second.orEmpty()
     val componentStateHolder = rememberSaveableStateHolder()

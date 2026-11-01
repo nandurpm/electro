@@ -7,7 +7,7 @@ import subprocess
 
 def verify(root: Path, tag: str) -> str:
     """Return the immutable release commit, rejecting all mismatched or untrusted sources."""
-    if not re.fullmatch(r'v\d+\.\d+\.\d+', tag):
+    if not re.fullmatch(r'v(?:0|[1-9][0-9]{0,4})\.(?:0|[1-9][0-9]{0,4})\.(?:0|[1-9][0-9]{0,4})', tag):
         raise ValueError('An explicit canonical version tag is required')
     text = (root / 'app/build.gradle.kts').read_text()
     version = re.search(r'versionName\s*=\s*"([^"]+)"', text)[1]
