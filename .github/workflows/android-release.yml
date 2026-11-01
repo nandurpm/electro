@@ -23,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Existing version tag to release, for example v3.2.0'
+        description: 'Existing version tag, for example v4.5.3 (required for stable publication)'
         required: false
         type: string
       publish:

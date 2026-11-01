@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -26,6 +25,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -230,7 +232,7 @@ fun ComponentReferenceLibrary(
                         }
                     }
                 Text(
-                    stringResource(R.string.component_count_hint, shown.size),
+                    pluralStringResource(R.plurals.component_count_hint, shown.size, shown.size),
                     Modifier.padding(horizontal = 16.dp),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
@@ -273,10 +275,14 @@ fun ComponentReferenceLibrary(
                             enabled = asset.id in selected || selected.size < 2,
                         )
                         Spacer(Modifier.weight(1f))
-                        IconButton({ vm.star("component:${asset.id}") }) {
+                        IconToggleButton(
+                            checked = "component:${asset.id}" in prefs.favourites,
+                            onCheckedChange = { vm.star("component:${asset.id}") },
+                        ) {
                             Icon(
-                                if ("component:${asset.id}" in prefs.favourites) Icons.Default.Star
-                                else Icons.Outlined.Star,
+                                if ("component:${asset.id}" in prefs.favourites)
+                                    rememberVectorPainter(Icons.Default.Star)
+                                else painterResource(R.drawable.ic_favorite_outline),
                                 if ("component:${asset.id}" in prefs.favourites)
                                     stringResource(R.string.component_remove_favorite, asset.name)
                                 else stringResource(R.string.component_add_favorite, asset.name),
@@ -403,10 +409,14 @@ fun ComponentReferenceDetail(
     Scaffold(
         topBar = {
             Bar(asset.name, back) {
-                IconButton({ vm.star("component:${asset.id}") }) {
+                IconToggleButton(
+                    checked = "component:${asset.id}" in prefs.favourites,
+                    onCheckedChange = { vm.star("component:${asset.id}") },
+                ) {
                     Icon(
-                        if ("component:${asset.id}" in prefs.favourites) Icons.Default.Star
-                        else Icons.Outlined.Star,
+                        if ("component:${asset.id}" in prefs.favourites)
+                            rememberVectorPainter(Icons.Default.Star)
+                        else painterResource(R.drawable.ic_favorite_outline),
                         stringResource(
                             if ("component:${asset.id}" in prefs.favourites)
                                 R.string.component_remove_favorite
