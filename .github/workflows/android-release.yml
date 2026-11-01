@@ -85,8 +85,8 @@ jobs:
           set -euo pipefail
           sdkmanager_path="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           test -x "$sdkmanager_path"
-          "$sdkmanager_path" 'platforms;android-35' 'platforms;android-37' 'build-tools;36.0.0' 'platform-tools'
-          test -f "$ANDROID_HOME/platforms/android-37/android.jar"
+          "$sdkmanager_path" 'platforms;android-35' 'platforms;android-37.0' 'build-tools;36.0.0' 'platform-tools'
+          test -f "$ANDROID_HOME/platforms/android-37.0/android.jar"
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
       - name: Verify wrapper JAR
         run: echo '3b8a25775a69158b5ad2b1d17a80a88dc7b40a352a73eb27d06c612a7ce68e98  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
