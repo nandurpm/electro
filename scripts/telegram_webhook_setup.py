@@ -24,7 +24,9 @@ def main():
     if not token:
         raise TelegramError('Bot configuration missing')
     chat_id = private_chat_id(owner)
-    credential = token.replace(':', '_', 1)
+    credential = os.environ.get('TELEGRAM_WEBHOOK_SECRET', '')
+    if len(credential) < 32 or credential in (token, token.replace(':', '_', 1)) or not all(c.isascii() and (c.isalnum() or c in '_-') for c in credential):
+        raise TelegramError('Configure an independent random TELEGRAM_WEBHOOK_SECRET of at least 32 characters')
     # The deployed endpoint must accept this exact credential before polling stops.
     verified = endpoint('/verify', credential, {})
     if verified.get('mode') != 'webhook' or not verified.get('ok'):

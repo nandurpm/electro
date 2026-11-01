@@ -78,3 +78,14 @@ jobs:
             verification/
             ${{ runner.temp }}/ELECTRO-source.zip
           retention-days: 14
+  webhook-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Test webhook without live credentials or messages
+        run: node supabase/functions/electro-telegram/test.cjs

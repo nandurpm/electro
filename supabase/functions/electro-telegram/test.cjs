@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const {stripTypeScriptTypes}=require('node:module');
 let source=fs.readFileSync(path.join(__dirname,'index.ts'),'utf8').replace('export async function handler','async function handler');
-const box={console,Date,Map,TextEncoder,Uint8Array,Response,Request,URL,Blob,FormData,AbortSignal,crypto:require('node:crypto').webcrypto,Deno:{serve(){}}};vm.createContext(box);vm.runInContext(stripTypeScriptTypes(source),box);const run=x=>vm.runInContext(x,box);
+const box={console,Date,Map,TextEncoder,Uint8Array,Response,Request,URL,Blob,FormData,AbortSignal,crypto:require('node:crypto').webcrypto,Deno:{serve(){},env:{get(name){return name==="TELEGRAM_BOT_TOKEN"?"123456:test-bot-token":name==="TELEGRAM_WEBHOOK_SECRET"?"independent_random_webhook_secret_123456789":""}}}};vm.createContext(box);vm.runInContext(stripTypeScriptTypes(source),box);const run=x=>vm.runInContext(x,box);
 (async()=>{
  assert.equal(run('authorized({message:{chat:{type:"private",id:1015720586},from:{id:1015720586}}})'),true);
  assert.equal(run('authorized({message:{chat:{type:"group",id:1015720586},from:{id:1015720586}}})'),false);
@@ -13,5 +13,12 @@ const box={console,Date,Map,TextEncoder,Uint8Array,Response,Request,URL,Blob,For
  box.calls=[];box.fetch=async(url,options)=>{box.calls.push({url,body:options?.body});if(url.includes('api.github'))return {ok:true,json:async()=>({tag_name:'v4',body:'<test>',html_url:'https://github.com/nandurpm/electro/releases/tag/v4'})};return {json:async()=>({ok:true,result:true})}};
  await run('handle("/changelog","test")');assert.match(JSON.parse(box.calls.at(-1).body).text,/&lt;test&gt;/);
  await run('handle("📲 Download APK","test")');assert.match(JSON.parse(box.calls.at(-1).body).text,/No matching download/);
- console.log('Webhook: 9 authorization, calculation, escaping and routing checks passed.');
+ box.calls=[];
+ box.fetch=async(url)=>{box.calls.push({url});return {json:async()=>({ok:true,result:{id:1}})}};
+ const headers={'x-telegram-bot-api-secret-token':'independent_random_webhook_secret_123456789'};
+ box.headers=headers;
+ assert.equal((await run('handler(new Request("https://example.com/verify",{method:"POST",headers,body:"{}"}))')).status,200);
+ assert.ok(box.calls[0].url.includes('/bot123456:test-bot-token/getMe'));
+ assert.equal((await run('handler(new Request("https://example.com/verify",{method:"POST",headers:{"x-telegram-bot-api-secret-token":"123456_test-bot-token"},body:"{}"}))')).status,403);
+ console.log('Webhook: authorization, calculations, escaping, routing and independent-secret checks passed.');
 })().catch(e=>{console.error(e);process.exitCode=1});
