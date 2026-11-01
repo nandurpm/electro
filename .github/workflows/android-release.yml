@@ -38,6 +38,7 @@ permissions:
 jobs:
   signed-release:
     runs-on: ubuntu-24.04
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == false && 'release-review' || 'release-signing' }}
     permissions:
       contents: write
     steps:
@@ -54,6 +55,11 @@ jobs:
           set -euo pipefail
           if [ "$REVIEW_ONLY" = true ]; then exit 0; fi
           python3 scripts/verify_release_source.py "$RELEASE_TAG"
+      - name: Require protected signing Environment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNING_ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == false && 'release-review' || 'release-signing' }}
+        run: python3 scripts/verify_signing_environment.py
       - name: Check release signing secrets
         env:
           ELECTROKIT_KEYSTORE_BASE64: ${{ secrets.ELECTROKIT_KEYSTORE_BASE64 }}
