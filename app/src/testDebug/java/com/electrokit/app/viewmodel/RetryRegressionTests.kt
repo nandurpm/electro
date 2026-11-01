@@ -229,6 +229,9 @@ class RetryRegressionTests {
         val repository = FailingRepository().apply { fail = false }
         val vm = AppViewModel(RuntimeEnvironment.getApplication(), repository)
         vm.values("c4", mapOf("v" to "24"))
+        // Bypass the UI debounce: this test verifies the production journal dispatcher, not
+        // whether a busy CI runner advances the 350 ms debounce on schedule.
+        vm.flushInputs()
         val deadline = System.nanoTime() + 5_000_000_000L
         while (repository.stageOnMain == null && System.nanoTime() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
