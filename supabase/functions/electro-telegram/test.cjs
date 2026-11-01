@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const {stripTypeScriptTypes}=require('node:module');
-let source=fs.readFileSync(path.join(__dirname,'index.ts'),'utf8').replace('export async function handler','async function handler');
-const box={console,Date,Map,TextEncoder,Uint8Array,Response,Request,URL,Blob,FormData,AbortSignal,crypto:require('node:crypto').webcrypto,Deno:{serve(){},env:{get(name){return name==="TELEGRAM_BOT_TOKEN"?"123456:test-bot-token":name==="TELEGRAM_WEBHOOK_SECRET"?"independent_random_webhook_secret_123456789":""}}}};vm.createContext(box);vm.runInContext(stripTypeScriptTypes(source),box);const run=x=>vm.runInContext(x,box);
+let source=fs.readFileSync(path.join(__dirname,'index.ts'),'utf8').replace('export async function handler','async function handler').replace('import { timingSafeEqual } from "node:crypto";', '');
+const box={timingSafeEqual:require("node:crypto").timingSafeEqual,console,Date,Map,TextEncoder,Uint8Array,Response,Request,URL,Blob,FormData,AbortSignal,crypto:require('node:crypto').webcrypto,Deno:{serve(){},env:{get(name){return name==="TELEGRAM_BOT_TOKEN"?"123456:test-bot-token":name==="TELEGRAM_WEBHOOK_SECRET"?"independent_random_webhook_secret_123456789":""}}}};vm.createContext(box);vm.runInContext(stripTypeScriptTypes(source),box);const run=x=>vm.runInContext(x,box);
 (async()=>{
  assert.equal(run('authorized({message:{chat:{type:"private",id:1015720586},from:{id:1015720586}}})'),true);
  assert.equal(run('authorized({message:{chat:{type:"group",id:1015720586},from:{id:1015720586}}})'),false);
@@ -20,5 +20,12 @@ const box={console,Date,Map,TextEncoder,Uint8Array,Response,Request,URL,Blob,For
  assert.equal((await run('handler(new Request("https://example.com/verify",{method:"POST",headers,body:"{}"}))')).status,200);
  assert.ok(box.calls[0].url.includes('/bot123456:test-bot-token/getMe'));
  assert.equal((await run('handler(new Request("https://example.com/verify",{method:"POST",headers:{"x-telegram-bot-api-secret-token":"123456_test-bot-token"},body:"{}"}))')).status,403);
+ box.calls=[];
+ for (const command of ['/menu','/apk','/version','/source','/status','/tools','/changelog','/help']) {
+   const response=await run('handler(new Request("https://example.com",{method:"POST",headers,body:JSON.stringify({message:{text:'+JSON.stringify(command)+',chat:{type:"private",id:123},from:{id:123}}})}))');
+   assert.equal(response.status,200);
+   assert.equal((await response.json()).ignored,true);
+ }
+ assert.equal(box.calls.length,0,'Unauthorized commands must never send a message or fetch GitHub');
  console.log('Webhook: authorization, calculations, escaping, routing and independent-secret checks passed.');
 })().catch(e=>{console.error(e);process.exitCode=1});

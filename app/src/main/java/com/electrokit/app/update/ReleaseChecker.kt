@@ -34,8 +34,7 @@ object ReleaseChecker {
      * @return Valid official stable-release metadata, not a certificate or malware verdict.
      */
     fun fetchLatest(context: Context? = null, force: Boolean = false): UpdateRelease {
-        val settings =
-            context?.getSharedPreferences("electro_release_check_settings", Context.MODE_PRIVATE)
+        val settings = context?.let { UpdateSettings.store(it) }
         val now = System.currentTimeMillis()
         if (!force && settings != null) {
             val age = now - settings.getLong("last_success", 0)
@@ -57,7 +56,9 @@ object ReleaseChecker {
             conn.readTimeout = 9000
             conn.setRequestProperty("Accept", "application/vnd.github+json")
             conn.setRequestProperty("User-Agent", "ELECTRO-Android-Release-Checker")
-            if (conn.responseCode != HttpURLConnection.HTTP_OK) error("GitHub release unavailable")
+            val status = conn.responseCode
+            if (status == 403 || status == 429) throw ReleaseRateLimitException()
+            if (status != HttpURLConnection.HTTP_OK) error("GitHub release unavailable")
             if (conn.contentLengthLong > MAX_REPLY) error("Release metadata too large")
             val out = ByteArrayOutputStream()
             conn.inputStream.use { stream ->
@@ -107,7 +108,7 @@ object ReleaseChecker {
                 tag,
                 exact,
                 base + filename,
-                data.optString("body").take(1100).ifBlank { "See the GitHub release notes." },
+                ReleaseNotes.plainText(data.optString("body")),
                 size,
             )
         }
@@ -119,7 +120,7 @@ object ReleaseChecker {
 object UpdateSettings {
     private const val NAME = "electro_release_check_settings"
 
-    private fun store(context: Context) = context.getSharedPreferences(NAME, Context.MODE_PRIVATE)
+    internal fun store(context: Context) = context.getSharedPreferences(NAME, Context.MODE_PRIVATE)
 
     /** @param context Private application context. @return Whether to check on launch. */
     fun autoCheck(context: Context): Boolean = store(context).getBoolean("auto_check", true)
@@ -128,6 +129,24 @@ object UpdateSettings {
     fun setAutoCheck(context: Context, value: Boolean) {
         store(context).edit().putBoolean("auto_check", value).apply()
     }
+
+    /**
+     * Persists Later for this exact optional version, including process restarts.
+     *
+     * @param context Private settings owner.
+     * @param version Dismissed optional version.
+     * @return Unit after scheduling the private preference write.
+     */
+    fun dismissPatch(context: Context, version: String) {
+        store(context).edit().putString("dismissed_patch_version", version).apply()
+    }
+
+    /**
+     * @param context Private settings owner. @param version Candidate optional version.
+     * @return Whether Later was selected for this exact version.
+     */
+    fun patchDismissed(context: Context, version: String): Boolean =
+        store(context).getString("dismissed_patch_version", null) == version
 
     /**
      * @param context App context. @param installed Current installed version. @return Previously

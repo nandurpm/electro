@@ -50,8 +50,37 @@ constructor(
     private val errors = MutableStateFlow<String?>(null)
     /** Read-only banner text for the current recoverable storage failure. */
     val error = errors.asStateFlow()
-    /** Exact failed operation, retained until retry or dismissal. */
-    private var retryAction: (() -> Unit)? = null
+
+    /** @property message Recoverable failure text. @property retry Exact failed operation. */
+    private data class Failure(val message: String, val retry: () -> Unit)
+
+    private val failures = linkedMapOf<String, Failure>()
+    private val settingsQueue = ArrayDeque<Pair<String, (PreferencesState) -> PreferencesState>>()
+    private val settingsMutex = Mutex()
+    private var nextMutation = 0L
+    private val validation = MutableStateFlow<String?>(null)
+    /** Input limits are separate from recoverable storage failures and never erase Retry. */
+    val validationError = validation.asStateFlow()
+
+    private fun publishFailure(key: String, resource: Int, retry: () -> Unit) {
+        failures[key] = Failure(getApplication<Application>().getString(resource), retry)
+        refreshFailure()
+    }
+
+    private fun clearFailure(key: String) {
+        failures.remove(key)
+        refreshFailure()
+    }
+
+    private fun refreshFailure() {
+        errors.value = failures.values.firstOrNull()?.message
+    }
+
+    /** @return Unit; dismisses a transient input-limit warning without affecting storage Retry. */
+    fun dismissValidationError() {
+        validation.value = null
+    }
+
     /** Asset/preference subscription cancelled before restarting loading. */
     private var loading: Job? = null
     /** Main-record input job; the durable journal already protects its pending values. */
@@ -60,8 +89,6 @@ constructor(
     private var debounceJob: Job? = null
     /** Serializes commits so an older disk transaction cannot overwrite newer typing. */
     private val inputMutex = Mutex()
-    /** Identifies the visible failure; unrelated successful operations cannot dismiss it. */
-    private var errorKind: String? = null
     /**
      * Latest unsaved snapshots, owned on the ViewModel main thread. Main-thread snapshots overlay
      * disk emissions, so an older record cannot undo new typing.
@@ -82,7 +109,7 @@ constructor(
      */
     fun retryLoading() {
         loading?.cancel()
-        errors.value = null
+        clearFailure("load")
         loading =
             viewModelScope.launch {
                 try {
@@ -97,9 +124,7 @@ constructor(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    retryAction = ::retryLoading
-                    errorKind = "load"
-                    errors.value = getApplication<Application>().getString(R.string.error_load)
+                    publishFailure("load", R.string.error_load, ::retryLoading)
                 }
             }
     }
@@ -114,20 +139,26 @@ constructor(
      *   cancellation is rethrown.
      */
     private fun update(transform: (PreferencesState) -> PreferencesState) {
+        settingsQueue.addLast("settings:${nextMutation++}" to transform)
+        drainSettings()
+    }
+
+    private fun drainSettings() {
         viewModelScope.launch {
-            try {
-                repository.update(transform)
-                if (errorKind == "settings") {
-                    errors.value = null
-                    retryAction = null
-                    errorKind = null
+            settingsMutex.withLock {
+                while (settingsQueue.isNotEmpty()) {
+                    val (key, transform) = settingsQueue.first()
+                    try {
+                        repository.update(transform)
+                        settingsQueue.removeFirst()
+                        clearFailure(key)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        publishFailure(key, R.string.error_settings, ::drainSettings)
+                        return@withLock
+                    }
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                retryAction = { update(transform) }
-                errorKind = "settings"
-                errors.value = getApplication<Application>().getString(R.string.error_settings)
             }
         }
     }
@@ -141,7 +172,7 @@ constructor(
      *   cancellation is rethrown.
      */
     fun retryFailedAction() {
-        retryAction?.invoke()
+        failures.values.firstOrNull()?.retry?.invoke()
     }
 
     /**
@@ -153,8 +184,15 @@ constructor(
      *   cancellation is rethrown.
      */
     fun dismissError() {
-        retryAction = null
-        errors.value = null
+        val key = failures.keys.firstOrNull() ?: return
+        viewModelScope.launch {
+            settingsMutex.withLock {
+                failures.remove(key)
+                settingsQueue.removeAll { it.first == key }
+                refreshFailure()
+            }
+            if (key.startsWith("settings:")) drainSettings()
+        }
     }
 
     /**
@@ -172,13 +210,19 @@ constructor(
                 debounceJob?.cancelAndJoin()
                 saveJob?.cancelAndJoin()
                 pending.clear()
-                inputMutex.withLock { withContext(ioDispatcher) { repository.resetPreferences() } }
+                settingsMutex.withLock {
+                    inputMutex.withLock {
+                        withContext(ioDispatcher) { repository.resetPreferences() }
+                    }
+                    settingsQueue.clear()
+                    failures.clear()
+                    validation.value = null
+                    refreshFailure()
+                }
                 retryLoading()
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                retryAction = ::resetPreferences
-                errorKind = "reset"
-                errors.value = getApplication<Application>().getString(R.string.error_reset)
+                publishFailure("reset", R.string.error_reset, ::resetPreferences)
             }
         }
     }
@@ -224,15 +268,10 @@ constructor(
             text.toByteArray(Charsets.UTF_8).size >
                 com.electrokit.app.data.ContentLimits.SNAPSHOT_BYTES
         ) {
-            errors.value = getApplication<Application>().getString(R.string.error_history_size)
-            retryAction = null
-            errorKind = "history_limit"
+            validation.value = getApplication<Application>().getString(R.string.error_history_size)
             return
         }
-        if (errorKind == "history_limit") {
-            errors.value = null
-            errorKind = null
-        }
+        validation.value = null
         update {
             it.copy(
                 calculations = com.electrokit.app.data.ContentLimits.prepend(text, it.calculations)
@@ -294,15 +333,10 @@ constructor(
         if (
             values.values.any { it.length > com.electrokit.app.data.ContentLimits.INPUT_CHARACTERS }
         ) {
-            errors.value = getApplication<Application>().getString(R.string.error_input_size)
-            retryAction = null
-            errorKind = "input_limit"
+            validation.value = getApplication<Application>().getString(R.string.error_input_size)
             return
         }
-        if (errorKind == "input_limit") {
-            errors.value = null
-            errorKind = null
-        }
+        validation.value = null
         pending[id] = values.toMap()
         state.value = state.value.copy(values = state.value.values + (id to values.toMap()))
         // Debounce edits without cancelling a durable write already in progress.
@@ -347,17 +381,11 @@ constructor(
                 }
                 // Remove only unchanged entries: edits made during this write must remain pending.
                 snapshot.forEach { (id, values) -> if (pending[id] == values) pending.remove(id) }
-                if (errorKind == "inputs") {
-                    errors.value = null
-                    retryAction = null
-                    errorKind = null
-                }
+                clearFailure("inputs")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                retryAction = ::flushInputs
-                errorKind = "inputs"
-                errors.value = getApplication<Application>().getString(R.string.error_inputs)
+                publishFailure("inputs", R.string.error_inputs, ::flushInputs)
                 return
             }
         }

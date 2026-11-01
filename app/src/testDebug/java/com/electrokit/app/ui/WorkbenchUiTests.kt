@@ -1,5 +1,6 @@
 package com.electrokit.app.ui
 
+import androidx.activity.compose.setContent
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.electrokit.app.MainActivity
@@ -371,26 +372,34 @@ class WorkbenchUiTests {
     @Test
     fun requiredBrowserUpdateCannotBePostponed() {
         ready()
-        val settings =
-            ui.activity.getSharedPreferences(
-                "electro_release_check_settings",
-                android.content.Context.MODE_PRIVATE,
-            )
-        settings
-            .edit()
-            .putString("verified_required_version", "9.0.0")
-            .putString(
-                "verified_required_url",
+        val release =
+            com.electrokit.app.update.UpdateRelease(
+                "v9.0.0",
+                "9.0.0",
                 "https://github.com/nandurpm/electro/releases/download/v9.0.0/ELECTRO-9.0.0.apk",
+                "Required feature update",
+                1000,
             )
-            .commit()
-        ui.activityRule.scenario.recreate()
+        var postponed = false
+        ui.runOnUiThread {
+            ui.activity.setContent {
+                com.electrokit.app.ui.theme.ElectroTheme(false) {
+                    com.electrokit.app.update.UpdateDialog(
+                        com.electrokit.app.update.UpdateState(pending = release),
+                        onLater = { postponed = true },
+                        onRefresh = {},
+                        onOpen = {},
+                        onDismissMessage = {},
+                    )
+                }
+            }
+        }
         ui.onNodeWithText("ELECTRO update available").assertExists()
         ui.onNodeWithText("Open Release").assertExists()
         ui.onNodeWithText("Later").assertDoesNotExist()
         ui.runOnIdle { ui.activity.onBackPressedDispatcher.onBackPressed() }
         ui.onNodeWithText("ELECTRO update available").assertExists()
-        settings.edit().clear().commit()
+        assertFalse(postponed)
     }
 
     @Test

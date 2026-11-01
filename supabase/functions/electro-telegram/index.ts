@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 // Independent secrets are configured in Supabase; request headers never carry the bot token.
 const OWNER = '1015720586';
 const REPO='nandurpm/electro';
@@ -7,7 +8,7 @@ const esc=(s:unknown)=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt
 const menu={keyboard:[[{text:'📲 Download APK'},{text:'🆕 Latest Version'}],[{text:'🧮 Quick Tools'}],[{text:'📦 Source Code'},{text:'📚 Releases'}],[{text:'🟢 Build Status'},{text:'📝 What’s New'}],[{text:'🏠 Main Menu'},{text:'ℹ️ About & Privacy'}]],resize_keyboard:true};
 const aliases:Record<string,string>={'📲 Download APK':'/apk','🆕 Latest Version':'/version','🧮 Quick Tools':'/tools','📦 Source Code':'/source','📚 Releases':'/releases','🟢 Build Status':'/status','📝 What’s New':'/changelog','🏠 Main Menu':'/menu','ℹ️ About & Privacy':'/about','❓ Help':'/help'};
 const commands=[['start','Open your private ELECTRO menu'],['menu','Main menu'],['apk','Latest Android APK'],['version','Latest release'],['source','Source ZIP'],['releases','Release history'],['status','Build status'],['tools','Quick electrical calculations'],['changelog','Latest release notes'],['about','Privacy and response times'],['help','Command help']].map(([command,description])=>({command,description}));
-async function digest(s:string){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))),b=>b.toString(16).padStart(2,'0')).join('');}
+async function digest(s:string){return new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)));}
 function authorized(u:any){const m=u.message;return m?.chat?.type==='private'&&String(m.chat.id)===OWNER&&String(m.from?.id)===OWNER&&!m.from?.is_bot;}
 async function tg(token:string,method:string,body:any){
  const r=await fetch('https://api.telegram.org/bot'+token+'/'+method,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(25000)});
@@ -55,7 +56,7 @@ export async function handler(request:Request){
  const secret=Deno.env.get('TELEGRAM_WEBHOOK_SECRET')||'';
  const token=Deno.env.get('TELEGRAM_BOT_TOKEN')||'';
  if(!secret||!token)return json({error:'not_configured'},503);
- if(await digest(credential)!==await digest(secret))return json({error:'forbidden'},403);
+ if(!timingSafeEqual(await digest(credential),await digest(secret)))return json({error:'forbidden'},403);
  try{
   if(new URL(request.url).pathname.endsWith('/verify')){const me=await tg(token,'getMe',{});return json({ok:true,bot_id:me.id,mode:'webhook'});}
   const u=await request.json();

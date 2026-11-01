@@ -21,15 +21,18 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -103,10 +106,30 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState, onCheckUpdates: () -> 
     val nav = rememberNavController()
     val loaded by vm.loaded.collectAsStateWithLifecycle()
     val err by vm.error.collectAsStateWithLifecycle()
+    val validation by vm.validationError.collectAsStateWithLifecycle()
+    LaunchedEffect(validation) {
+        if (validation != null) {
+            kotlinx.coroutines.delay(6000)
+            vm.dismissValidationError()
+        }
+    }
+    val statusBackdrop = BrandNavy
+    val statusInset =
+        WindowInsets.statusBars.getTop(androidx.compose.ui.platform.LocalDensity.current).toFloat()
     // A neutral brand loading surface avoids flashing the wrong persisted theme during migration.
     var confirmReset by remember { mutableStateOf(false) }
     Surface(
-        Modifier.fillMaxSize(),
+        Modifier.fillMaxSize()
+            .then(
+                Modifier.drawWithContent {
+                    drawContent()
+                    // Root owns safeDrawing once; paint its status inset to match the navy toolbar.
+                    drawRect(
+                        statusBackdrop,
+                        size = androidx.compose.ui.geometry.Size(size.width, statusInset),
+                    )
+                }
+            ),
         contentColor = MaterialTheme.colorScheme.onBackground,
         color = MaterialTheme.colorScheme.background,
     ) {
@@ -132,21 +155,21 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState, onCheckUpdates: () -> 
             if (confirmReset)
                 AlertDialog(
                     onDismissRequest = { confirmReset = false },
-                    title = { Text("Reset damaged preferences?") },
-                    text = {
-                        Text(
-                            "This deletes favorites, saved calculations and inputs. This cannot be undone."
-                        )
-                    },
+                    title = { Text(stringResource(R.string.reset_preferences_title)) },
+                    text = { Text(stringResource(R.string.reset_preferences_message)) },
                     confirmButton = {
                         TextButton({
                             confirmReset = false
                             vm.resetPreferences()
                         }) {
-                            Text("Reset")
+                            Text(stringResource(R.string.reset_action))
                         }
                     },
-                    dismissButton = { TextButton({ confirmReset = false }) { Text("Cancel") } },
+                    dismissButton = {
+                        TextButton({ confirmReset = false }) {
+                            Text(stringResource(R.string.cancel_action))
+                        }
+                    },
                 )
             return@Surface
         }
@@ -167,6 +190,17 @@ fun ElectroApp(vm: AppViewModel, prefs: PreferencesState, onCheckUpdates: () -> 
                         Text(stringResource(R.string.ui_retry))
                     }
                     TextButton({ vm.dismissError() }) { Text(stringResource(R.string.ui_dismiss)) }
+                }
+            if (validation != null)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        validation!!,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f).padding(8.dp),
+                    )
+                    TextButton(vm::dismissValidationError) {
+                        Text(stringResource(R.string.ui_dismiss))
+                    }
                 }
             NavHost(nav, "main", Modifier.weight(1f)) {
                 composable("main") {
@@ -295,7 +329,7 @@ fun Bar(
                             )
                             if (brand)
                                 Text(
-                                    "Electronics Toolkit",
+                                    stringResource(R.string.app_subtitle),
                                     color = TopBarText,
                                     style = MaterialTheme.typography.labelSmall,
                                 )
@@ -391,7 +425,7 @@ fun EntryRow(entry: Entry, openEntry: () -> Unit, star: Boolean? = null, onStar:
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
             .heightIn(min = 68.dp)
-            .clickable(onClick = openEntry)
+            .clickable(role = Role.Button, onClick = openEntry)
             .padding(start = 16.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -473,7 +507,7 @@ fun Databases(
                 Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     .clip(RoundedCornerShape(22.dp))
                     .background(MaterialTheme.colorScheme.surface)
-                    .clickable { openEntry(id) }
+                    .clickable(role = Role.Button) { openEntry(id) }
                     .padding(16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -508,7 +542,10 @@ fun Databases(
             Text(
                 stringResource(R.string.more_features),
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth().clickable { onMore() }.padding(16.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .clickable(role = Role.Button) { onMore() }
+                        .padding(16.dp),
             )
         }
     }
@@ -803,7 +840,11 @@ fun ReferenceScreen(entry: Entry, page: Page, back: () -> Unit) {
                                     it,
                                     fontSize = 12.sp,
                                     modifier =
-                                        Modifier.clickable {
+                                        Modifier.clickable(
+                                                role = Role.Button,
+                                                onClickLabel =
+                                                    stringResource(R.string.copy_reference),
+                                            ) {
                                                 clipboard.setText(AnnotatedString(it))
                                             }
                                             .padding(vertical = 4.dp),
@@ -866,7 +907,9 @@ private fun TableCell(
             .heightIn(min = 52.dp)
             .then(if (compact) Modifier.fillMaxHeight() else Modifier)
             .background(if (header) BrandNavy else colour ?: Color.Transparent)
-            .clickable { clipboard.setText(AnnotatedString(value)) }
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.copy_value)) {
+                clipboard.setText(AnnotatedString(value))
+            }
             .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1034,7 +1077,7 @@ fun ModuleScreen(entry: Entry, vm: AppViewModel, back: () -> Unit) {
                 color = Heading,
             )
             TextButton({ comparison = true }, enabled = selected.size >= 2) {
-                Text("Compare selected (${selected.size}/3)")
+                Text(stringResource(R.string.compare_selected, selected.size))
             }
             if (comparison)
                 AlertDialog(
@@ -1044,7 +1087,7 @@ fun ModuleScreen(entry: Entry, vm: AppViewModel, back: () -> Unit) {
                         androidx.compose.ui.window.DialogProperties(
                             usePlatformDefaultWidth = false
                         ),
-                    title = { Text("Compare components") },
+                    title = { Text(stringResource(R.string.compare_components)) },
                     text = {
                         Column(Modifier.verticalScroll(rememberScrollState())) {
                             val parts = data.filter { it.name in selected }
@@ -1064,13 +1107,30 @@ fun ModuleScreen(entry: Entry, vm: AppViewModel, back: () -> Unit) {
                             )
                         }
                     },
-                    confirmButton = { TextButton({ comparison = false }) { Text("Close") } },
+                    confirmButton = {
+                        TextButton({ comparison = false }) {
+                            Text(stringResource(R.string.close_action))
+                        }
+                    },
                 )
             LazyColumn(Modifier.weight(1f)) {
                 items(filtered, key = { it.name }) { part ->
                     var expanded by rememberSaveable(part.name) { mutableStateOf(false) }
+                    val expansionState =
+                        stringResource(
+                            if (expanded) R.string.expanded_state else R.string.collapsed_state
+                        )
+                    val expansionLabel =
+                        stringResource(
+                            if (expanded) R.string.collapse_action else R.string.expand_action
+                        )
                     Column(
-                        Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(16.dp)
+                        Modifier.fillMaxWidth()
+                            .semantics { stateDescription = expansionState }
+                            .clickable(role = Role.Button, onClickLabel = expansionLabel) {
+                                expanded = !expanded
+                            }
+                            .padding(16.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(

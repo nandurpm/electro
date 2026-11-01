@@ -1,0 +1,7 @@
+<resources>
+    <color name="brand_navy">#020D18</color>
+    <color name="startup_light">#F8FAFC</color>
+    <color name="startup_background">#F8FAFC</color>
+    <color name="splash_icon_background">#063753</color>
+    <color name="icon_background">@color/brand_navy</color>
+</resources>

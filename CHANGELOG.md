@@ -1,5 +1,13 @@
 # Changes
 
+## 4.5.4 — theme, update and persistence reliability (code 33)
+
+- Preserve ordered settings retries while showing input-limit warnings independently.
+- Persist optional patch dismissal and retain mandatory feature updates with lifecycle-owned updater state.
+- Align system bars and night splash resources; improve dialog formatting, accessibility and UI string resources.
+- Add offline minified-APK emulator smoke coverage and timing-safe webhook secret verification.
+
+
 ## 4.0.0 — engineering correctness and reliability (code 20)
 
 - Promoted the audited source changes after 3.3.0 into the 4.0.0 release candidate; no new engineering specifications or manufacturer claims are introduced.

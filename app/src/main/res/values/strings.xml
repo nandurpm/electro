@@ -225,7 +225,7 @@
     <string name="update_electro_update_available" formatted="false">ELECTRO update available</string>
     <string name="update_installed" formatted="false">Installed: </string>
     <string name="update_what_s_new" formatted="false">WHAT\'S NEW</string>
-    <string name="update_open_the_official_github_release_page_to_review_the_signed_apk_an" formatted="false">Open the official GitHub release page to review the signed APK and install it manually.</string>
+    <string name="update_open_release_hint" formatted="false">Open the official GitHub release page to review the signed APK and install it manually.</string>
     <string name="update_open_release" formatted="false">Open Release</string>
     <string name="update_later" formatted="false">Later</string>
     <string name="update_check_for_updates" formatted="false">Check for Updates</string>
@@ -245,4 +245,26 @@
     <string name="update_current_version">ELECTRO %1$s is up to date.</string>
     <string name="update_browser_failed">Unable to open the official ELECTRO release page.</string>
     <string name="update_network_failed">Unable to check GitHub releases. Connect to the internet and retry.</string>
+    <string name="update_versions">Installed: %1$s\nNew: %2$s</string>
+    <string name="update_rate_limited">GitHub is limiting update checks on this network. Try again later or open the official Releases page in your browser.</string>
+    <string name="reset_preferences_title">Reset damaged preferences?</string>
+    <string name="reset_preferences_message">This deletes favorites, saved calculations and inputs. This cannot be undone.</string>
+    <string name="reset_action">Reset</string>
+    <string name="cancel_action">Cancel</string>
+    <string name="app_subtitle">Electronics Toolkit</string>
+    <string name="copy_reference">Copy reference</string>
+    <string name="copy_value">Copy value</string>
+    <string name="expanded_state">Expanded</string>
+    <string name="collapsed_state">Collapsed</string>
+    <string name="expand_action">Expand component</string>
+    <string name="collapse_action">Collapse component</string>
+    <string name="compare_selected">Compare selected (%1$d/3)</string>
+    <string name="compare_components">Compare components</string>
+    <string name="close_action">Close</string>
+    <string name="about_electro">About ELECTRO</string>
+    <string name="share_calculation">Share calculation</string>
+    <string name="appearance_label">Appearance</string>
+    <string name="language_english">Language: English</string>
+    <string name="offline_by_design">Offline by design</string>
+    <string name="save_result">Save result</string>
 </resources>
