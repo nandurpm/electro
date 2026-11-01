@@ -175,16 +175,17 @@ fun MainScreen(
             componentLoadAttempt,
         ) {
             componentLoadError = false
-            try {
-                value =
+            value =
+                try {
                     withContext(Dispatchers.IO) {
                         loadComponents(context) to loadComponentGuides(context)
                     }
-            } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                throw cancelled
-            } catch (_: Exception) {
-                componentLoadError = true
-            }
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    componentLoadError = true
+                    null
+                }
         }
     val components = componentData?.first.orEmpty()
     val guides = componentData?.second.orEmpty()
