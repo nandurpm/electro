@@ -2,14 +2,14 @@
 
 **Electrical • Electronics • Offline Reference**
 
-Offline-first native Android electronics toolkit. Version **4.5.3**, code **32**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
+Offline-first native Android electronics toolkit. Version **4.5.4**, code **33**, application ID **`com.electrokit.app`**, Android 7.0/API 24+.
 
 
 ## Features
 
 - Material 3 dark-blue, light and system appearance; persistent header/search and visible Android system bars.
 - Interactive multimeter training: seven exercises with diagrams, test steps, examples, common mistakes and safety precautions.
-- In-app GitHub release checks show verified patch and feature releases and open the official release page for manual review. ELECTRO does not download or install APKs itself, so users can continue using the app offline and choose when to update.
+- In-app GitHub release checks show verified patch and feature releases and open the official release page for manual review. ELECTRO does not download or install APKs itself. Patch updates can be postponed with Later (remembered for that version). Once verified, major/feature updates require opening the official release and installing the compatible update before continuing; the requirement persists offline.
 - INTERNET permission is used only for optional GitHub release metadata checks; all learning, calculations and saved settings work locally.
 - Home, Tools, Learn, Favorites and Profile, with recent public tools, bookmarks, saved calculation snapshots and retained raw inputs.
 - All original **31 calculators, 55 pinout entries, 21 resources and three Parts/AVR/PIC databases** remain reachable.

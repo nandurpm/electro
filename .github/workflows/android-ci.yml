@@ -59,6 +59,19 @@ jobs:
         run: |
           set -euo pipefail
           ./gradlew --no-daemon --max-workers=4 testDebugUnitTest testReleaseUnitTest lintDebug lintRelease assembleDebug assembleRelease | tee "$RUNNER_TEMP/electro-ci-build.log"
+      - name: Boot Android 15 for minified APK smoke test
+        timeout-minutes: 8
+        run: bash scripts/boot_ci_emulator.sh
+      - name: Smoke test minified APK offline at compact width and large font
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          bash scripts/smoke_minified_apk.sh app/build/outputs/apk/release/app-release-unsigned.apk 2>&1 | tee "$RUNNER_TEMP/electro-smoke.log"
+      - name: Expose Android runtime failure diagnostics
+        if: failure()
+        run: |
+          timeout 10 adb logcat -d -t 100 > "$RUNNER_TEMP/electro-smoke-logcat.txt" 2>&1 || true
+          python3 scripts/report_emulator_failure.py "$RUNNER_TEMP/electro-emulator.log" "$RUNNER_TEMP/electro-adb.txt" "$RUNNER_TEMP/electro-smoke.log" "$RUNNER_TEMP/electro-smoke-logcat.txt"
       - name: Generate current build evidence and source archive
         run: |
           "$RUNNER_TEMP/electro-python/bin/python" scripts/record_verification.py --apk app/build/outputs/apk/release/app-release-unsigned.apk --build-log "$RUNNER_TEMP/electro-ci-build.log" --variants debug release
@@ -75,6 +88,12 @@ jobs:
             app/build/reports/
             app/build/test-results/
             app/build/design-previews/
+            ${{ runner.temp }}/electro-minified-smoke/*.png
+            ${{ runner.temp }}/electro-minified-smoke/*.xml
+            ${{ runner.temp }}/electro-minified-smoke/*.txt
+            ${{ runner.temp }}/electro-emulator.log
+            ${{ runner.temp }}/electro-smoke.log
+            ${{ runner.temp }}/electro-smoke-logcat.txt
             verification/
             ${{ runner.temp }}/ELECTRO-source.zip
           retention-days: 14

@@ -20,8 +20,15 @@ def ratio(fg,bg):
 def token(source,name):
     # Toolbar tokens derive from their actual shared source definitions, not the light palette.
     match = re.search(rf'val {name} = Color\(0xFF([0-9A-Fa-f]{{6}})\)',source)
-    assert match, f'Missing colour token {name}'
-    return match[1]
+    if match:
+        return match[1]
+    resource = re.search(rf'val {name}: Color\s+@Composable get\(\) = colorResource\(R.color.(\w+)\)', source)
+    assert resource, f'Missing colour token {name}'
+    import xml.etree.ElementTree as ET
+    colors = ET.parse(ROOT/'app/src/main/res/values/colors.xml').getroot()
+    value = colors.find(f"color[@name='{resource[1]}']")
+    assert value is not None and re.fullmatch(r'#[0-9A-Fa-f]{6}', value.text or ''), 'Invalid shared color'
+    return value.text[1:]
 
 def palette(source,name):
     # Missing/changed source syntax fails explicitly instead of retaining an obsolete colour list.

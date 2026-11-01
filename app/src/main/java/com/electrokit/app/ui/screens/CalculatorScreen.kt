@@ -128,7 +128,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                 }
                 DropdownMenu(more, { more = false }) {
                     DropdownMenuItem(
-                        text = { Text("Save calculation") },
+                        text = { Text(stringResource(R.string.workbench_save_calculation)) },
                         enabled = validResult,
                         onClick = {
                             more = false
@@ -288,7 +288,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     modifier = Modifier.weight(1f),
                     onClick = { calculated = Calculators.calculate(id, scaled, mode) },
                 ) {
-                    Text("Calculate")
+                    Text(stringResource(R.string.workbench_calculate))
                 }
                 OutlinedButton(
                     onClick = {
@@ -300,7 +300,7 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                         update(spec.fields.associate { it.key to it.initial })
                     }
                 ) {
-                    Text("Reset")
+                    Text(stringResource(R.string.reset_action))
                 }
             }
             Card(
@@ -353,7 +353,10 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                 fontWeight = FontWeight.Bold,
             )
             Text(spec.formula, Modifier.padding(vertical = 8.dp))
-            Text("Substitution", style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.workbench_substitution),
+                style = MaterialTheme.typography.titleMedium,
+            )
             spec.fields.forEach { field ->
                 Text(
                     "${field.label} = ${raw[field.key].orEmpty().ifBlank { "not entered" }} ${field.unit}",
@@ -365,10 +368,10 @@ fun CalculatorScreen(entry: Entry, vm: AppViewModel, prefs: PreferencesState, ba
                     { clipboard.setText(AnnotatedString(shareText)) },
                     enabled = validResult,
                 ) {
-                    Text("Copy result")
+                    Text(stringResource(R.string.ui_copy_result))
                 }
                 TextButton({ vm.saveCalculation(shareText) }, enabled = validResult) {
-                    Text("Save result")
+                    Text(stringResource(R.string.save_result))
                 }
             }
             Text(

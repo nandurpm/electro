@@ -20,24 +20,24 @@ class InAppUpdaterRegressionTests(unittest.TestCase):
         self.assertFalse(tree.root_node.has_error, "MainActivity.kt has an invalid merge or Kotlin grammar")
 
     def test_single_update_dialog_preserves_both_update_policies(self):
-        source = MAIN.read_text()
-        dialog = source[source.index('val release = pending'):source.index('if (checkStatus != null)')]
+        source = (MAIN.parent / "update/UpdateDialog.kt").read_text()
+        dialog = source[source.index('val release = state.pending'):source.index('if (state.message != null)')]
         dialog = re.sub(r'\s+', ' ', dialog)
         self.assertEqual(dialog.count('onDismissRequest = '), 1)
         self.assertEqual(dialog.count('confirmButton = '), 1)
         self.assertEqual(dialog.count('dismissButton = '), 1)
         self.assertIn('UpdatePriority.REQUIRED_FEATURE', dialog)
-        self.assertIn('openReleasePage(release)', dialog)
+        self.assertIn('onOpen(release)', dialog)
         self.assertIn('R.string.update_open_release', dialog)
-        self.assertIn('if (!required) TextButton', dialog)
-        self.assertIn('onDismissRequest = { if (!required) pending = null }', dialog)
+        self.assertIn('else TextButton', dialog)
+        self.assertIn('onDismissRequest = { if (!required) onLater() }', dialog)
         self.assertIn('dismissOnBackPress = !required, dismissOnClickOutside = !required', dialog)
         self.assertNotIn('downloadInsideApp', dialog)
         self.assertNotIn('Install Update', dialog)
         self.assertNotIn('LinearProgressIndicator', dialog)
 
     def test_sideload_installer_capability_is_absent(self):
-        source = MAIN.read_text()
+        source = "\n".join(p.read_text() for p in MAIN.parent.rglob("*.kt"))
         manifest = MANIFEST.read_text()
         forbidden = (
             'REQUEST_INSTALL_PACKAGES',

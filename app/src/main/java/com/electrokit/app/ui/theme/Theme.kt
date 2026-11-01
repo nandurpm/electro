@@ -1,16 +1,19 @@
 package com.electrokit.app.ui.theme
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.electrokit.app.R
 
 /** Deep navy brand surface for app bars and branded loading states. */
-val BrandNavy = Color(0xFF020D18)
+val BrandNavy: Color
+    @Composable get() = colorResource(R.color.brand_navy)
 /** High-contrast toolbar foreground. */
 val TopBarText = Color(0xFFF5F8FC)
 /** Theme-aware emphasis for headings and active controls. */
@@ -100,7 +103,8 @@ private val Light =
         onSurfaceVariant = Color(0xFF485C70),
     )
 
-/** Applies the complete light or dark palette to all app surfaces and controls.
+/**
+ * Applies the complete light or dark palette to all app surfaces and controls.
  *
  * @param light True selects the light palette; false selects the midnight palette.
  * @param content App subtree rendered with the selected palette.
@@ -108,14 +112,50 @@ private val Light =
  */
 @Composable
 fun ElectroTheme(light: Boolean, content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (light) Light else Dark,
-        shapes = Shapes(extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(8.dp),
-            medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(20.dp)),
-        typography = Typography(
-            titleLarge = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp),
-            titleMedium = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp),
-            bodyLarge = TextStyle(fontSize = 15.sp, lineHeight = 22.sp),
-            bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp)), content = content)
+    MaterialTheme(
+        colorScheme = if (light) Light else Dark,
+        shapes =
+            Shapes(
+                extraSmall = RoundedCornerShape(6.dp),
+                small = RoundedCornerShape(8.dp),
+                medium = RoundedCornerShape(16.dp),
+                large = RoundedCornerShape(20.dp),
+                extraLarge = RoundedCornerShape(28.dp),
+            ),
+        typography =
+            Typography(
+                displayLarge = TextStyle(fontSize = 57.sp, lineHeight = 64.sp),
+                displayMedium = TextStyle(fontSize = 45.sp, lineHeight = 52.sp),
+                displaySmall = TextStyle(fontSize = 36.sp, lineHeight = 44.sp),
+                headlineLarge = TextStyle(fontSize = 32.sp, lineHeight = 40.sp),
+                headlineMedium = TextStyle(fontSize = 28.sp, lineHeight = 36.sp),
+                headlineSmall = TextStyle(fontSize = 24.sp, lineHeight = 32.sp),
+                titleSmall =
+                    TextStyle(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                    ),
+                bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 16.sp),
+                labelLarge =
+                    TextStyle(fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
+                labelMedium =
+                    TextStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
+                labelSmall =
+                    TextStyle(fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 16.sp),
+                titleLarge =
+                    TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp),
+                titleMedium =
+                    TextStyle(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        lineHeight = 22.sp,
+                    ),
+                bodyLarge = TextStyle(fontSize = 15.sp, lineHeight = 22.sp),
+                bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp),
+            ),
+        content = content,
+    )
 }
 
 /** Neutral metal shared by diagrams; identification wire colours remain separate. */

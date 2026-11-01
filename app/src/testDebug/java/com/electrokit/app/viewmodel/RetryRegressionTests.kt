@@ -37,7 +37,9 @@ class RetryRegressionTests {
         var attempts = 0
         /** Captures the real staging thread for the production-dispatcher regression. */
         @Volatile var stageOnMain: Boolean? = null
-        /** Optional broken asset load isolates error ownership from successful input persistence. */
+        /**
+         * Optional broken asset load isolates error ownership from successful input persistence.
+         */
         var failLoad = false
 
         /** Staged snapshot survives creation of another ViewModel using this fixture. */
@@ -79,7 +81,9 @@ class RetryRegressionTests {
          *   Assertion/time-out failures propagate; the failure fixture deliberately throws
          *   IOException while enabled.
          */
-        override suspend fun loadAssets() { if (failLoad) throw java.io.IOException("Load failure") }
+        override suspend fun loadAssets() {
+            if (failLoad) throw java.io.IOException("Load failure")
+        }
 
         /**
          * Verifies reset preferences; unexpected behaviour fails the test visibly.
@@ -118,7 +122,12 @@ class RetryRegressionTests {
     @Test
     fun settingsRetryRepeatsSettingsMutationRatherThanFlushingInputs() {
         val repository = FailingRepository()
-        val vm = AppViewModel(RuntimeEnvironment.getApplication(), repository, kotlinx.coroutines.Dispatchers.Unconfined)
+        val vm =
+            AppViewModel(
+                RuntimeEnvironment.getApplication(),
+                repository,
+                kotlinx.coroutines.Dispatchers.Unconfined,
+            )
         shadowOf(Looper.getMainLooper()).idle()
         vm.theme(true)
         shadowOf(Looper.getMainLooper()).idle()
@@ -142,7 +151,12 @@ class RetryRegressionTests {
     @Test
     fun inputRetryPersistsPendingSnapshot() {
         val repository = FailingRepository()
-        val vm = AppViewModel(RuntimeEnvironment.getApplication(), repository, kotlinx.coroutines.Dispatchers.Unconfined)
+        val vm =
+            AppViewModel(
+                RuntimeEnvironment.getApplication(),
+                repository,
+                kotlinx.coroutines.Dispatchers.Unconfined,
+            )
         vm.values("c4", mapOf("v" to "24"))
         vm.flushInputs()
         shadowOf(Looper.getMainLooper()).idle()
@@ -162,21 +176,41 @@ class RetryRegressionTests {
     @Test
     fun freshViewModelRecoversStagedInputsBeforeDataStoreCommit() {
         val repository = FailingRepository()
-        val first = AppViewModel(RuntimeEnvironment.getApplication(), repository, kotlinx.coroutines.Dispatchers.Unconfined)
+        val first =
+            AppViewModel(
+                RuntimeEnvironment.getApplication(),
+                repository,
+                kotlinx.coroutines.Dispatchers.Unconfined,
+            )
         shadowOf(Looper.getMainLooper()).idle()
         first.values("c4", mapOf("v" to "37"))
         // Lifecycle stop flushes the debounce before a new process restores the journal.
         first.flushInputs()
         assertEquals("37", repository.stagedInputs()["c4"]?.get("v"))
-        val restored = AppViewModel(RuntimeEnvironment.getApplication(), repository, kotlinx.coroutines.Dispatchers.Unconfined)
+        val restored =
+            AppViewModel(
+                RuntimeEnvironment.getApplication(),
+                repository,
+                kotlinx.coroutines.Dispatchers.Unconfined,
+            )
         shadowOf(Looper.getMainLooper()).idle()
         assertEquals("37", restored.preferences.value.values["c4"]?.get("v"))
     }
+
     /** @return Unit; a successful input transaction must not hide a failed asset load. */
     @Test
     fun inputSuccessDoesNotDismissLoadFailure() {
-        val repository = FailingRepository().apply { fail = false; failLoad = true }
-        val vm = AppViewModel(RuntimeEnvironment.getApplication(), repository, kotlinx.coroutines.Dispatchers.Unconfined)
+        val repository =
+            FailingRepository().apply {
+                fail = false
+                failLoad = true
+            }
+        val vm =
+            AppViewModel(
+                RuntimeEnvironment.getApplication(),
+                repository,
+                kotlinx.coroutines.Dispatchers.Unconfined,
+            )
         shadowOf(Looper.getMainLooper()).idle()
         val loadError = vm.error.value
         assertNotNull(loadError)
@@ -203,4 +237,55 @@ class RetryRegressionTests {
         assertEquals(false, repository.stageOnMain)
     }
 
+    /** @return Unit; validation limits cannot replace or discard the retained settings Retry. */
+    @Test
+    fun sizeWarningsPreserveStorageRetry() {
+        val repository = FailingRepository()
+        val vm =
+            AppViewModel(
+                RuntimeEnvironment.getApplication(),
+                repository,
+                kotlinx.coroutines.Dispatchers.Unconfined,
+            )
+        shadowOf(Looper.getMainLooper()).idle()
+        vm.theme(true)
+        shadowOf(Looper.getMainLooper()).idle()
+        val failure = vm.error.value
+        vm.values("c4", mapOf("v" to "1".repeat(ContentLimits.INPUT_CHARACTERS + 1)))
+        assertEquals(failure, vm.error.value)
+        assertNotNull(vm.validationError.value)
+        vm.saveCalculation("x".repeat(ContentLimits.SNAPSHOT_BYTES + 1))
+        assertEquals(failure, vm.error.value)
+        repository.fail = false
+        vm.retryFailedAction()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertTrue(repository.preferences.value.light)
+        assertNull(vm.error.value)
+    }
+
+    /** @return Unit; retry replays every failed preference mutation in original order. */
+    @Test
+    fun multipleSettingsFailuresRetainEveryMutationInOrder() {
+        val repository = FailingRepository()
+        val vm =
+            AppViewModel(
+                RuntimeEnvironment.getApplication(),
+                repository,
+                kotlinx.coroutines.Dispatchers.Unconfined,
+            )
+        shadowOf(Looper.getMainLooper()).idle()
+        vm.theme(true)
+        vm.star("c4")
+        vm.theme(false)
+        shadowOf(Looper.getMainLooper()).idle()
+        repository.fail = false
+        vm.retryFailedAction()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertFalse(repository.preferences.value.light)
+        assertTrue("c4" in repository.preferences.value.favourites)
+        assertNull(vm.error.value)
+        val attempts = repository.attempts
+        vm.retryFailedAction()
+        assertEquals(attempts, repository.attempts)
+    }
 }

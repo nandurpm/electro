@@ -232,14 +232,14 @@ fun MainScreen(
                     IconButton(onClick = { menu = true }) { Icon(Icons.Default.Settings, "Menu") }
                     DropdownMenu(menu, { menu = false }) {
                         DropdownMenuItem(
-                            text = { Text("Settings") },
+                            text = { Text(stringResource(R.string.settings)) },
                             onClick = {
                                 menu = false
                                 settings()
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("About ELECTRO") },
+                            text = { Text(stringResource(R.string.about_electro)) },
                             onClick = {
                                 menu = false
                                 info(0)
@@ -424,7 +424,12 @@ fun MainScreen(
                             ListItem(
                                 headlineContent = { Text(c.name) },
                                 supportingContent = { Text(c.category) },
-                                modifier = Modifier.clickable { openComponent(c) },
+                                modifier =
+                                    Modifier.clickable(
+                                        role = androidx.compose.ui.semantics.Role.Button
+                                    ) {
+                                        openComponent(c)
+                                    },
                             )
                         }
                         items(learningPages.filter { it.title.contains(query, true) }) { page ->
@@ -770,7 +775,9 @@ fun MainScreen(
                     items(prefs.calculations.filter { it.contains(query, true) }) { result ->
                         Card {
                             Text(result, Modifier.padding(16.dp))
-                            TextButton({ share(context, result) }) { Text("Share calculation") }
+                            TextButton({ share(context, result) }) {
+                                Text(stringResource(R.string.share_calculation))
+                            }
                         }
                     }
                 }
@@ -845,13 +852,19 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text("ELECTRO", style = MaterialTheme.typography.titleLarge)
-                    Text("Your electronics workspace", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.workbench_your_electronics_workspace),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
         }
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
-                Text("Appearance", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.appearance_label),
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("dark", "light", "system").forEach { mode ->
                         FilterChip(
@@ -866,12 +879,17 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
         }
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Language: English")
-                Text("Offline by design", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.language_english))
+                Text(
+                    stringResource(R.string.offline_by_design),
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Text(
                     "No accounts, analytics or ads. Internet access is used for GitHub update checks. Favorites, settings, inputs and saved results stay on this device. Android sharing sends only the text you choose to share."
                 )
-                TextButton({ confirm = true }) { Text("Clear saved calculation history") }
+                TextButton({ confirm = true }) {
+                    Text(stringResource(R.string.workbench_clear_saved_calculation_history))
+                }
                 TextButton({ vm.sort() }) {
                     Text(if (prefs.alphabetical) "Use original tool order" else "Sort tools A–Z")
                 }
@@ -895,17 +913,25 @@ fun ElectroSettings(vm: AppViewModel, prefs: PreferencesState, modifier: Modifie
     if (confirm)
         AlertDialog(
             onDismissRequest = { confirm = false },
-            title = { Text("Clear saved results?") },
-            text = { Text("Your favorites and calculator inputs will be retained.") },
+            title = { Text(stringResource(R.string.workbench_clear_saved_results)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.workbench_your_favorites_and_calculator_inputs_will_be_retained
+                    )
+                )
+            },
             confirmButton = {
                 TextButton({
                     vm.clearCalculations()
                     confirm = false
                 }) {
-                    Text("Clear history")
+                    Text(stringResource(R.string.workbench_clear_history))
                 }
             },
-            dismissButton = { TextButton({ confirm = false }) { Text("Cancel") } },
+            dismissButton = {
+                TextButton({ confirm = false }) { Text(stringResource(R.string.cancel_action)) }
+            },
         )
 }
 
