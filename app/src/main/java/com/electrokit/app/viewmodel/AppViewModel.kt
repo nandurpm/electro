@@ -139,6 +139,9 @@ constructor(
      *   cancellation is rethrown.
      */
     private fun update(transform: (PreferencesState) -> PreferencesState) {
+        // Publish the optimistic snapshot before the asynchronous repository write so immediate
+        // navigation cannot render a stale preference value.
+        state.value = transform(state.value)
         settingsQueue.addLast("settings:${nextMutation++}" to transform)
         drainSettings()
     }
