@@ -36,7 +36,7 @@ Set-Location electro
 git switch -c feature/my-change
 java -version
 & "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" --licenses
-& "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+& "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" 'platforms;android-35' 'platforms;android-37.1' 'build-tools;36.0.0' 'platform-tools'
 & "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" --list_installed
 .\gradlew.bat --version
 .\gradlew.bat testDebugUnitTest lintDebug assembleDebug
@@ -54,7 +54,7 @@ cd electro
 ls -lh app/build/outputs/apk/debug/app-debug.apk
 ```
 
-In this cloud workspace first run `source /workspace/toolchains/activate-electro.sh`. The saved environment Install script prepares JDK/SDK and writable caches. Gradle **9.8.2**, AGP **8.7.3**, Kotlin **2.0.21**, JDK **17**, SDK **35** and Build Tools **35.0.0** are the pinned toolchain. Kotlin needs no separate installation. First-time dependency downloads require network access; runtime Internet access is limited to optional GitHub release metadata checks. The wrapper distribution SHA-256 is pinned; TLS remains enabled.
+In this cloud workspace first run `source /workspace/toolchains/activate-electro.sh`. The saved environment Install script prepares JDK/SDK and writable caches; ensure it installs the required SDK packages listed above before building. Gradle **9.9.2**, AGP **9.5.2**, Kotlin **2.4.21**, JDK **17**, compile SDK **37.1** and Build Tools **36.0.0** are the pinned toolchain. Kotlin needs no separate installation. First-time dependency downloads require network access; runtime Internet access is limited to optional GitHub release metadata checks. The wrapper distribution SHA-256 is pinned; TLS remains enabled.
 
 ## Developer checks
 
